@@ -2,11 +2,11 @@
 
 > Explicit states predictable user experiences
 
-[Problem statement](#problem-statement)
-[Solution](#solution)
-[Explicit and safe code by example](#explicit-and-safe-code-by-example)
-[As context provider](#as-context-provider)
-[API](#api)
+- [Problem statement](#problem-statement)
+- [Solution](#solution)
+- [Explicit and safe code by example](#explicit-and-safe-code-by-example)
+- [As context provider](#as-context-provider)
+- [API](#api)
 
 Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Any asynchronous code results in resolvement or rejection. We typically write our application logic in such a way that these events directly drives our state changes and side effects, causing new events to trigger. But this is not safe code. Users treat your application like Mr and Ms Potato Head, bad internet connections causes latency and errors and the share complexity of a user flow grows out of hand and out of mind.
 
