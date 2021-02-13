@@ -1,10 +1,10 @@
-export type TState = {
+export interface TState {
   state: string;
-};
+}
 
-export type TAction = {
+export interface TAction {
   type: string;
-};
+}
 
 export type TEffect<S extends TState> = (state: S) => void | (() => void);
 
@@ -31,7 +31,7 @@ export const exec = <S extends TState>(
   effects: {
     [State in S['state']]?:
       | TEffect<S extends { state: State } ? S : never>
-      | TEffect<S extends { state: State } ? S : never>[];
+      | Array<TEffect<S extends { state: State } ? S : never>>;
   },
 ) =>
   // @ts-ignore
@@ -43,8 +43,12 @@ export const exec = <S extends TState>(
           const result = effect(state);
 
           return () => {
-            if (dispose) dispose();
-            if (result) result();
+            if (dispose) {
+              dispose();
+            }
+            if (result) {
+              result();
+            }
           };
         }, undefined)
       : // @ts-ignore
