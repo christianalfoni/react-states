@@ -1,10 +1,10 @@
 {
-  "name": "typescript-library-boilerplate",
-  "version": "0.1.0",
-  "description": "Boilerplate for TypeScript libraries",
-  "author": "Max Davidson <davidsonmax@gmail.com>",
+  "name": "react-states",
+  "version": "1.0.0",
+  "description": "Explicit states predictable user experiences",
+  "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
-  "repository": "git+https://github.com/maxdavidson/typescript-library-boilerplate.git",
+  "repository": "git+https://github.com/christianalfoni/react-states.git",
   "main": "lib/index.js",
   "module": "es/index.js",
   "browser": "dist/bundle.js",
@@ -29,9 +29,10 @@
   },
   "keywords": [
     "typescript",
-    "lib",
-    "library",
-    "boilerplate"
+    "react",
+    "reducer",
+    "state",
+    "statemachine"
   ],
   "files": [
     "lib",
