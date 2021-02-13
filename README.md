@@ -4,7 +4,7 @@
 
 - [Problem statement](#problem-statement)
 - [Solution](#solution)
-- [Explicit and safe code by example](#explicit-and-safe-code-by-example)
+- [Predictable user experience by example](#predictable-user-experience-by-example)
 - [As context provider](#as-context-provider)
 - [API](#api)
 
@@ -151,7 +151,7 @@ const Todos = () => {
 };
 ```
 
-## Explicit and safe code by example
+## Predictable user experience by example
 
 ### Authentication
 
