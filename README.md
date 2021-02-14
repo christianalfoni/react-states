@@ -381,8 +381,8 @@ Imagine you want to add and remove items from the list, where any new items are 
 - When you update an item it might fail
 - When changing an item being created, it needs to finish creating it before we send the update
 - When updating an item being updated, it needs to finish updating it before we send the update
-- When changing an item being created, and the creation fails, we should not send the update
-- When changing an item being updated, and the update fails, we should not send the update
+- When changing an item being created and the creation fails, we should not send the update
+- When changing an item being updated and the update fails, we should not send the update
 
 We will only care about the `LOADED` state in this example and we introduce the same explicit state to every item:
 
@@ -486,7 +486,7 @@ const Items = () => {
 };
 ```
 
-This example shows the real complexity of doing optimistic updates and keeping our request to the server in order, also dealing with any errors that can occur. Typically we do not deal with this at all, but with explicit states we are drawn into reasoning and model this complexity.
+This example shows the real complexity of doing optimistic updates and keeping our request to the server in order, also dealing with any errors that can occur. Typically we do not deal with this at all, but with explicit states we are drawn into reasoning about and model this complexity.
 
 The lifetime of an item can now be:
 
