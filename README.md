@@ -6,6 +6,7 @@
 - [Solution](#solution)
 - [Predictable user experience by example](#predictable-user-experience-by-example)
 - [As context provider](#as-context-provider)
+- [TypeScript](#typescript)
 - [API](#api)
 
 Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
@@ -549,6 +550,94 @@ export const AuthProvider = ({ children }) => {
   return <context.Provider value={auth}>{children}</context.Provider>;
 };
 ```
+
+# TypeScript
+
+Using TypeScript with `react-states` gives you a lot of benefits. Most of the typing is inferred, the only thing you really need to define is your explicit states and actions.
+
+```ts
+type User = { username: string };
+
+type AuthState =
+  | {
+      state: 'UNAUTHENTICATED';
+      error?: string;
+    }
+  | {
+      state: 'AUTHENTICATING';
+    }
+  | {
+      state: 'AUTHENTICATED';
+      user: User;
+    };
+
+type AuthAction =
+  | {
+      type: 'SIGN_IN';
+      provider: 'google' | 'facebook';
+    }
+  | {
+      type: 'SIGN_IN_SUCCESS';
+      user: User;
+    }
+  | {
+      type: 'SIGN_IN_ERROR';
+      error: string;
+    };
+```
+
+You use these types on the reducer and the rest works itself out:
+
+```ts
+const [auth, dispatch] = useReducer((state: AuthState, action: AuthAction) =>
+  transition(state, action, {
+    // All states are required to be defined
+    UNAUTHENTICATED: {
+      // Action types are optional
+      SIGN_IN: (
+        // Typed to SIGN_IN
+        action,
+        // Typed to UNAUTHENTICATED
+        state,
+      ) => {},
+    },
+    AUTHENTICATING: {
+      SIGN_IN_SUCCESS: () => {},
+      SIGN_IN_ERROR: () => {},
+    },
+    AUTHENTICATED: {},
+  }),
+);
+
+useEffect(
+  () =>
+    exec(auth, {
+      // Optional states
+      AUTHENTICATING: (
+        // Typed to AUTHENTICATING state
+        state,
+      ) => {},
+    }),
+  [auth],
+);
+
+const result = transform(auth, {
+  // Optional states
+  UNAUTHENTICATED: (
+    // Typed to UNAUTHENTICATED
+    state,
+  ) => null,
+});
+
+if (auth.state === 'AUTHENTICATED') {
+  // auth is now typed to AUTHENTICATED
+}
+```
+
+`react-states` will give you the following typing:
+
+1. It will ensure that all states are defined on `transition`
+2. It will ensure
 
 # API
 
