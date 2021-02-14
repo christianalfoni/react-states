@@ -12,20 +12,22 @@ Your application logic is constantly bombarded by events. Some events are relate
 
 **react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable.
 
+**NOTE!** This documentation is a good read if you have no intention of using the tools provided. It points to complexities that we rarely deal with in application development and is good to reflect upon :-)
+
 ## Problem statement
 
 **A typical way to express state in React is:**
 
 ```ts
 const [todos, dispatch] = React.useReducer(
-  (todos, action) => {
+  (state, action) => {
     switch (action.type) {
       case 'FETCH_TODOS':
-        return { ...todos, isLoading: true };
+        return { ...state, isLoading: true };
       case 'FETCH_TODOS_SUCCESS':
-        return { ...todos, isLoading: false, data: action.data };
+        return { ...state, isLoading: false, data: action.data };
       case 'FETCH_TODOS_ERROR':
-        return { ...todos, isLoading: false, error: action.error };
+        return { ...state, isLoading: false, error: action.error };
     }
   },
   {
@@ -394,7 +396,11 @@ const Items = () => {
                 id,
                 title,
                 state:
-                  data[id].state === 'CREATING' || data[id].state === 'UPDATING' ? 'QUEUED_DIRTY' : 'QUEUED_UPDATE',
+                  data[id].state === 'CREATING' || data[id].state === 'UPDATING'
+                    ? 'QUEUED_DIRTY'
+                    : data[id].state === 'CREATE_ERROR'
+                    ? 'QUEUED_CREATE'
+                    : 'QUEUED_UPDATE',
               },
             },
           }),
@@ -484,6 +490,7 @@ The lifetime of an item can now be:
 - `QUEUED_UPDATE` -> It was changed -> `QUEUED_DIRTY` -> `QUEUED_UPDATE` -> `UPDATED`
 - `QUEUED_CREATE` -> It was changed -> `QUEUED_DIRTY` -> `CREATE_ERROR`
 - `QUEUED_UPDATE` -> It was changed -> `QUEUED_DIRTY` -> `UPDATE_ERROR`
+- `QUEUED_CREATE` -> `CREATE_ERROR` -> It was changed -> `QUEUED_CREATE`
 
 ## As context provider
 
