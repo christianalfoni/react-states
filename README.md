@@ -153,6 +153,14 @@ const Todos = () => {
 };
 ```
 
+- The todos will only be loaded once, no matter how many times `FETCH_TODOS` is dispatched
+- The logic for actually fetching the todos will also only run once, because it is an effect of
+  moving into the `LOADING` state
+- We only need `dispatch` now
+- We are explicit about what state the reducer is in, meaning if we do want to enable fetching the todos several times we can do so in the `LOADED` state, meaning you will at least not fetch the todos while they are already being fetched
+
+**The solution here is not specifically related to controlling data fetching. It is putting you into the mindset of explicit states and guarding the state changes and execution of side effects. It applies to everything in your application**
+
 ## Predictable user experience by example
 
 ### Authentication
