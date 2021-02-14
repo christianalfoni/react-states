@@ -1,7 +1,7 @@
 {
   "name": "react-states",
   "version": "1.0.0",
-  "description": "Explicit states predictable user experiences",
+  "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
   "repository": "git+https://github.com/christianalfoni/react-states.git",

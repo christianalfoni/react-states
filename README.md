@@ -1,6 +1,6 @@
 # react-states
 
-> Explicit states predictable user experiences
+> Explicit states for predictable user experiences
 
 - [Problem statement](#problem-statement)
 - [Solution](#solution)
@@ -8,9 +8,9 @@
 - [As context provider](#as-context-provider)
 - [API](#api)
 
-Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Any asynchronous code results in resolvement or rejection. We typically write our application logic in such a way that these events directly drives our state changes and side effects, causing new events to trigger. But this is not safe code. Users treat your application like Mr and Ms Potato Head, bad internet connections causes latency and errors and the share complexity of a user flow grows out of hand and out of mind.
+Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
 
-**react-states** is **3** utility functions made up of **20** lines of code that will make your code explicit and safe.
+**react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable.
 
 ## Problem statement
 
@@ -40,7 +40,7 @@ This way of expressing state has issues:
 
 - We are not being explicit about what states this reducer can be in: `NOT_LOADED`, `LOADING`, `LOADED` and `ERROR`
 - There is one state not expressed at all, `NOT_LOADED`
-- There is not internal understanding of state when an action is handled. It will be handled regardless
+- There is no internal understanding of state when an action is handled. It will be handled regardless
   of the current state of the reducer
 
 **A typical way to express logic in React is:**
@@ -90,8 +90,8 @@ const Todos = ({ todos }) => {
 
 This way of expressing dynamic render has issues:
 
-- It is not very appealing is it?
 - Since the reducer has no explicit states, it can have an `error` and `isLoading` at the same time, it is not necessarily correct to render an `error` over the `isLoading` state
+- It is not very appealing is it?
 
 ## Solution
 
@@ -155,8 +155,6 @@ const Todos = () => {
 
 ### Authentication
 
-With a traditional reducer you often guard it from the outside. For example:
-
 ```tsx
 const Auth = () => {
   const [auth, dispatch] = useReducer(
@@ -197,7 +195,7 @@ const Auth = () => {
 };
 ```
 
-Calling `authenticate` twice is invalid behaviour, but this is not defined within your reducer. The only thing preventing your authentication logic from running multiple time, causing all sorts of weirdness, is an HTML attribute. This is fragile because you separate the logic. The **explicit and safe** way would be:
+Calling `authenticate` twice is invalid behaviour, but this is not defined within your reducer. The only thing preventing your authentication logic from running multiple time, causing all sorts of weirdness, is an HTML attribute. This is fragile because you separate the logic. With **explicit states** you could rather:
 
 ```tsx
 const Auth = () => {
@@ -244,7 +242,7 @@ const Auth = () => {
 };
 ```
 
-Now the application can dispatch as many `SIGN_IN` as it wants, the reducer will only handle one at a time.
+Now the application can dispatch as many `SIGN_IN` as it wants, the reducer will only handle a single one whenever the current state is `UNAUTHENTICATED`.Of course we still disable the button, but this is a property of the UI, it is not part of our application logic.
 
 ### Initial data
 
@@ -292,7 +290,7 @@ const Tabs = () => {
 
 The issue we have created now is that the mounting of our `List` is what drives our logic. That means whenever the user would move away from this `List` tab and back, it would trigger a new fetch of the list. But this is typically not what you want. The fetching of the list could also be slow, where the user again moves back and forth. That means when they move back the list might be there, but then suddenly it is set again because of a late resolvement causing UI flicker or more critical issues.
 
-By rather:
+With **explicit states**:
 
 ```tsx
 const Tabs = () => {
@@ -363,11 +361,133 @@ const list = useReducer(
 );
 ```
 
-As you can see we are explicit about how events in the application are dealt with using explicit states. This results in safer code.
+But we would still never get into a situation when we are loading the list, that we start loading it again.
+
+### Logic within same state
+
+Imagine you want to add and remove items from the list, where any new items are **POST**ed to the server and any updates are **PATCH**ed to the server. We are going to deal with the real complexity of this:
+
+- When you create an item it might fail
+- When you update an item it might fail
+- When changing an item being created, it needs to finish creating it before we send the update
+- When updating an item being updated, it needs to finish updating it before we send the update
+- When changing an item being created, and the creation fails, we should not send the update
+- When changing an item being updated, and the update fails, we should not send the update
+
+We will only care about the `LOADED` state in this example and we introduce the same explicit state to every item:
+
+```tsx
+const Items = () => {
+  const [items, dispatch] = useReducer(
+    (state, action) =>
+      transition(state, action, {
+        LOADED: {
+          ADD_ITEM: ({ id, title }, { data }) => ({
+            state: 'LOADED',
+            data: { ...data, [id]: { id, title, state: 'QUEUED_CREATE' } },
+          }),
+          CHANGE_ITEM: ({ id, title }, { data }) => ({
+            state: 'LOADED',
+            data: {
+              ...data,
+              [id]: {
+                id,
+                title,
+                state:
+                  data[id].state === 'CREATING' || data[id].state === 'UPDATING' ? 'QUEUED_DIRTY' : 'QUEUED_UPDATE',
+              },
+            },
+          }),
+          CREATE_ITEM: ({ id }, { data }) => ({
+            state: 'LOADED',
+            data: { ...data, [id]: { ...data[id], state: 'CREATING' } },
+          }),
+          CREATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+            state: 'LOADED',
+            data: {
+              ...data,
+              [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'CREATED' },
+            },
+          }),
+          CREATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+            state: 'LOADED',
+            data: { ...data, [id]: { ...data[id], state: 'CREATE_ERROR', error } },
+          }),
+          UPDATE_ITEM: ({ id }, { data }) => ({
+            state: 'LOADED',
+            data: { ...data, [id]: { ...data[id], state: 'UPDATING' } },
+          }),
+          UPDATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+            state: 'LOADED',
+            data: {
+              ...data,
+              [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'UPDATED' },
+            },
+          }),
+          UPDATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+            state: 'LOADED',
+            data: { ...data, [id]: { ...data[id], state: 'UPDATE_ERROR', error } },
+          }),
+        },
+      }),
+    { state: 'NOT_LOADED' },
+  );
+
+  useEffect(() =>
+    exec(items, {
+      LOADING: [
+        function createItem({ data }) {
+          const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
+
+          if (queuedItem) {
+            dispatch({ type: 'CREATE_ITEM', id: queuedItem.id });
+            axios
+              .post('/items', queuedItem)
+              .then(response => {
+                dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
+              })
+              .catch(error => {
+                dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
+              });
+          }
+        },
+        function updateItem({ data }) {
+          const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
+
+          if (queuedItem) {
+            dispatch({ type: 'UPDATE_ITEM', id: queuedItem.id });
+            axios
+              .patch('/items', queuedItem)
+              .then(response => {
+                dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
+              })
+              .catch(error => {
+                dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
+              });
+          }
+        },
+      ],
+    }),
+  );
+};
+```
+
+This example shows the real complexity of doing optimistic updates and keeping our request to the server in order, also dealing with any errors that can occur. Typically we do not deal with this at all, but with explicit states we are drawn into reasoning and model this complexity.
+
+The lifetime of an item can now be:
+
+- `QUEUED_CREATE` -> `CREATED`
+- `QUEUED_UPDATE` -> `UPDATED`
+- `QUEUED_CREATE` -> `CREATE_ERROR`
+- `QUEUED_UPDATE` -> `UPDATE_ERROR`
+- `QUEUED_CREATE` -> It was changed -> `QUEUED_DIRTY` -> `QUEUED_UPDATE` -> `UPDATED`
+- `QUEUED_UPDATE` -> It was changed -> `QUEUED_DIRTY` -> `QUEUED_UPDATE` -> `UPDATED`
+- `QUEUED_CREATE` -> It was changed -> `QUEUED_DIRTY` -> `CREATE_ERROR`
+- `QUEUED_UPDATE` -> It was changed -> `QUEUED_DIRTY` -> `UPDATE_ERROR`
 
 ## As context provider
 
-Since there is not need for callbacks we have an opportunity to expose features as context providers which are strictly driven by dispatches and explicit states to drive side effects.
+Since there is no need for callbacks we have an opportunity to expose features as context providers which are strictly driven by dispatches and explicit states to drive side effects.
 
 ```tsx
 const context = createContext(null);
