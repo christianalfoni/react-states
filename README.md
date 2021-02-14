@@ -63,7 +63,7 @@ const fetchTodos = React.useCallback(() => {
 
 This way of expressing logic has issues:
 
-- The logic of `fetchTodos` will run regardless of the current state of the reducer
+- The logic of `fetchTodos` is at the mercy of whoever triggers it. There is no explicit state guarding that it should run or not
 - You have to create callbacks that needs to be passed down as props
 
 **A typical way to express dynamic rendering in React is:**
@@ -157,9 +157,9 @@ const Todos = () => {
 - The logic for actually fetching the todos will also only run once, because it is an effect of
   moving into the `LOADING` state
 - We only need `dispatch` now
-- We are explicit about what state the reducer is in, meaning if we do want to enable fetching the todos several times we can do so in the `LOADED` state, meaning you will at least not fetch the todos while they are already being fetched
+- We are explicit about what state the reducer is in, meaning if we do want to enable fetching the todos several times we can allow it in the `LOADED` state, meaning you will at least not fetch the todos while they are already being fetched
 
-**The solution here is not specifically related to controlling data fetching. It is putting you into the mindset of explicit states and guarding the state changes and execution of side effects. It applies to everything in your application**
+**The solution here is not specifically related to controlling data fetching. It is putting you into the mindset of explicit states and guarding the state changes and execution of side effects. It applies to everything in your application, especially async code**
 
 ## Predictable user experience by example
 
