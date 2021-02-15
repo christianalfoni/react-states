@@ -2,6 +2,8 @@
 
 > Explicit states for predictable user experiences
 
+[![react-states](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://youtu.be/ul_3ABrpj64)
+
 - [Problem statement](#problem-statement)
 - [Solution](#solution)
 - [Predictable user experience by example](#predictable-user-experience-by-example)
