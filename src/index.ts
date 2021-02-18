@@ -8,6 +8,10 @@ export interface TAction {
 
 export type TEffect<S extends TState> = (state: S) => void | (() => void);
 
+export type PickState<S extends { state: string }, SS extends S['state']> = S extends { state: SS } ? S : never;
+
+export type PickAction<E extends { type: string }, T extends E['type']> = E extends { type: T } ? E : never;
+
 export const transition = <S extends TState, A extends TAction, NewState extends S['state']>(
   state: S,
   action: A,

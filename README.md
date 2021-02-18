@@ -8,6 +8,7 @@
 - [Solution](#solution)
 - [Predictable user experience by example](#predictable-user-experience-by-example)
 - [As context provider](#as-context-provider)
+- [Patterns](#patterns)
 - [TypeScript](#typescript)
 - [API](#api)
 
@@ -553,6 +554,31 @@ export const AuthProvider = ({ children }) => {
 };
 ```
 
+# Patterns
+
+## Lift actions
+
+Sometimes you might have one or multiple handlers across states. You can lift them up and compose them back into your transitions.
+
+```ts
+const globalActions = {
+  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, state: State) => ({
+    ...state,
+    description,
+  }),
+};
+
+const reducer = (state: State, action: Action) =>
+  transition(state, action, {
+    FOO: {
+      ...globalActions,
+    },
+    BAR: {
+      ...globalActions,
+    },
+  });
+```
+
 # TypeScript
 
 Using TypeScript with `react-states` gives you a lot of benefits. Most of the typing is inferred, the only thing you really need to define is your explicit states and actions.
@@ -634,6 +660,41 @@ const result = transform(auth, {
 if (auth.state === 'AUTHENTICATED') {
   // auth is now typed to AUTHENTICATED
 }
+```
+
+## Helper types
+
+`react-states` exposes the `PickState` and `PickAction` helper types. Use these helper types when you "lift" your action handlers into separate functions.
+
+```ts
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    };
+
+type Action =
+  | {
+      type: 'A';
+    }
+  | {
+      type: 'B';
+    };
+
+const actions = {
+  A: (action: PickAction<Action, 'A'>, state: PickState<State, 'FOO'>) => {},
+  B: (action: PickAction<Action, 'B'>, state: PickState<State, 'FOO'>) => {},
+};
+
+const reducer = (state: State, action: Action) =>
+  transition(state, action, {
+    FOO: {
+      ...actions,
+    },
+    BAR: {},
+  });
 ```
 
 # API
