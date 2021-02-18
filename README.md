@@ -636,11 +636,6 @@ if (auth.state === 'AUTHENTICATED') {
 }
 ```
 
-`react-states` will give you the following typing:
-
-1. It will ensure that all states are defined on `transition`
-2. It will ensure
-
 # API
 
 ## transition
