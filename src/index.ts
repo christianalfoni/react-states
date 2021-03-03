@@ -85,15 +85,15 @@ export const useStates = <C extends TContext, A extends TAction>(
   },
   initialState: C,
 ) => {
-  const [context, dispatch] = React.useReducer(
-    (state: C, action: A) => transition(state, action, transitions),
-    initialState,
-  );
+  const reducer = React.useReducer((state: C, action: A) => transition(state, action, transitions), initialState);
 
-  return {
-    context,
-    dispatch,
-    exec: (effects: TEffects<C>) => exec(context, effects),
-    transform: (transforms: TTransforms<C>) => transform(context, transforms),
-  };
+  return React.useMemo(
+    () => ({
+      context: reducer[0],
+      dispatch: reducer[1],
+      exec: (effects: TEffects<C>) => exec(reducer[0], effects),
+      transform: (transforms: TTransforms<C>) => transform(reducer[0], transforms),
+    }),
+    [reducer[0]],
+  );
 };
