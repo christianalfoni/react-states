@@ -135,7 +135,7 @@ const Todos = () => {
             });
         },
       }),
-    [todos.exec],
+    [todos],
   );
 
   return (
@@ -244,7 +244,7 @@ const Auth = () => {
             });
         },
       }),
-    [auth.exec],
+    [auth],
   );
 
   return (
@@ -338,7 +338,7 @@ const Tabs = () => {
             });
         },
       }),
-    [list.exec],
+    [list],
   );
 
   return (
@@ -484,7 +484,7 @@ const Items = () => {
           },
         ],
       }),
-    [items.exec],
+    [items],
   );
 };
 ```
@@ -544,7 +544,7 @@ export const AuthProvider = ({ children }) => {
             });
         },
       }),
-    [auth.exec],
+    [auth],
   );
 
   return <context.Provider value={auth}>{children}</context.Provider>;
@@ -642,7 +642,7 @@ useEffect(
         state,
       ) => {},
     }),
-  [auth.exec],
+  [auth],
 );
 
 const result = auth.transform({
@@ -718,7 +718,7 @@ React.useEffect(
         // Do something when moving into NEW_STATE
       },
     }),
-  [foo.exec],
+  [foo],
 );
 
 // Transform a state into a value, typically react nodes
