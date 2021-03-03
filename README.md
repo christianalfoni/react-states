@@ -103,28 +103,27 @@ This way of expressing dynamic render has issues:
 ## Solution
 
 ```tsx
-import { transition, exec, transform } from 'react-states';
+import { useStates } from 'react-states';
 
 const Todos = () => {
-  const [todos, dispatch] = useReducer(
-    (state, action) =>
-      transition(state, action, {
-        NOT_LOADED: {
-          FETCH_TODOS: () => ({ state: 'LOADING' }),
-        },
-        LOADING: {
-          FETCH_TODOS_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-          FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-        },
-        LOADED: {},
-        ERROR: {},
-      }),
+  const todos = useStates(
+    {
+      NOT_LOADED: {
+        FETCH_TODOS: () => ({ state: 'LOADING' }),
+      },
+      LOADING: {
+        FETCH_TODOS_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+        FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+      },
+      LOADED: {},
+      ERROR: {},
+    },
     { state: 'NOT_LOADED' },
   );
 
   useEffect(
     () =>
-      exec(todos, {
+      todos.exec({
         LOADING: () => {
           axios
             .get('/todos')
@@ -136,12 +135,12 @@ const Todos = () => {
             });
         },
       }),
-    [todos],
+    [todos.exec],
   );
 
   return (
     <div className="wrapper">
-      {transform(todos, {
+      {todos.transform({
         NOT_LOADED: () => 'Not loaded',
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
@@ -214,19 +213,18 @@ Calling `authenticate` twice is invalid behaviour, but this is not defined withi
 
 ```tsx
 const Auth = () => {
-  const [auth, dispatch] = useReducer(
-    (state, action) =>
-      transition(state, action, {
-        UNAUTHENTICATED: {
-          SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
-        },
-        AUTHENTICATING: {
-          SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
-          SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-        },
-        AUTHENTICATED: {},
-        ERROR: {},
-      }),
+  const auth = useStates(
+    {
+      UNAUTHENTICATED: {
+        SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
+      },
+      AUTHENTICATING: {
+        SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
+        SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+      },
+      AUTHENTICATED: {},
+      ERROR: {},
+    },
     {
       state: 'UNAUTHENTICATED',
     },
@@ -234,7 +232,7 @@ const Auth = () => {
 
   useEffect(
     () =>
-      exec(auth, {
+      auth.exec({
         AUTHENTICATING: () => {
           axios
             .get('/signin')
@@ -246,11 +244,11 @@ const Auth = () => {
             });
         },
       }),
-    [auth],
+    [auth.exec],
   );
 
   return (
-    <button onClick={() => dispatch({ type: 'SIGN_IN' })} disabled={auth.state === 'AUTHENTICATING'}>
+    <button onClick={() => dispatch({ type: 'SIGN_IN' })} disabled={auth.context.state === 'AUTHENTICATING'}>
       Log In
     </button>
   );
@@ -309,38 +307,38 @@ With **explicit states**:
 
 ```tsx
 const Tabs = () => {
-  const list = useReducer(
-    (state, action) =>
-      transition(state, action, {
-        NOT_LOADED: {
-          FETCH: () => ({ state: 'LOADING' }),
-        },
-        LOADING: {
-          FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-          FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
-        },
-        LOADED: {},
-        ERROR: {},
-      }),
+  const list = useStates(
+    {
+      NOT_LOADED: {
+        FETCH: () => ({ state: 'LOADING' }),
+      },
+      LOADING: {
+        FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+        FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
+      },
+      LOADED: {},
+      ERROR: {},
+    },
     {
       state: 'NOT_LOADED',
     },
   );
-  const [listState, listDispatch] = list;
 
-  useEffect(() =>
-    exec(listState, {
-      LOADING: () => {
-        axios
-          .get('/list')
-          .then(response => {
-            listDispatch({ type: 'FETCH_SUCCESS', data: response.data });
-          })
-          .catch(error => {
-            listDispatch({ type: 'FETCH_ERROR', error: error.message });
-          });
-      },
-    }),
+  useEffect(
+    () =>
+      list.exec({
+        LOADING: () => {
+          axios
+            .get('/list')
+            .then(response => {
+              listDispatch({ type: 'FETCH_SUCCESS', data: response.data });
+            })
+            .catch(error => {
+              listDispatch({ type: 'FETCH_ERROR', error: error.message });
+            });
+        },
+      }),
+    [list.exec],
   );
 
   return (
@@ -354,22 +352,21 @@ const Tabs = () => {
 Now it does not matter how many times the `List` component mounts. There will only be a single fetching of the list. If you wanted to fetch the list again when it was already loaded you could just do the following change:
 
 ```ts
-const list = useReducer(
-  (state, action) =>
-    transition(state, action, {
-      NOT_LOADED: {
-        FETCH: () => ({ state: 'LOADING' }),
-      },
-      LOADING: {
-        FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-        FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
-      },
-      LOADED: {
-        // We allow fetching again when we have loaded the data
-        FETCH: () => ({ state: 'LOADING' }),
-      },
-      ERROR: {},
-    }),
+const list = useStates(
+  {
+    NOT_LOADED: {
+      FETCH: () => ({ state: 'LOADING' }),
+    },
+    LOADING: {
+      FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+      FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
+    },
+    LOADED: {
+      // We allow fetching again when we have loaded the data
+      FETCH: () => ({ state: 'LOADING' }),
+    },
+    ERROR: {},
+  },
   {
     state: 'NOT_LOADED',
   },
@@ -393,100 +390,101 @@ We will only care about the `LOADED` state in this example and we introduce the 
 
 ```tsx
 const Items = () => {
-  const [items, dispatch] = useReducer(
-    (state, action) =>
-      transition(state, action, {
-        LOADED: {
-          ADD_ITEM: ({ id, title }, { data }) => ({
-            state: 'LOADED',
-            data: { ...data, [id]: { id, title, state: 'QUEUED_CREATE' } },
-          }),
-          CHANGE_ITEM: ({ id, title }, { data }) => ({
-            state: 'LOADED',
-            data: {
-              ...data,
-              [id]: {
-                id,
-                title,
-                state:
-                  data[id].state === 'CREATING' || data[id].state === 'UPDATING'
-                    ? 'QUEUED_DIRTY'
-                    : data[id].state === 'CREATE_ERROR'
-                    ? 'QUEUED_CREATE'
-                    : 'QUEUED_UPDATE',
-              },
+  const items = useStates(
+    {
+      LOADED: {
+        ADD_ITEM: ({ id, title }, { data }) => ({
+          state: 'LOADED',
+          data: { ...data, [id]: { id, title, state: 'QUEUED_CREATE' } },
+        }),
+        CHANGE_ITEM: ({ id, title }, { data }) => ({
+          state: 'LOADED',
+          data: {
+            ...data,
+            [id]: {
+              id,
+              title,
+              state:
+                data[id].state === 'CREATING' || data[id].state === 'UPDATING'
+                  ? 'QUEUED_DIRTY'
+                  : data[id].state === 'CREATE_ERROR'
+                  ? 'QUEUED_CREATE'
+                  : 'QUEUED_UPDATE',
             },
-          }),
-          CREATE_ITEM: ({ id }, { data }) => ({
-            state: 'LOADED',
-            data: { ...data, [id]: { ...data[id], state: 'CREATING' } },
-          }),
-          CREATE_ITEM_SUCCESS: ({ id }, { data }) => ({
-            state: 'LOADED',
-            data: {
-              ...data,
-              [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'CREATED' },
-            },
-          }),
-          CREATE_ITEM_ERROR: ({ id, error }, { data }) => ({
-            state: 'LOADED',
-            data: { ...data, [id]: { ...data[id], state: 'CREATE_ERROR', error } },
-          }),
-          UPDATE_ITEM: ({ id }, { data }) => ({
-            state: 'LOADED',
-            data: { ...data, [id]: { ...data[id], state: 'UPDATING' } },
-          }),
-          UPDATE_ITEM_SUCCESS: ({ id }, { data }) => ({
-            state: 'LOADED',
-            data: {
-              ...data,
-              [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'UPDATED' },
-            },
-          }),
-          UPDATE_ITEM_ERROR: ({ id, error }, { data }) => ({
-            state: 'LOADED',
-            data: { ...data, [id]: { ...data[id], state: 'UPDATE_ERROR', error } },
-          }),
-        },
-      }),
+          },
+        }),
+        CREATE_ITEM: ({ id }, { data }) => ({
+          state: 'LOADED',
+          data: { ...data, [id]: { ...data[id], state: 'CREATING' } },
+        }),
+        CREATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+          state: 'LOADED',
+          data: {
+            ...data,
+            [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'CREATED' },
+          },
+        }),
+        CREATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+          state: 'LOADED',
+          data: { ...data, [id]: { ...data[id], state: 'CREATE_ERROR', error } },
+        }),
+        UPDATE_ITEM: ({ id }, { data }) => ({
+          state: 'LOADED',
+          data: { ...data, [id]: { ...data[id], state: 'UPDATING' } },
+        }),
+        UPDATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+          state: 'LOADED',
+          data: {
+            ...data,
+            [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'UPDATED' },
+          },
+        }),
+        UPDATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+          state: 'LOADED',
+          data: { ...data, [id]: { ...data[id], state: 'UPDATE_ERROR', error } },
+        }),
+      },
+    },
     { state: 'NOT_LOADED' },
   );
 
-  useEffect(() =>
-    exec(items, {
-      LOADING: [
-        function createItem({ data }) {
-          const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
+  useEffect(
+    () =>
+      items.exec({
+        LOADING: [
+          function createItem({ data }) {
+            const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
 
-          if (queuedItem) {
-            dispatch({ type: 'CREATE_ITEM', id: queuedItem.id });
-            axios
-              .post('/items', queuedItem)
-              .then(response => {
-                dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
-              })
-              .catch(error => {
-                dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
-              });
-          }
-        },
-        function updateItem({ data }) {
-          const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
+            if (queuedItem) {
+              dispatch({ type: 'CREATE_ITEM', id: queuedItem.id });
+              axios
+                .post('/items', queuedItem)
+                .then(response => {
+                  dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
+                })
+                .catch(error => {
+                  dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
+                });
+            }
+          },
+          function updateItem({ data }) {
+            const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
 
-          if (queuedItem) {
-            dispatch({ type: 'UPDATE_ITEM', id: queuedItem.id });
-            axios
-              .patch('/items', queuedItem)
-              .then(response => {
-                dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
-              })
-              .catch(error => {
-                dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
-              });
-          }
-        },
-      ],
-    }),
+            if (queuedItem) {
+              dispatch({ type: 'UPDATE_ITEM', id: queuedItem.id });
+              axios
+                .patch('/items', queuedItem)
+                .then(response => {
+                  dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
+                })
+                .catch(error => {
+                  dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
+                });
+            }
+          },
+        ],
+      }),
+    [items.exec],
   );
 };
 ```
@@ -515,28 +513,26 @@ const context = createContext(null);
 export const useAuth = () => useContext(context);
 
 export const AuthProvider = ({ children }) => {
-  const auth = useReducer(
-    (state, action) =>
-      transition(state, action, {
-        UNAUTHENTICATED: {
-          SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
-        },
-        AUTHENTICATING: {
-          SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
-          SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-        },
-        AUTHENTICATED: {},
-        ERROR: {},
-      }),
+  const auth = useStates(
+    {
+      UNAUTHENTICATED: {
+        SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
+      },
+      AUTHENTICATING: {
+        SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
+        SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+      },
+      AUTHENTICATED: {},
+      ERROR: {},
+    },
     {
       state: 'UNAUTHENTICATED',
     },
   );
-  const [authState, dispatch] = auth;
 
   useEffect(
     () =>
-      exec(authState, {
+      auth.exec({
         AUTHENTICATING: () => {
           axios
             .get('/signin')
@@ -548,7 +544,7 @@ export const AuthProvider = ({ children }) => {
             });
         },
       }),
-    [authState],
+    [auth.exec],
   );
 
   return <context.Provider value={auth}>{children}</context.Provider>;
@@ -563,13 +559,13 @@ Sometimes you might have one or multiple handlers across states. You can lift th
 
 ```ts
 const globalActions = {
-  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, state: State) => ({
+  CHANGE_DESCRIPTION: ({ description }, state) => ({
     ...state,
     description,
   }),
 };
 
-const reducer = (state: State, action: Action) =>
+const reducer = (state, action) =>
   transition(state, action, {
     FOO: {
       ...globalActions,
@@ -587,7 +583,7 @@ Using TypeScript with `react-states` gives you a lot of benefits. Most of the ty
 ```ts
 type User = { username: string };
 
-type AuthState =
+type AuthContext =
   | {
       state: 'UNAUTHENTICATED';
       error?: string;
@@ -618,8 +614,7 @@ type AuthAction =
 You use these types on the reducer and the rest works itself out:
 
 ```ts
-const [auth, dispatch] = useReducer((state: AuthState, action: AuthAction) =>
-  transition(state, action, {
+const auth = useStates<AuthContext, AuthAction>({
     // All states are required to be defined
     UNAUTHENTICATED: {
       // Action types are optional
@@ -640,17 +635,17 @@ const [auth, dispatch] = useReducer((state: AuthState, action: AuthAction) =>
 
 useEffect(
   () =>
-    exec(auth, {
+    auth.exec({
       // Optional states
       AUTHENTICATING: (
         // Typed to AUTHENTICATING state
         state,
       ) => {},
     }),
-  [auth],
+  [auth.exec],
 );
 
-const result = transform(auth, {
+const result = auth.transform({
   // Optional states
   UNAUTHENTICATED: (
     // Typed to UNAUTHENTICATED
@@ -658,8 +653,8 @@ const result = transform(auth, {
   ) => null,
 });
 
-if (auth.state === 'AUTHENTICATED') {
-  // auth is now typed to AUTHENTICATED
+if (auth.context.state === 'AUTHENTICATED') {
+  // auth.context is now typed to AUTHENTICATED
 }
 ```
 
@@ -668,7 +663,7 @@ if (auth.state === 'AUTHENTICATED') {
 `react-states` exposes the `PickState` and `PickAction` helper types. Use these helper types when you "lift" your action handlers into separate functions.
 
 ```ts
-type State =
+type Context =
   | {
       state: 'FOO';
     }
@@ -685,20 +680,53 @@ type Action =
     };
 
 const actions = {
-  A: (action: PickAction<Action, 'A'>, state: PickState<State, 'FOO'>) => {},
-  B: (action: PickAction<Action, 'B'>, state: PickState<State, 'FOO'>) => {},
+  A: (action: PickAction<Action, 'A'>, context: PickState<Context, 'FOO'>) => {},
+  B: (action: PickAction<Action, 'B'>, context: PickState<Context, 'FOO'>) => {},
 };
 
-const reducer = (state: State, action: Action) =>
-  transition(state, action, {
-    FOO: {
-      ...actions,
-    },
-    BAR: {},
-  });
+const foo = useStates<Context, Action>({
+  FOO: {
+    ...actions,
+  },
+  BAR: {},
+});
 ```
 
 # API
+
+## useStates
+
+This is the opinoinated single API. You can go lower level to control things more explicitly.
+
+```ts
+const foo = useStates(
+  {
+    SOME_STATE: {
+      SOME_ACTION_TYPE: (action, currentContext) => ({ state: 'NEW_STATE' }),
+    },
+    NEW_STATE: {},
+  },
+  {
+    state: 'SOME_STATE',
+  },
+);
+
+React.useEffect(
+  () =>
+    foo.exec({
+      NEW_STATE: context => {
+        // Do something when moving into NEW_STATE
+      },
+    }),
+  [foo.exec],
+);
+
+// Transform a state into a value, typically react nodes
+const value = foo.transform({
+  SOME_STATE: context => 'foo',
+  NEW_STATE: context => 'bar',
+});
+```
 
 ## transition
 
@@ -800,4 +828,5 @@ return (
 ```
 
 # Inspirations
-Me learning state machines and state charts is heavily influenced by @davidkpiano and his [XState](https://xstate.js.org/) library. So why not just use that? Well,  XState is framework agnostic and needs more concepts like storing the state, sending events and subscriptions. These are concepts React already provides with reducer state, dispatches and the following reconciliation. Funny thing is that **react-states** is actually technically framework agnostic, but its API is designed to be used with React.
+
+Me learning state machines and state charts is heavily influenced by @davidkpiano and his [XState](https://xstate.js.org/) library. So why not just use that? Well, XState is framework agnostic and needs more concepts like storing the state, sending events and subscriptions. These are concepts React already provides with reducer state, dispatches and the following reconciliation. Funny thing is that **react-states** is actually technically framework agnostic, but its API is designed to be used with React.
