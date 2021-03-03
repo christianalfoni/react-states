@@ -11,6 +11,7 @@
 - [Patterns](#patterns)
 - [TypeScript](#typescript)
 - [API](#api)
+- [Inspirations](#inspirations)
 
 Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
 
@@ -797,3 +798,6 @@ return (
   </div>
 );
 ```
+
+# Inspirations
+Me learning state machines and state charts is heavily influenced by @davidkpiano and his [XState](https://xstate.js.org/) library. So why not just use that? Well,  XState is framework agnostic and needs more concepts like storing the state, sending events and subscriptions. These are concepts React already provides with reducer state, dispatches and the following reconciliation. Funny thing is that **react-states** is actually technically framework agnostic, but its API is designed to be used with React.
