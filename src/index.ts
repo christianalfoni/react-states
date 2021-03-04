@@ -10,12 +10,12 @@ export interface TAction {
 
 export type TEffect<C extends TContext> = (state: C) => void | (() => void);
 
-export type TTransitions<C extends TContext, A extends TAction, NewState extends C['state']> = {
+export type TTransitions<C extends TContext, A extends TAction> = {
   [State in C['state']]: {
     [Type in A['type']]?: (
       action: A extends { type: Type } ? A : never,
       state: C extends { state: State } ? C : never,
-    ) => C extends { state: NewState } ? C : never;
+    ) => C extends { state: C['state'] } ? C : never;
   };
 };
 
@@ -46,7 +46,7 @@ export interface States<Context extends TContext, Action extends TAction> {
 export const transition = <C extends TContext, A extends TAction, NewState extends C['state']>(
   state: C,
   action: A,
-  transitions: TTransitions<C, A, NewState>,
+  transitions: TTransitions<C, A>,
 ): C =>
   // @ts-ignore
   transitions[state.state] && transitions[state.state][action.type]
@@ -88,7 +88,7 @@ export const useStates = <C extends TContext, A extends TAction>(
       [Type in A['type']]?: (
         action: A extends { type: Type } ? A : never,
         state: C extends { state: State } ? C : never,
-      ) => C;
+      ) => C extends { state: C['state'] } ? C : never;
     };
   },
   initialState: C,
