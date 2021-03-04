@@ -15,7 +15,7 @@
 
 Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
 
-**react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable.
+**react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable. These utility functions can be used directly, or you can consume the **useStates** hook to get an opinionated abstraction on top of them.
 
 **NOTE!** This documentation is a good read if you have no intention of using the tools provided. It points to complexities that we rarely deal with in application development and is good to reflect upon :-)
 
