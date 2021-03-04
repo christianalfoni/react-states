@@ -653,7 +653,7 @@ const result = auth.transform({
   ) => null,
 });
 
-if (auth.context.state === 'AUTHENTICATED') {
+if (auth.is('AUTHENTICATED') {
   // auth.context is now typed to AUTHENTICATED
 }
 ```
@@ -726,6 +726,11 @@ const value = foo.transform({
   SOME_STATE: context => 'foo',
   NEW_STATE: context => 'bar',
 });
+
+// Check if in a specific state
+if (foo.is('AUTHENTICATED')) {
+  // foo.context.state is 'AUTHENTICATED'
+}
 ```
 
 ## transition
