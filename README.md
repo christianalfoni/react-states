@@ -696,7 +696,7 @@ const foo = useStates<Context, Action>({
 
 ## useStates
 
-This is the opinoinated single API. You can go lower level to control things more explicitly.
+This is the opinoinated single API. You can go lower level to control things more explicitly with the specific 3 helper functions, **transition**, **exec** and **transform**, seen below.
 
 ```ts
 const foo = useStates(
