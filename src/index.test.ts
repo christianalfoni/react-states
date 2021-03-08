@@ -72,25 +72,6 @@ describe('react-states', () => {
     disposer();
     expect(isDisposed).toBe(true);
   });
-  test('should dispose all', () => {
-    const state = {
-      state: 'FOO',
-    };
-    const disposed: string[] = [];
-    const disposer = exec(state, {
-      FOO: [
-        () => () => {
-          disposed.push('a');
-        },
-        () => () => {
-          disposed.push('b');
-        },
-        () => {},
-      ],
-    });
-    disposer();
-    expect(disposed).toEqual(['a', 'b']);
-  });
   test('should transform', () => {
     const state = {
       state: 'FOO',

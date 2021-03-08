@@ -20,16 +20,21 @@ export type TTransitions<C extends TContext, A extends TAction, NewState extends
 };
 
 export type TEffects<C extends TContext> = {
-  [State in C['state']]?:
-    | TEffect<C extends { state: State } ? C : never>
-    | Array<TEffect<C extends { state: State } ? C : never>>;
+  [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
-export type TTransforms<C extends TContext> =
-  | C['state']
-  | {
-      [State in C['state']]?: (state: C extends { state: State } ? C : never) => any;
-    };
+export type TTransforms<C extends TContext> = {
+  [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
+};
+
+export type TUseStatesTransitions<C extends TContext, A extends TAction> = {
+  [State in C['state']]: {
+    [Type in A['type']]?: (
+      action: A extends { type: Type } ? A : never,
+      state: C extends { state: State } ? C : never,
+    ) => C extends { state: C['state'] } ? C : never;
+  };
+};
 
 export type PickState<C extends { state: string }, SS extends C['state']> = C extends { state: SS } ? C : never;
 
@@ -39,7 +44,11 @@ export interface States<Context extends TContext, Action extends TAction> {
   context: Context;
   dispatch: React.Dispatch<Action>;
   exec: (effects: TEffects<Context>) => void | (() => void);
-  transform: (transforms: TTransforms<Context>) => any;
+  transform: <T extends TTransforms<Context>>(
+    transforms: T,
+  ) => {
+    [K in keyof T]: T[K] extends () => infer R ? R : never;
+  }[keyof T];
   is: <S extends Context['state']>(state: S) => this is States<PickState<Context, S>, Action>;
 }
 
@@ -58,45 +67,25 @@ export const exec = <C extends TContext>(state: C, effects: TEffects<C>) =>
   // @ts-ignore
   effects[state.state]
     ? // @ts-ignore
-      Array.isArray(effects[state.state])
-      ? // @ts-ignore
-        effects[state.state].reduce((dispose, effect) => {
-          const result = effect(state);
-
-          return () => {
-            if (dispose) {
-              dispose();
-            }
-            if (result) {
-              result();
-            }
-          };
-        }, undefined)
-      : // @ts-ignore
-        effects[state.state](state)
+      effects[state.state](state)
     : undefined;
 
-export const transform = <C extends TContext>(
-  state: C,
-  transforms: TTransforms<C>,
+export const transform = <C extends TContext, T extends TTransforms<C>>(
+  context: C,
+  transforms: T,
+): {
+  [K in keyof T]: T[K] extends () => infer R ? R : never;
   // @ts-ignore
-) => (transforms[state.state] ? transforms[state.state](state) : null);
+}[keyof T] => (transforms[context.state] ? transforms[context.state](state) : null);
 
 export const useStates = <C extends TContext, A extends TAction>(
-  transitions: {
-    [State in C['state']]: {
-      [Type in A['type']]?: (
-        action: A extends { type: Type } ? A : never,
-        state: C extends { state: State } ? C : never,
-      ) => C extends { state: C['state'] } ? C : never;
-    };
-  },
+  transitions: TUseStatesTransitions<C, A>,
   initialState: C,
-) => {
+): States<C, A> => {
   const reducer = React.useReducer((state: C, action: A) => transition(state, action, transitions), initialState);
 
   return React.useMemo(
-    (): States<C, A> => ({
+    () => ({
       context: reducer[0],
       dispatch: reducer[1],
       exec: effects => exec(reducer[0], effects),

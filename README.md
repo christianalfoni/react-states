@@ -237,10 +237,10 @@ const Auth = () => {
           axios
             .get('/signin')
             .then(response => {
-              dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
+              auth.dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
             .catch(error => {
-              dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
+              auth.dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
       }),
@@ -248,7 +248,7 @@ const Auth = () => {
   );
 
   return (
-    <button onClick={() => dispatch({ type: 'SIGN_IN' })} disabled={auth.context.state === 'AUTHENTICATING'}>
+    <button onClick={() => dispatch({ type: 'SIGN_IN' })} disabled={auth.is('AUTHENTICATING')}>
       Log In
     </button>
   );
@@ -331,10 +331,10 @@ const Tabs = () => {
           axios
             .get('/list')
             .then(response => {
-              listDispatch({ type: 'FETCH_SUCCESS', data: response.data });
+              list.dispatch({ type: 'FETCH_SUCCESS', data: response.data });
             })
             .catch(error => {
-              listDispatch({ type: 'FETCH_ERROR', error: error.message });
+              list.dispatch({ type: 'FETCH_ERROR', error: error.message });
             });
         },
       }),
@@ -451,38 +451,35 @@ const Items = () => {
   useEffect(
     () =>
       items.exec({
-        LOADING: [
-          function createItem({ data }) {
-            const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
+        LOADED: () => {
+          const queuedCreate = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
 
-            if (queuedItem) {
-              dispatch({ type: 'CREATE_ITEM', id: queuedItem.id });
-              axios
-                .post('/items', queuedItem)
-                .then(response => {
-                  dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
-                })
-                .catch(error => {
-                  dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
-                });
-            }
-          },
-          function updateItem({ data }) {
-            const queuedItem = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
+          if (queuedCreate) {
+            items.dispatch({ type: 'CREATE_ITEM', id: queuedCreate.id });
+            axios
+              .post('/items', queuedCreate)
+              .then(response => {
+                items.dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
+              })
+              .catch(error => {
+                items.dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
+              });
+          }
 
-            if (queuedItem) {
-              dispatch({ type: 'UPDATE_ITEM', id: queuedItem.id });
-              axios
-                .patch('/items', queuedItem)
-                .then(response => {
-                  dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
-                })
-                .catch(error => {
-                  dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
-                });
-            }
-          },
-        ],
+          const queuedUpdate = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
+
+          if (queuedUpdate) {
+            items.dispatch({ type: 'UPDATE_ITEM', id: queuedUpdate.id });
+            axios
+              .patch('/items', queuedUpdate)
+              .then(response => {
+                items.dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
+              })
+              .catch(error => {
+                items.dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
+              });
+          }
+        },
       }),
     [items],
   );
@@ -637,20 +634,19 @@ useEffect(
   () =>
     auth.exec({
       // Optional states
-      AUTHENTICATING: (
-        // Typed to AUTHENTICATING state
-        state,
-      ) => {},
+      // Typed to AUTHENTICATING state
+      AUTHENTICATING: (context) => {},
     }),
   [auth],
 );
 
+// Result is inferred
 const result = auth.transform({
-  // Optional states
-  UNAUTHENTICATED: (
-    // Typed to UNAUTHENTICATED
-    state,
-  ) => null,
+  // Typed to UNAUTHENTICATED
+  UNAUTHENTICATED: (context) => null,
+  // It is exhaustive to ensure unwanted results
+  AUTHENTICATING: (context) => 'Loading...',
+  AUTHENTICATED: (context) => 'Woop woop',
 });
 
 if (auth.is('AUTHENTICATED') {
@@ -770,18 +766,6 @@ useEffect(
   () =>
     exec(someState, {
       SOME_STATE: currentState => {},
-    }),
-  [someState],
-);
-```
-
-If your state triggers multiple effects you can give an array instead:
-
-```ts
-useEffect(
-  () =>
-    exec(someState, {
-      SOME_STATE: [function effectA(currentState) {}, function effectB(currentState) {}],
     }),
   [someState],
 );
