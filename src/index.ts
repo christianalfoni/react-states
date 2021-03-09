@@ -76,7 +76,7 @@ export const transform = <C extends TContext, T extends TTransforms<C>>(
 ): {
   [K in keyof T]: T[K] extends () => infer R ? R : never;
   // @ts-ignore
-}[keyof T] => (transforms[context.state] ? transforms[context.state](state) : null);
+}[keyof T] => (transforms[context.state] ? transforms[context.state](context) : null);
 
 export const useStates = <C extends TContext, A extends TAction>(
   transitions: TUseStatesTransitions<C, A>,
