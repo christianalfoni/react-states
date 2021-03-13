@@ -200,7 +200,9 @@ export const DevtoolsManager = () => {
   const manager = React.useContext(managerContext);
   const [statesData, setStatesData] = React.useState(manager.states);
   const [expandedStates, setExpandedStates] = React.useState([] as string[]);
-  const [isOpen, toggleOpen] = React.useState(JSON.parse(localStorage.getItem(IS_OPEN_STORAGE_KEY) || 'false'));
+  const [isOpen, toggleOpen] = React.useState<boolean>(
+    JSON.parse(localStorage.getItem(IS_OPEN_STORAGE_KEY) || 'false'),
+  );
 
   React.useEffect(() => manager.subscribe(setStatesData), [manager]);
 

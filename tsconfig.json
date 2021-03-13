@@ -7,6 +7,7 @@
     "lib": ["dom", "es2017"],
     "jsx": "react",
     "moduleResolution": "node",
+    "skipLibCheck": true,
     "importHelpers": true,
     "declaration": true,
     "pretty": true,
@@ -16,5 +17,5 @@
     "resolveJsonModule": true,
     "strict": true
   },
-  "exclude": ["node_modules", "dist", "es", "lib"]
+  "exclude": ["node_modules", "dist", "es", "lib", "demo-src", "vite.config.ts"]
 }
