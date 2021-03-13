@@ -5,6 +5,7 @@
     "rootDir": "src",
     "outDir": ".code",
     "lib": ["dom", "es2017"],
+    "jsx": "react",
     "moduleResolution": "node",
     "importHelpers": true,
     "declaration": true,

@@ -6,6 +6,7 @@
 
 - [Problem statement](#problem-statement)
 - [Solution](#solution)
+- [Devtools](#devtools)
 - [Predictable user experience by example](#predictable-user-experience-by-example)
 - [As context provider](#as-context-provider)
 - [Patterns](#patterns)
@@ -140,7 +141,7 @@ const Todos = () => {
 
   return (
     <div className="wrapper">
-      {todos.transform({
+      {todos.map({
         NOT_LOADED: () => 'Not loaded',
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
@@ -164,6 +165,27 @@ const Todos = () => {
 - We are explicit about what state the reducer is in, meaning if we do want to enable fetching the todos several times we can allow it in the `LOADED` state, meaning you will at least not fetch the todos while they are already being fetched
 
 **The solution here is not specifically related to controlling data fetching. It is putting you into the mindset of explicit states and guarding the state changes and execution of side effects. It applies to everything in your application, especially async code**
+
+## Devtools
+
+By adding the `DevtoolsProvider` and the `DevtoolsManager` to your React application you will get insight into the history of state changes, dispatches, side effects and also look at the definition of your `useStates` right from within your app.
+
+```tsx
+import * as React from 'react';
+import { render } from 'react-dom';
+import { DevtoolsManager, DevtoolsProvider } from '../src/devtools';
+import { App } from './App';
+
+const rootElement = document.getElementById('root');
+
+render(
+  <DevtoolsProvider>
+    <DevtoolsManager /> // Put this as first child
+    <App />
+  </DevtoolsProvider>,
+  rootElement,
+);
+```
 
 ## Predictable user experience by example
 
@@ -641,7 +663,7 @@ useEffect(
 );
 
 // Result is inferred
-const result = auth.transform({
+const result = auth.map({
   // Typed to UNAUTHENTICATED
   UNAUTHENTICATED: (context) => null,
   // It is exhaustive to ensure unwanted results
@@ -717,8 +739,8 @@ React.useEffect(
   [foo],
 );
 
-// Transform a state into a value, typically react nodes
-const value = foo.transform({
+// Map a state into a value, typically react nodes
+const value = foo.map({
   SOME_STATE: context => 'foo',
   NEW_STATE: context => 'bar',
 });
@@ -787,10 +809,10 @@ useEffect(
 );
 ```
 
-## transform
+## map
 
 ```tsx
-const result = transform(state, {
+const result = map(state, {
   SOME_STATE: currentState => 'foo',
 });
 ```
@@ -800,7 +822,7 @@ Is especially useful with rendering:
 ```tsx
 return (
   <div className="wrapper">
-    {transform(todos, {
+    {map(todos, {
       NOT_LOADED: () => 'Not loaded',
       LOADING: () => 'Loading...',
       LOADED: ({ data }) => (

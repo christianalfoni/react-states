@@ -23,7 +23,7 @@ export type TEffects<C extends TContext> = {
   [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
-export type TTransforms<C extends TContext> = {
+export type TMap<C extends TContext> = {
   [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
 };
 
@@ -44,7 +44,15 @@ export interface States<Context extends TContext, Action extends TAction> {
   context: Context;
   dispatch: React.Dispatch<Action>;
   exec: (effects: TEffects<Context>) => void | (() => void);
-  transform: <T extends TTransforms<Context>>(
+  /**
+   * @deprecated Use "map" instead
+   */
+  transform: <T extends TMap<Context>>(
+    transforms: T,
+  ) => {
+    [K in keyof T]: T[K] extends () => infer R ? R : never;
+  }[keyof T];
+  map: <T extends TMap<Context>>(
     transforms: T,
   ) => {
     [K in keyof T]: T[K] extends () => infer R ? R : never;
@@ -70,13 +78,26 @@ export const exec = <C extends TContext>(state: C, effects: TEffects<C>) =>
       effects[state.state](state)
     : undefined;
 
-export const transform = <C extends TContext, T extends TTransforms<C>>(
+export const transform = <C extends TContext, T extends TMap<C>>(
   context: C,
   transforms: T,
 ): {
   [K in keyof T]: T[K] extends () => infer R ? R : never;
+}[keyof T] => {
+  console.warn(`"transform" is deprecated, please use "map" instead`);
   // @ts-ignore
-}[keyof T] => (transforms[context.state] ? transforms[context.state](context) : null);
+  return map(context, transforms);
+};
+
+export const map = <C extends TContext, T extends TMap<C>>(
+  context: C,
+  map: T,
+): {
+  [K in keyof T]: T[K] extends () => infer R ? R : never;
+  // @ts-ignore
+}[keyof T] => (map[context.state] ? map[context.state](context) : null);
+
+export const TRANSITIONS = Symbol('TRANSITIONS');
 
 export const useStates = <C extends TContext, A extends TAction>(
   transitions: TUseStatesTransitions<C, A>,
@@ -86,10 +107,12 @@ export const useStates = <C extends TContext, A extends TAction>(
 
   return React.useMemo(
     () => ({
+      [TRANSITIONS]: transitions,
       context: reducer[0],
       dispatch: reducer[1],
       exec: effects => exec(reducer[0], effects),
       transform: transforms => transform(reducer[0], transforms),
+      map: transforms => map(reducer[0], transforms),
       is(state) {
         if (this.context.state === state) {
           return true;
