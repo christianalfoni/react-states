@@ -103,6 +103,8 @@ This way of expressing dynamic render has issues:
 
 ## Solution
 
+If you want to look at a real project using this approach, please visit: [excalidraw-firebase](https://github.com/codesandbox/excalidraw-firebase).
+
 ```tsx
 import { useStates } from 'react-states';
 
