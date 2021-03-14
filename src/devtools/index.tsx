@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { TRANSITIONS, States, TAction, TContext, TTransitions, TEffects } from '../';
+import { TRANSITIONS, TAction, TContext, TTransitions, TEffects } from '../';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
 
@@ -142,7 +142,9 @@ const managerContext = React.createContext({} as Manager);
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
 
-export const useDevtools = (id: string, states: States<any, any>) => {
+// We have to type as any as States<any, any> throws error not matching
+// the explicit context
+export const useDevtools = (id: string, states: { context: any, exec: any, map: any, dispatch: any }) => {
   const manager = React.useContext(managerContext);
 
   React.useEffect(() => {
@@ -162,7 +164,7 @@ export const useDevtools = (id: string, states: States<any, any>) => {
   }, [id, manager, states]);
 
   const originalExec = states.exec;
-  states.exec = effects =>
+  states.exec = (effects: any) =>
     originalExec(
       Object.keys(effects).reduce((aggr, key) => {
         const originalEffect = effects[key]!;
@@ -180,7 +182,7 @@ export const useDevtools = (id: string, states: States<any, any>) => {
     );
 
   const originalDispatch = states.dispatch;
-  states.dispatch = action => {
+  states.dispatch = (action: any) => {
     manager.onMessage(id, {
       type: 'dispatch',
       action,
