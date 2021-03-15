@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -45,7 +45,8 @@
     "@types/node": "^8.0.0",
     "@types/react": "^17.0.2",
     "@types/react-dom": "^17.0.2",
-    "tslib": "^2.1.0"
+    "tslib": "^2.1.0",
+    "react": "*"
   },
   "devDependencies": {
     "@types/jest": "^23.0.0",
