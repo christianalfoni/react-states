@@ -2,9 +2,13 @@
 
 # Generated stuff
 .code
-dist
-lib
-es
+devtools
+index.js
+index.d.ts
+index.js.map
+index.test.js
+index.test.js.map
+index.test.d.ts
 
 ### macOS ###
 *.DS_Store
