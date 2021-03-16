@@ -2,7 +2,8 @@
 
 # Generated stuff
 .code
-devtools
+devtools/*
+!devtools/package.json
 index.js
 index.d.ts
 index.js.map

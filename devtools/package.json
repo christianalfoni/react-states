@@ -1,0 +1,7 @@
+{
+  "name": "react-states/devtools",
+  "private": true,
+  "main": "../cjs/devtools/index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts"
+}
