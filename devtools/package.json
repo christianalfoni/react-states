@@ -1,7 +1,0 @@
-{
-  "name": "react-states/devtools",
-  "private": true,
-  "main": "../lib/devtools",
-  "module": "../es/devtools",
-  "typings": "../lib/devtools/index.d.ts"
-}

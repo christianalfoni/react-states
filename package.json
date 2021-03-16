@@ -34,10 +34,9 @@
     "statemachine"
   ],
   "files": [
-    "lib",
-    "es",
-    "dist",
-    "devtools"
+    "devtools",
+    "index.js",
+    "index.d.ts"
   ],
   "dependencies": {
     "@types/node": "^8.0.0",
