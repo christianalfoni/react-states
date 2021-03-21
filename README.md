@@ -597,6 +597,49 @@ const reducer = (state, action) =>
   });
 ```
 
+## map all the things
+
+You can use `map` for more than rendering a specific UI. You can for example use it for styling:
+
+```tsx
+<div
+  css={someContext.map({
+    STATE_A: () => ({ opacity: 1 }),
+    STATE_B: () => ({ opacity: 0.5 }),
+  })}
+/>
+```
+
+You can even create your own UI metadata related to a state which can be consumed throughout your UI definition:
+
+```ts
+const ui = someContext.map({
+  STATE_A: () => ({ icon: <IconA />, text: 'foo', buttonStyle: { color: 'red' } }),
+  STATE_B: () => ({ icon: <IconB />, text: 'bar', buttonStyle: { color: 'blue' } }),
+});
+
+ui.icon;
+ui.text;
+ui.buttonStyle;
+```
+
+## Subtype mapping context
+
+You might have functions that only deals with certain states. To ensure type safety with `map`, you can import the `map` helper itself.
+
+```ts
+import { map, PickState } from 'react-states';
+
+function mapSomeState(context: PickState<Context, 'A' | 'B'>) {
+  return map(context, {
+    A: () => {},
+    B: () => {},
+  });
+}
+```
+
+`map` will infer the type of context and ensure type safety for the subtype.
+
 # TypeScript
 
 Using TypeScript with `react-states` gives you a lot of benefits. Most of the typing is inferred, the only thing you really need to define is your explicit states and actions.
