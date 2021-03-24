@@ -4,6 +4,8 @@
 
 [![react-states](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://youtu.be/ul_3ABrpj64)
 
+**Take a look at a reference project using react-states**: [excalidraw-firebase](https://github.com/codesandbox/excalidraw-firebase).
+
 - [Problem statement](#problem-statement)
 - [Solution](#solution)
 - [Devtools](#devtools)
@@ -597,7 +599,7 @@ const reducer = (state, action) =>
   });
 ```
 
-## map all the things
+## Map all the things
 
 You can use `map` for more than rendering a specific UI. You can for example use it for styling:
 
@@ -622,23 +624,6 @@ ui.icon;
 ui.text;
 ui.buttonStyle;
 ```
-
-## Subtype mapping context
-
-You might have functions that only deals with certain states. To ensure type safety with `map`, you can import the `map` helper itself.
-
-```ts
-import { map, PickState } from 'react-states';
-
-function mapSomeState(context: PickState<Context, 'A' | 'B'>) {
-  return map(context, {
-    A: () => {},
-    B: () => {},
-  });
-}
-```
-
-`map` will infer the type of context and ensure type safety for the subtype.
 
 # TypeScript
 
@@ -720,6 +705,55 @@ if (auth.is('AUTHENTICATED') {
   // auth.context is now typed to AUTHENTICATED
 }
 ```
+
+## Subtype context for map
+
+You might have functions that only deals with certain states. To ensure type safety with `map`, you can import the `map` helper itself.
+
+```ts
+import { map, PickState } from 'react-states';
+
+function mapSomeState(context: PickState<Context, 'A' | 'B'>) {
+  return map(context, {
+    A: () => {},
+    B: () => {},
+  });
+}
+```
+
+`map` will infer the type of context and ensure type safety for the subtype.
+
+## Base contexts
+
+Sometimes you have multiple states sharing the same base context. You can best express this by:
+
+```ts
+type BaseContext = {
+  ids: string[];
+};
+
+type Context =
+  | {
+      state: 'NOT_LOADED';
+    }
+  | {
+      state: 'LOADING';
+    }
+  | (BaseContext &
+      (
+        | {
+            state: 'LOADED';
+          }
+        | {
+            state: 'LOADED_DIRTY';
+          }
+        | {
+            state: 'LOADED_ACTIVE';
+          }
+      ));
+```
+
+This expresses the simplest states first, then indents the states using the base context. This ensures that you see these states related to their base and with their indentation they have "special meaning".
 
 ## Helper types
 
