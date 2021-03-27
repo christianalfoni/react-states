@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+export * from './result';
+
 export interface TContext {
   state: string;
 }
