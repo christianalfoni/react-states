@@ -17,5 +17,14 @@
     "resolveJsonModule": true,
     "strict": true
   },
-  "exclude": ["node_modules", "dist", "es", "lib", "demo-src", "vite.config.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "es",
+    "lib",
+    "demo-src",
+    "vite.config.ts",
+    "src/index.test.ts",
+    "src/result.test.ts"
+  ]
 }

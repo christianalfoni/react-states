@@ -7,9 +7,9 @@ devtools/*
 index.js
 index.d.ts
 index.js.map
-index.test.js
-index.test.js.map
-index.test.d.ts
+result.d.ts
+result.js
+result.js.map
 cjs
 
 ### macOS ###

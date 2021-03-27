@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --outDir . --module es2015 && tsc --outDir cjs --module commonjs",
-    "clean": "rimraf cjs devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts",
+    "clean": "rimraf cjs devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts result.d.ts result.js result.js.map",
     "typecheck": "tsc --noEmit",
     "lint": "tslint --project tsconfig.json --format stylish",
     "format": "prettier '**/*.{md,js,jsx,json,ts,tsx}' --write",
@@ -35,7 +35,10 @@
     "devtools",
     "index.js",
     "index.js.map",
-    "index.d.ts"
+    "index.d.ts",
+    "result.d.ts",
+    "result.js",
+    "result.js.map"
   ],
   "peerDependencies": {
     "react": "*"
@@ -55,6 +58,7 @@
     "rimraf": "^2.6.1",
     "semver": "^6.3.0",
     "ts-jest": "~23.10.0",
+    "tslib": "^2.1.0",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.13.0",
     "tslint-plugin-prettier": "^2.0.0",
