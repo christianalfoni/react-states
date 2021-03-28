@@ -7,7 +7,7 @@ export interface TContext {
 }
 
 export interface TAction {
-  type: string;
+  type: string | symbol;
 }
 
 export type TEffect<C extends TContext> = (state: C) => void | (() => void);
