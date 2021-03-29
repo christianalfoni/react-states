@@ -117,3 +117,26 @@ export function result<V, E extends ErrorValue>(promise: Promise<Ok<V> | Err<E>>
     },
   };
 }
+
+export type ResultMock<T extends (...args: any[]) => Result<any, any>> = T & {
+  ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
+  err: (value: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
+};
+
+export const createResultMock = <T extends (...args: any[]) => Result<any, any>>(): T & {
+  ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
+  err: (value: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
+} => {
+  let resolve!: any;
+  const fn = () =>
+    result(
+      new Promise(r => {
+        resolve = r;
+      }),
+    );
+
+  fn.ok = (value: any) => resolve(ok(value));
+  fn.err = (err: any) => resolve(err(err));
+
+  return fn as any;
+};
