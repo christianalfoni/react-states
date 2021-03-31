@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -10,7 +10,7 @@
   "types": "index.d.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --outDir . --module es2015 && tsc --outDir cjs --module commonjs",
+    "build": "tsc --outDir . --module esnext && tsc --outDir cjs --module commonjs",
     "clean": "rimraf cjs devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts result.d.ts result.js result.js.map",
     "typecheck": "tsc --noEmit",
     "lint": "tslint --project tsconfig.json --format stylish",
