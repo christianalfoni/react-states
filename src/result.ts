@@ -53,14 +53,18 @@ export function err<E extends string, D extends any>(type: E, data?: D): Err<{ t
   };
 }
 
-export function result<V, E extends ErrorValue>(promise: Promise<Ok<V> | Err<E>>): Result<V, E> {
+export const RESOLVER_PROMISE = Symbol('RESOLVER_PROMISE')
+
+export function result<V, E extends ErrorValue>(cb: (
+  ok: (value: V) => Ok<V>,
+  err: (...args: E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]]) => Err<E>
+) => Promise<Ok<V> | Err<E>>): Result<V, E> {
   let isCancelled = false;
   let currentDisposer = () => {
     isCancelled = true;
   };
-
-  const wrappedPromise = new Promise<Ok<V> | Err<E>>((resolve, reject) => {
-    promise
+  let currentPromise = new Promise<Ok<V> | Err<E>>((resolve, reject) => {
+    cb(ok, err as any)
       .then(result =>
         resolve(
           isCancelled
@@ -92,7 +96,7 @@ export function result<V, E extends ErrorValue>(promise: Promise<Ok<V> | Err<E>>
 
   return {
     resolve: (resolveOk, errors) => {
-      wrappedPromise.then(result => {
+      currentPromise.then(result => {
         if (result.ok) {
           const disposer = resolveOk(result.value);
 
@@ -107,11 +111,16 @@ export function result<V, E extends ErrorValue>(promise: Promise<Ok<V> | Err<E>>
           err && err('data' in result.error ? result.error.data : undefined);
         }
       });
-      return () => {
+      
+      const disposer = Object.assign(() => {
         currentDisposer();
-      };
+      }, {
+        [RESOLVER_PROMISE]: currentPromise
+      })
+
+      return disposer
     },
-    promise: wrappedPromise,
+    promise: currentPromise,
     cancel: () => {
       currentDisposer();
     },
@@ -120,17 +129,17 @@ export function result<V, E extends ErrorValue>(promise: Promise<Ok<V> | Err<E>>
 
 export type ResultMock<T extends (...args: any[]) => Result<any, any>> = T & {
   ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
-  err: (value: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
+  err: (err: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
 };
 
 export const createResultMock = <T extends (...args: any[]) => Result<any, any>>(): T & {
   ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
-  err: (value: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
+  err: (...err: ReturnType<T> extends Result<any, infer E> ? E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]] : never) => void;
 } => {
   let resolve!: any;
   const fn = () =>
     result(
-      new Promise(r => {
+      () => new Promise(r => {
         resolve = r;
       }),
     );

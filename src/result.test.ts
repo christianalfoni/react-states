@@ -1,10 +1,10 @@
-import { result, ok, err } from './result';
+import { result } from './result';
 
 describe('result', () => {
   test('should create a promise', done => {
     expect.assertions(1);
 
-    const { promise } = result(Promise.resolve(ok('foo')));
+    const { promise } = result<string, any>(ok => Promise.resolve(ok('foo')));
 
     promise.then(result => {
       if (result.ok) {
@@ -16,10 +16,12 @@ describe('result', () => {
   test('should cancel a result', done => {
     expect.assertions(1);
 
-    const { cancel, promise } = result(Promise.resolve(err('foo', 123)));
+    const { cancel, promise } = result<string, { type: 'foo'; data: number }>((ok, err) =>
+      Promise.resolve(err('foo', 123)),
+    );
 
     promise.then(result => {
-      if (!result.ok) {
+      if (result.ok === false) {
         expect(result.error.type).toBe('CANCELLED');
       }
 
@@ -31,7 +33,7 @@ describe('result', () => {
   test('should resolve', done => {
     expect.assertions(1);
 
-    const { resolve } = result(Promise.resolve(ok('foo')));
+    const { resolve } = result<string, any>(ok => Promise.resolve(ok('foo')));
 
     resolve(value => {
       expect(value).toBe('foo');
@@ -41,7 +43,7 @@ describe('result', () => {
   test('should cancel a resolve', done => {
     expect.assertions(1);
 
-    const { resolve } = result(Promise.resolve(ok('foo')));
+    const { resolve } = result<string, any>(ok => Promise.resolve(ok('foo')));
 
     const cancel = resolve(() => {}, {
       CANCELLED: () => {
@@ -55,11 +57,11 @@ describe('result', () => {
   test('should cancel a nested resolve', done => {
     expect.assertions(1);
 
-    const { resolve } = result(Promise.resolve(ok('foo')));
+    const { resolve } = result<string, any>(ok => Promise.resolve(ok('foo')));
 
     const cancel = resolve(
       () => {
-        return result(Promise.resolve(ok('bar'))).resolve(() => {}, {
+        return result<string, any>(ok => Promise.resolve(ok('bar'))).resolve(() => {}, {
           CANCELLED: () => {
             expect(true).toBe(true);
             done();

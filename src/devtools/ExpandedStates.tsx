@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HistoryItem } from '.';
+import { HistoryItem } from './Manager';
 import { TTransitions } from '..';
 import { Transitions } from './Transitions';
 import { History } from './History';

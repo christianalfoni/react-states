@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { IS_ACTION_IGNORED } from './devtools';
 
 export * from './result';
 
@@ -66,12 +67,18 @@ export const transition = <C extends TContext, A extends TAction, NewState exten
   state: C,
   action: A,
   transitions: TTransitions<C, A, NewState>,
-): C =>
+): C => {
   // @ts-ignore
-  transitions[state.state] && transitions[state.state][action.type]
-    ? // @ts-ignore
-      transitions[state.state][action.type](action, state)
-    : state;
+  if (transitions[state.state] && transitions[state.state][action.type]) {
+    // @ts-ignore
+    return transitions[state.state][action.type](action, state);
+  } else {
+    // @ts-ignore
+    action[IS_ACTION_IGNORED] = true;
+  }
+
+  return state;
+};
 
 export const exec = <C extends TContext>(state: C, effects: TEffects<C>) =>
   // @ts-ignore

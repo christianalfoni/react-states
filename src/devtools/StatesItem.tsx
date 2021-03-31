@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { HistoryItem } from '.';
+import { HistoryItem } from './Manager';
 import { TTransitions } from '..';
 import { ExpandedStates } from './ExpandedStates';
 import { colors } from './styles';

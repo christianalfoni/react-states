@@ -1,150 +1,19 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { TRANSITIONS, TAction, TContext, TTransitions, TEffects } from '../';
+import { TRANSITIONS, TAction, TEffects, RESOLVER_PROMISE } from '../';
+import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
-
-export type DevtoolMessage =
-  | {
-      type: 'dispatch';
-      action: TAction;
-    }
-  | {
-      type: 'state';
-      context: {
-        state: string;
-      };
-    }
-  | {
-      type: 'exec';
-      context: {
-        state: string;
-      };
-      name: string;
-    };
-
-export type HistoryItem =
-  | {
-      type: 'state';
-      context: TContext;
-      execs: string[];
-      transitions: {
-        [state: string]: string[];
-      };
-    }
-  | {
-      type: 'action';
-      action: TAction;
-    };
-
-export type StatesData = {
-  [id: string]: {
-    isMounted: boolean;
-    history: HistoryItem[];
-    transitions: TTransitions<any, any, any>;
-  };
-};
-
-export type Subscription = (statesData: StatesData) => () => void;
-
-class Manager {
-  private subscriptions: Function[] = [];
-  states: StatesData = {};
-  private notify() {
-    this.subscriptions.forEach(cb => cb(this.states));
-  }
-  onMessage(id: string, message: DevtoolMessage) {
-    switch (message.type) {
-      case 'state':
-        // No idea what TypeScript complains here, but not below
-        // @ts-ignore
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              {
-                type: 'state',
-                context: message.context,
-                execs: [],
-              },
-              ...this.states[id].history,
-            ],
-          },
-        };
-        break;
-      case 'dispatch':
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              {
-                type: 'action',
-                action: message.action,
-              },
-              ...this.states[id].history,
-            ],
-          },
-        };
-        break;
-      case 'exec':
-        const lastStateEntryIndex = this.states[id].history.findIndex(item => item.type === 'state')!;
-        const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              ...this.states[id].history.slice(0, lastStateEntryIndex),
-              {
-                ...lastStateEntry,
-                execs: [...lastStateEntry.execs, message.name],
-              },
-              ...this.states[id].history.slice(lastStateEntryIndex + 1),
-            ],
-          },
-        };
-        break;
-    }
-    this.notify();
-  }
-  mount(id: string, transitions: TTransitions<any, any, any>) {
-    this.states = {
-      ...this.states,
-      [id]: {
-        isMounted: true,
-        history: [],
-        transitions,
-      },
-    };
-    this.notify();
-  }
-  dispose(id: string) {
-    this.states = {
-      ...this.states,
-      [id]: {
-        ...this.states[id],
-        isMounted: false,
-      },
-    };
-    this.notify();
-  }
-  subscribe(cb: Function) {
-    this.subscriptions.push(cb);
-    return () => {
-      this.subscriptions.splice(this.subscriptions.indexOf(cb), 1);
-    };
-  }
-}
 
 const managerContext = React.createContext({} as Manager);
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
 
+export const IS_ACTION_IGNORED = Symbol('IS_ACTION_IGNORED');
+
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, states: { context: any, exec: any, map: any, dispatch: any }) => {
+export const useDevtools = (id: string, states: { context: any; exec: any; map: any; dispatch: any }) => {
   const manager = React.useContext(managerContext);
 
   React.useEffect(() => {
@@ -168,13 +37,30 @@ export const useDevtools = (id: string, states: { context: any, exec: any, map: 
     originalExec(
       Object.keys(effects).reduce((aggr, key) => {
         const originalEffect = effects[key]!;
+
         aggr[key] = context => {
+          const returnedValue = originalEffect(context);
+
+          if (returnedValue && returnedValue[RESOLVER_PROMISE]) {
+            returnedValue[RESOLVER_PROMISE].then((result: any) => {
+              manager.onMessage(id, {
+                type: 'exec-resolved',
+                context,
+                name: originalEffect.name,
+                result,
+              });
+            }).catch(() => {
+              // Something really bad happened, ignore it
+            });
+          }
+
           manager.onMessage(id, {
             type: 'exec',
             context,
             name: originalEffect.name,
           });
-          return originalEffect(context);
+
+          return returnedValue;
         };
 
         return aggr;
@@ -183,11 +69,14 @@ export const useDevtools = (id: string, states: { context: any, exec: any, map: 
 
   const originalDispatch = states.dispatch;
   states.dispatch = (action: any) => {
+    action[IS_ACTION_IGNORED] = false;
+
+    originalDispatch(action);
     manager.onMessage(id, {
       type: 'dispatch',
       action,
+      ignored: action[IS_ACTION_IGNORED],
     });
-    originalDispatch(action);
   };
 };
 
