@@ -146,8 +146,18 @@ export const createResultMock = <T extends (...args: any[]) => Result<any, any>>
       }),
     );
 
-  fn.ok = (value: any) => resolve(ok(value));
-  fn.err = (err: any) => resolve(err(err));
+  fn.ok = (value: any) => {
+    if (!resolve) {
+      throw new Error(`The MOCK resolving to OK ${JSON.stringify(value)} has not been called yet`)
+    }
+    resolve(ok(value))
+  };
+  fn.err = (err: any) => {
+    if (!resolve) {
+      throw new Error(`The MOCK resolving to ERR ${JSON.stringify(err)} has not been called yet`)
+    }
+    resolve(err(err))
+  };
 
   return fn as any;
 };
