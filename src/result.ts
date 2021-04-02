@@ -149,11 +149,11 @@ export const createResultMock = <T extends (...args: any[]) => Result<any, any>>
     }
     resolve(ok(value))
   };
-  fn.err = (error: any) => {
+  fn.err = (error: string, data: any) => {
     if (!resolve) {
       throw new Error(`The MOCK resolving to ERR ${JSON.stringify(err)} has not been called yet`)
     }
-    resolve(err(error))
+    resolve(err(error, data))
   };
 
   return fn as any;
