@@ -131,13 +131,10 @@ export function result<V, E extends ErrorValue>(cb: (
 
 export type ResultMock<T extends (...args: any[]) => Result<any, any>> = T & {
   ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
-  err: (err: ReturnType<T> extends Result<any, infer E> ? E : never) => void;
+  err: (...err: ReturnType<T> extends Result<any, infer E> ? E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]] : never) => void;
 };
 
-export const createResultMock = <T extends (...args: any[]) => Result<any, any>>(): T & {
-  ok: (value: ReturnType<T> extends Result<infer V, any> ? V : never) => void;
-  err: (...err: ReturnType<T> extends Result<any, infer E> ? E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]] : never) => void;
-} => {
+export const createResultMock = <T extends (...args: any[]) => Result<any, any>>(): ResultMock<T> => {
   let resolve!: any;
   const fn = () =>
     result(
