@@ -57,7 +57,7 @@ export const RESOLVER_PROMISE = Symbol('RESOLVER_PROMISE')
 
 export function result<V, E extends ErrorValue>(cb: (
   ok: (value: V) => Ok<V>,
-  err: (...args: E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]]) => Err<E>
+  err: (...args: E extends { data: infer D } ? [type: E["type"], data: D] : [type: E["type"]]) => Err<E>,
 ) => Promise<Ok<V> | Err<E>>): Result<V, E> {
   let isCancelled = false;
   let currentDisposer = () => {
@@ -112,6 +112,8 @@ export function result<V, E extends ErrorValue>(cb: (
         }
       });
       
+
+
       const disposer = Object.assign(() => {
         currentDisposer();
       }, {

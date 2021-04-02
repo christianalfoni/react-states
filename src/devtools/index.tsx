@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { TRANSITIONS, TAction, TEffects, RESOLVER_PROMISE } from '../';
+import { TRANSITIONS, TEffects, RESOLVER_PROMISE, IS_ACTION_IGNORED } from '../';
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
@@ -8,8 +8,6 @@ import { colors } from './styles';
 const managerContext = React.createContext({} as Manager);
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
-
-export const IS_ACTION_IGNORED = Symbol('IS_ACTION_IGNORED');
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context

@@ -1,4 +1,4 @@
-import { exec, transform, transition } from '.';
+import { exec, map, transition } from '.';
 
 describe('react-states', () => {
   test('should transition states', () => {
@@ -77,7 +77,7 @@ describe('react-states', () => {
       state: 'FOO',
     };
     expect(
-      transform(state, {
+      map(state, {
         FOO: () => 'foo',
       }),
     ).toBe('foo');
@@ -87,7 +87,7 @@ describe('react-states', () => {
       state: 'FOO',
     };
     expect(
-      transform(state, {
+      map(state, {
         BAR: () => 'foo',
       }),
     ).toBe(null);
