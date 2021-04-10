@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { TRANSITIONS, TEffects, RESOLVER_PROMISE, IS_ACTION_IGNORED } from '../';
+import { TAction, TContext } from '../..';
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
@@ -11,8 +12,9 @@ export const useDevtoolsManager = () => React.useContext(managerContext);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, states: { context: any; exec: any; map: any; dispatch: any }) => {
+export const useDevtools = (id: string, reducer: [context: TContext, dispatch: (action: TAction) => any]) => {
   const manager = React.useContext(managerContext);
+  const [context, dispatch] = reducer
 
   React.useEffect(() => {
     // @ts-ignore
@@ -26,9 +28,9 @@ export const useDevtools = (id: string, states: { context: any; exec: any; map: 
   React.useEffect(() => {
     manager.onMessage(id, {
       type: 'state',
-      context: states.context,
+      context
     });
-  }, [id, manager, states]);
+  }, [id, manager, context]);
 
   const originalExec = states.exec;
   states.exec = (effects: any) =>

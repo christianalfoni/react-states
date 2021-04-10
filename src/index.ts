@@ -27,7 +27,7 @@ export type TEffects<C extends TContext> = {
   [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
-export type TMap<C extends TContext> = {
+export type TMatch<C extends TContext> = {
   [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
 };
 
@@ -48,7 +48,7 @@ export interface States<Context extends TContext, Action extends TAction> {
   context: Context;
   dispatch: React.Dispatch<Action>;
   exec: (effects: TEffects<Context>) => void | (() => void);
-  map: <T extends TMap<Context>>(
+  map: <T extends TMatch<Context>>(
     transforms: T,
   ) => {
     [K in keyof T]: T[K] extends () => infer R ? R : never;
@@ -81,13 +81,13 @@ export const exec = <C extends TContext>(state: C, effects: TEffects<C>) =>
       effects[state.state](state)
     : undefined;
 
-export const map = <C extends TContext, T extends TMap<C>>(
+export const match = <C extends TContext, T extends TMatch<C>>(
   context: C,
-  map: T,
+  matches: T,
 ): {
   [K in keyof T]: T[K] extends () => infer R ? R : never;
   // @ts-ignore
-}[keyof T] => (map[context.state] ? map[context.state](context) : null);
+}[keyof T] => (matches[context.state] ? matches[context.state](context) : null);
 
 export const TRANSITIONS = Symbol('TRANSITIONS');
 
@@ -96,11 +96,6 @@ export const useStates = <C extends TContext, A extends TAction>(
   initialState: C,
 ): States<C, A> => {
   const reducer = React.useReducer((state: C, action: A) => transition(state, action, transitions), initialState);
-  const whens = React.useRef<
-    {
-      [S in C['state']]?: any[];
-    }
-  >({});
 
   const context = reducer[0];
 
@@ -118,40 +113,7 @@ export const useStates = <C extends TContext, A extends TAction>(
 
         return false;
       },
-      when(state) {
-        if (this.context.state === state) {
-          return this;
-        }
-
-        const promise = new Promise<States<PickState<C, typeof state>, A>>(resolve => {
-          if (!whens.current[state]) {
-            whens.current[state] = [];
-          }
-
-          whens.current[state]!.push(resolve);
-        });
-
-        let status = 'pending';
-        let result: any;
-        let suspender = promise.then(
-          r => {
-            status = 'success';
-            result = r;
-          },
-          e => {
-            status = 'error';
-            result = e;
-          },
-        );
-
-        if (status === 'pending') {
-          throw suspender;
-        } else if (status === 'error') {
-          throw result;
-        }
-
-        return result;
-      },
+      when(state) {},
     }),
     [context],
   );
