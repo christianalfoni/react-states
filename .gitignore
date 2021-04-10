@@ -11,6 +11,7 @@ result.d.ts
 result.js
 result.js.map
 cjs
+test
 
 ### macOS ###
 *.DS_Store
