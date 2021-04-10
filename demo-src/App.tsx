@@ -1,6 +1,4 @@
 import * as React from 'react';
-import { exec, transition } from '../src';
-import { useDevtools } from '../src/devtools';
 import { useAuth } from './AuthFeature';
 
 export function App() {

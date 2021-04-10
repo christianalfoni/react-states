@@ -1,24 +1,65 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import { TRANSITIONS, TEffects, RESOLVER_PROMISE, IS_ACTION_IGNORED } from '../';
-import { TAction, TContext } from '../..';
+import {
+  TAction,
+  TContext,
+  TEffect,
+  DEBUG_TRANSITIONS,
+  DEBUG_EXEC,
+  RESOLVER_PROMISE,
+  DEBUG_IS_ACTION_IGNORED,
+  StatesReducer,
+} from '../';
+
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
+
+const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 
 const managerContext = React.createContext({} as Manager);
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
 
+function applyExecDebugToContext(
+  context: TContext,
+  cb: (effect: TEffect<any>, context: TContext, path: string[]) => void,
+  path: string[] = [],
+) {
+  // @ts-ignore
+  context[DEBUG_EXEC] = (effect: TEffect<any>) => {
+    return cb(effect, context, path);
+  };
+
+  Object.keys(context).forEach((key) => {
+    const value = (context as any)[key];
+    if (!Array.isArray(value) && typeof value === 'object' && value !== null && typeof value.state === 'string') {
+      applyExecDebugToContext(value, cb, path.concat(key));
+    }
+  });
+}
+
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, reducer: [context: TContext, dispatch: (action: TAction) => any]) => {
+export const useDevtools = (id: string, reducer: StatesReducer<any, any>) => {
   const manager = React.useContext(managerContext);
-  const [context, dispatch] = reducer
+  const [context, dispatch] = reducer;
 
   React.useEffect(() => {
     // @ts-ignore
-    manager.mount(id, states[TRANSITIONS]);
+    manager.mount(id, () => {
+      // We dispatch to ensure the transition is run
+      dispatch({
+        type: DEBUG_TRIGGER_TRANSITIONS,
+      });
+
+      // No change to context, but at least we have the transitions there now
+      manager.onMessage(id, {
+        type: 'transitions',
+        // @ts-ignore
+        transitions: context[DEBUG_TRANSITIONS],
+      });
+    });
 
     return () => {
       manager.dispose(id);
@@ -28,54 +69,51 @@ export const useDevtools = (id: string, reducer: [context: TContext, dispatch: (
   React.useEffect(() => {
     manager.onMessage(id, {
       type: 'state',
-      context
+      context,
+      // @ts-ignore
+      transitions: context[DEBUG_TRANSITIONS],
     });
   }, [id, manager, context]);
 
-  const originalExec = states.exec;
-  states.exec = (effects: any) =>
-    originalExec(
-      Object.keys(effects).reduce((aggr, key) => {
-        const originalEffect = effects[key]!;
+  applyExecDebugToContext(context, (effect, contextLevel, path) => {
+    const returnedValue = effect(contextLevel);
+    const name = path.concat(effect.name).join('.');
+    // @ts-ignore
+    if (returnedValue && returnedValue[RESOLVER_PROMISE]) {
+      // @ts-ignore
+      returnedValue[RESOLVER_PROMISE].then((result: any) => {
+        manager.onMessage(id, {
+          type: 'exec-resolved',
+          context,
+          name,
+          result,
+        });
+      }).catch(() => {
+        // Something really bad happened, ignore it
+      });
+    }
 
-        aggr[key] = context => {
-          const returnedValue = originalEffect(context);
+    manager.onMessage(id, {
+      type: 'exec',
+      context,
+      name,
+    });
 
-          if (returnedValue && returnedValue[RESOLVER_PROMISE]) {
-            returnedValue[RESOLVER_PROMISE].then((result: any) => {
-              manager.onMessage(id, {
-                type: 'exec-resolved',
-                context,
-                name: originalEffect.name,
-                result,
-              });
-            }).catch(() => {
-              // Something really bad happened, ignore it
-            });
-          }
+    return returnedValue;
+  });
 
-          manager.onMessage(id, {
-            type: 'exec',
-            context,
-            name: originalEffect.name,
-          });
+  reducer[1] = (action: any) => {
+    action[DEBUG_IS_ACTION_IGNORED] = false;
+    dispatch(action);
 
-          return returnedValue;
-        };
+    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
+      return;
+    }
 
-        return aggr;
-      }, {} as TEffects<any>) as any,
-    );
-
-  const originalDispatch = states.dispatch;
-  states.dispatch = (action: any) => {
-    action[IS_ACTION_IGNORED] = false;
-
-    originalDispatch(action);
     manager.onMessage(id, {
       type: 'dispatch',
       action,
-      ignored: action[IS_ACTION_IGNORED],
+      ignored: action[DEBUG_IS_ACTION_IGNORED],
     });
   };
 };
@@ -102,9 +140,9 @@ export const DevtoolsManager = () => {
   }, [targetEl]);
 
   const toggleExpanded = React.useCallback(
-    id => {
-      setExpandedStates(current =>
-        current.includes(id) ? current.filter(existingId => existingId !== id) : current.concat(id),
+    (id) => {
+      setExpandedStates((current) =>
+        current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
       );
     },
     [setExpandedStates],
@@ -137,7 +175,7 @@ export const DevtoolsManager = () => {
           cursor: 'pointer',
           color: colors.text,
         }}
-        onClick={() => toggleOpen(current => !current)}
+        onClick={() => toggleOpen((current) => !current)}
       >
         {isOpen ? '⇨' : '⇦'}
       </div>
@@ -148,7 +186,7 @@ export const DevtoolsManager = () => {
             padding: 0,
           }}
         >
-          {Object.keys(statesData).map(id => {
+          {Object.keys(statesData).map((id) => {
             const data = statesData[id];
 
             return (
@@ -160,6 +198,7 @@ export const DevtoolsManager = () => {
                 isMounted={data.isMounted}
                 isExpanded={expandedStates.includes(id)}
                 toggleExpanded={toggleExpanded}
+                triggerTransitions={data.triggerTransitions}
               />
             );
           })}

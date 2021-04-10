@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { HistoryItem } from './Manager';
-import { TTransitions } from '..';
 import { ExpandedStates } from './ExpandedStates';
 import { colors } from './styles';
+import { TTransitions } from '../';
 
 export const StatesItem = React.memo(
   ({
@@ -12,15 +12,17 @@ export const StatesItem = React.memo(
     toggleExpanded,
     isMounted,
     isExpanded,
+    triggerTransitions,
   }: {
     id: string;
     toggleExpanded: (id: string) => void;
     history: HistoryItem[];
-    transitions: TTransitions<any, any, any>;
+    transitions: TTransitions;
     isMounted: boolean;
     isExpanded: boolean;
+    triggerTransitions: () => void;
   }) => {
-    const currentState = history.find(item => item.type === 'state')! as HistoryItem & { type: 'state' };
+    const currentState = history.find((item) => item.type === 'state')! as HistoryItem & { type: 'state' };
 
     return (
       <li
@@ -39,7 +41,12 @@ export const StatesItem = React.memo(
           <span style={{ color: colors.yellow }}>{currentState.context.state}</span>
         </div>
         {isExpanded ? (
-          <ExpandedStates history={history} transitions={transitions} currentState={currentState.context.state} />
+          <ExpandedStates
+            triggerTransitions={triggerTransitions}
+            history={history}
+            transitions={transitions}
+            currentState={currentState.context.state}
+          />
         ) : null}
       </li>
     );

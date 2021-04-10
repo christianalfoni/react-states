@@ -1,38 +1,32 @@
-import { exec, match, transition } from '.';
+import { exec, match, transitions } from '.';
 
 describe('react-states', () => {
   test('should transition states', () => {
-    const state = {
+    const context = {
       state: 'FOO',
     };
+    const transition = transitions({
+      FOO: {
+        SWITCH: () => ({ state: 'BAR' }),
+      },
+    });
     expect(
-      transition(
-        state,
-        {
-          type: 'SWITCH',
-        },
-        {
-          FOO: {
-            SWITCH: () => ({ state: 'BAR' }),
-          },
-        },
-      ),
-    ).toEqual({ state: 'BAR' });
+      transition(context, {
+        type: 'SWITCH',
+      }).state,
+    ).toBe('BAR');
   });
   test('should ignore invalid transitions', () => {
     const state = {
       state: 'FOO',
     };
+    const transition = transitions({
+      FOO: {},
+    });
     expect(
-      transition(
-        state,
-        {
-          type: 'SWITCH',
-        },
-        {
-          FOO: {},
-        },
-      ),
+      transition(state, {
+        type: 'SWITCH',
+      }),
     ).toBe(state);
   });
   test('should exec effects based on state', () => {

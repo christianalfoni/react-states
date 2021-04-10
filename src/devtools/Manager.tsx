@@ -11,6 +11,11 @@ export type DevtoolMessage =
       context: {
         state: string;
       };
+      transitions: TTransitions;
+    }
+  | {
+      type: 'transitions';
+      transitions: TTransitions;
     }
   | {
       type: 'exec';
@@ -52,6 +57,7 @@ export type HistoryItem =
       transitions: {
         [state: string]: string[];
       };
+      triggerTransitions: () => void;
     }
   | {
       type: 'action';
@@ -63,7 +69,8 @@ export type StatesData = {
   [id: string]: {
     isMounted: boolean;
     history: HistoryItem[];
-    transitions: TTransitions<any, any, any>;
+    transitions: TTransitions;
+    triggerTransitions: () => void;
   };
 };
 
@@ -73,7 +80,7 @@ export class Manager {
   private subscriptions: Function[] = [];
   states: StatesData = {};
   private notify() {
-    this.subscriptions.forEach(cb => cb(this.states));
+    this.subscriptions.forEach((cb) => cb(this.states));
   }
   onMessage(id: string, message: DevtoolMessage) {
     switch (message.type) {
@@ -116,7 +123,7 @@ export class Manager {
         break;
       }
       case 'exec': {
-        const lastStateEntryIndex = this.states[id].history.findIndex(item => item.type === 'state')!;
+        const lastStateEntryIndex = this.states[id].history.findIndex((item) => item.type === 'state')!;
         const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
         this.states = {
           ...this.states,
@@ -139,7 +146,7 @@ export class Manager {
       }
       case 'exec-resolved': {
         const lastStateEntryIndex = this.states[id].history.findIndex(
-          item => item.type === 'state' && item.context.state === message.context.state,
+          (item) => item.type === 'state' && item.context.state === message.context.state,
         )!;
         const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
         this.states = {
@@ -171,13 +178,14 @@ export class Manager {
     }
     this.notify();
   }
-  mount(id: string, transitions: TTransitions<any, any, any>) {
+  mount(id: string, triggerTransitions: () => void) {
     this.states = {
       ...this.states,
       [id]: {
         isMounted: true,
         history: [],
-        transitions,
+        transitions: {},
+        triggerTransitions,
       },
     };
     this.notify();

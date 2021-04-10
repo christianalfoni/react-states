@@ -10,10 +10,12 @@ export const ExpandedStates = React.memo(
     transitions,
     currentState,
     history,
+    triggerTransitions,
   }: {
-    transitions: TTransitions<any, any, any>;
+    transitions: TTransitions;
     currentState: string;
     history: HistoryItem[];
+    triggerTransitions: () => void;
   }) => {
     const [currentTab, setCurrentTab] = React.useState<'history' | 'transitions'>('history');
     return (
@@ -29,7 +31,7 @@ export const ExpandedStates = React.memo(
               cursor: 'pointer',
               textDecoration: currentTab === 'history' ? 'underline' : 'none',
             }}
-            onClick={event => {
+            onClick={(event) => {
               event.stopPropagation();
               setCurrentTab('history');
             }}
@@ -46,8 +48,9 @@ export const ExpandedStates = React.memo(
               cursor: 'pointer',
               textDecoration: currentTab === 'transitions' ? 'underline' : 'none',
             }}
-            onClick={event => {
+            onClick={(event) => {
               event.stopPropagation();
+              triggerTransitions();
               setCurrentTab('transitions');
             }}
           >
