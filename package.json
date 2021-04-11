@@ -1,17 +1,31 @@
 {
   "name": "react-states",
-  "version": "4.2.0-next",
+  "version": "4.4.0-next",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
   "repository": "git+https://github.com/christianalfoni/react-states.git",
   "module": "index.js",
   "main": "cjs/index.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./cjs/index.js"
+    },
+    "./devtools": {
+      "import": "./devtools/index.js",
+      "require": "./cjs/devtools/index.js"
+    },
+    "./test": {
+      "import": "./test/index.js",
+      "require": "./cjs/test/index.js"
+    }
+  },
   "types": "index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc --outDir . --module esnext && tsc --outDir cjs --module commonjs",
-    "clean": "rimraf cjs devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts result.d.ts result.js result.js.map",
+    "clean": "rimraf cjs test/*.ts test/*.js devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts result.d.ts result.js result.js.map",
     "typecheck": "tsc --noEmit",
     "format": "prettier '**/*.{md,js,jsx,json,ts,tsx}' --write",
     "test": "jest --env=jsdom --coverage",
@@ -42,6 +56,7 @@
     "test"
   ],
   "peerDependencies": {
+    "@testing-library/react": "*",
     "react": "*"
   },
   "devDependencies": {
