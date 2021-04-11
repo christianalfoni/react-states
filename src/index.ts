@@ -69,7 +69,10 @@ export function exec<C extends TContext>(context: C, effects: TEffects<C>) {
 
 export function match<C extends TContext, T extends TMatch<C>>(
   context: C,
-  matches: T,
+  matches: T &
+    {
+      [K in keyof T]: K extends C['state'] ? T[K] : never;
+    },
 ): {
   [K in keyof T]: T[K] extends () => infer R ? R : never;
 }[keyof T] {
