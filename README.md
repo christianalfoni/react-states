@@ -6,19 +6,43 @@
 
 **Take a look at a reference project using react-states**: [excalidraw-firebase](https://github.com/codesandbox/excalidraw-firebase).
 
-- [Problem statement](#problem-statement)
-- [Solution](#solution)
-- [Devtools](#devtools)
-- [Predictable user experience by example](#predictable-user-experience-by-example)
-- [As context provider](#as-context-provider)
+---
+
+**VERSION 4** has some breaking changes:
+
+- Removed **useStates** hook, as new patterns made it obvious that the core helpers should be used instead
+- **transition** is now **transitions** and it returns a reducer
+- **map** is now **match** with improved typing
+- No need to add **DevtoolManager** anymore
+- There is a new **renderStatesReducer** test helper
+
+---
+
+- [react-states](#react-states)
+  - [Problem statement](#problem-statement)
+  - [Solution](#solution)
+  - [Devtools](#devtools)
+  - [Predictable user experience by example](#predictable-user-experience-by-example)
+    - [Authentication](#authentication)
+    - [Initial data](#initial-data)
+    - [Logic within same state](#logic-within-same-state)
+  - [As context provider](#as-context-provider)
 - [Patterns](#patterns)
+  - [Lift actions](#lift-actions)
+  - [Match all the things](#match-all-the-things)
 - [TypeScript](#typescript)
+  - [Subtype context for map](#subtype-context-for-map)
+  - [Base contexts](#base-contexts)
+  - [Helper types](#helper-types)
 - [API](#api)
+  - [transitions](#transitions)
+  - [exec](#exec)
+  - [map](#map)
 - [Inspirations](#inspirations)
 
 Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
 
-**react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable. These utility functions can be used directly, or you can consume the **useStates** hook to get an opinionated abstraction on top of them.
+**react-states** is **3** utility functions made up of **20** lines of code that will make your user experience more predictable.
 
 **NOTE!** This documentation is a good read if you have no intention of using the tools provided. It points to complexities that we rarely deal with in application development and is good to reflect upon :-)
 
@@ -60,10 +84,10 @@ const fetchTodos = React.useCallback(() => {
   dispatch({ type: 'FETCH_TODOS' });
   axios
     .get('/todos')
-    .then(response => {
+    .then((response) => {
       dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
     })
-    .catch(error => {
+    .catch((error) => {
       dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
     });
 }, []);
@@ -87,7 +111,7 @@ const Todos = ({ todos }) => {
   } else {
     content = (
       <ul>
-        {todos.map(todo => (
+        {todos.map((todo) => (
           <li>{todo.title}</li>
         ))}
       </ul>
@@ -108,34 +132,33 @@ This way of expressing dynamic render has issues:
 If you want to look at a real project using this approach, please visit: [excalidraw-firebase](https://github.com/codesandbox/excalidraw-firebase).
 
 ```tsx
-import { useStates } from 'react-states';
+import { transitions, exec, match } from 'react-states';
+
+const reducer = transitions({
+  NOT_LOADED: {
+    FETCH_TODOS: () => ({ state: 'LOADING' }),
+  },
+  LOADING: {
+    FETCH_TODOS_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+    FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+  },
+  LOADED: {},
+  ERROR: {},
+});
 
 const Todos = () => {
-  const todos = useStates(
-    {
-      NOT_LOADED: {
-        FETCH_TODOS: () => ({ state: 'LOADING' }),
-      },
-      LOADING: {
-        FETCH_TODOS_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-        FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-      },
-      LOADED: {},
-      ERROR: {},
-    },
-    { state: 'NOT_LOADED' },
-  );
+  const [todos, dispatch] = useStates(reducer, { state: 'NOT_LOADED' });
 
   useEffect(
     () =>
-      todos.exec({
+      exec(todos, {
         LOADING: () => {
           axios
             .get('/todos')
-            .then(response => {
+            .then((response) => {
               dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
             })
-            .catch(error => {
+            .catch((error) => {
               dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
             });
         },
@@ -145,12 +168,12 @@ const Todos = () => {
 
   return (
     <div className="wrapper">
-      {todos.map({
+      {match(todos, {
         NOT_LOADED: () => 'Not loaded',
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
           <ul>
-            {data.map(todo => (
+            {data.map((todo) => (
               <li>{todo.title}</li>
             ))}
           </ul>
@@ -172,19 +195,18 @@ const Todos = () => {
 
 ## Devtools
 
-By adding the `DevtoolsProvider` and the `DevtoolsManager` to your React application you will get insight into the history of state changes, dispatches, side effects and also look at the definition of your `useStates` right from within your app.
+By adding the `DevtoolsProvider` and the `DevtoolsManager` to your React application you will get insight into the history of state changes, dispatches, side effects and also look at the definition of your `transitions` right from within your app.
 
 ```tsx
 import * as React from 'react';
 import { render } from 'react-dom';
-import { DevtoolsManager, DevtoolsProvider } from '../src/devtools';
+import { DevtoolsProvider } from '../src/devtools';
 import { App } from './App';
 
 const rootElement = document.getElementById('root');
 
 render(
   <DevtoolsProvider>
-    <DevtoolsManager /> // Put this as first child
     <App />
   </DevtoolsProvider>,
   rootElement,
@@ -219,10 +241,10 @@ const Auth = () => {
     dispatch({ type: 'SIGN_IN' });
     axios
       .get('/signin')
-      .then(response => {
+      .then((response) => {
         dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
       })
-      .catch(error => {
+      .catch((error) => {
         dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
       });
   }, []);
@@ -238,35 +260,34 @@ const Auth = () => {
 Calling `authenticate` twice is invalid behaviour, but this is not defined within your reducer. The only thing preventing your authentication logic from running multiple time, causing all sorts of weirdness, is an HTML attribute. This is fragile because you separate the logic. With **explicit states** you could rather:
 
 ```tsx
+const reducer = transitions({
+  UNAUTHENTICATED: {
+    SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
+  },
+  AUTHENTICATING: {
+    SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
+    SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+  },
+  AUTHENTICATED: {},
+  ERROR: {},
+});
+
 const Auth = () => {
-  const auth = useStates(
-    {
-      UNAUTHENTICATED: {
-        SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
-      },
-      AUTHENTICATING: {
-        SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
-        SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-      },
-      AUTHENTICATED: {},
-      ERROR: {},
-    },
-    {
-      state: 'UNAUTHENTICATED',
-    },
-  );
+  const [auth, dispatch] = useReducer(reducer, {
+    state: 'UNAUTHENTICATED',
+  });
 
   useEffect(
     () =>
-      auth.exec({
+      exec(auth, {
         AUTHENTICATING: () => {
           axios
             .get('/signin')
-            .then(response => {
-              auth.dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
+            .then((response) => {
+              dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
-            .catch(error => {
-              auth.dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
+            .catch((error) => {
+              dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
       }),
@@ -274,7 +295,15 @@ const Auth = () => {
   );
 
   return (
-    <button onClick={() => dispatch({ type: 'SIGN_IN' })} disabled={auth.is('AUTHENTICATING')}>
+    <button
+      onClick={() => dispatch({ type: 'SIGN_IN' })}
+      disabled={match(auth, {
+        UNAUTHENTICATED: () => false,
+        AUTHENTICATING: () => true,
+        AUTHENTICATED: () => true,
+        ERROR: () => false,
+      })}
+    >
       Log In
     </button>
   );
@@ -311,10 +340,10 @@ const Tabs = () => {
     dispatch({ type: 'FETCH' });
     axios
       .get('/list')
-      .then(response => {
+      .then((response) => {
         dispatch({ type: 'FETCH_SUCCESS', data: response.data });
       })
-      .catch(error => {
+      .catch((error) => {
         dispatch({ type: 'FETCH_ERROR', error: error.message });
       });
   }, []);
@@ -332,35 +361,34 @@ The issue we have created now is that the mounting of our `List` is what drives 
 With **explicit states**:
 
 ```tsx
+const reducer = transitions({
+  NOT_LOADED: {
+    FETCH: () => ({ state: 'LOADING' }),
+  },
+  LOADING: {
+    FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+    FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
+  },
+  LOADED: {},
+  ERROR: {},
+});
+
 const Tabs = () => {
-  const list = useStates(
-    {
-      NOT_LOADED: {
-        FETCH: () => ({ state: 'LOADING' }),
-      },
-      LOADING: {
-        FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-        FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
-      },
-      LOADED: {},
-      ERROR: {},
-    },
-    {
-      state: 'NOT_LOADED',
-    },
-  );
+  const [list, dispatch] = useReducer(reducer, {
+    state: 'NOT_LOADED',
+  });
 
   useEffect(
     () =>
-      list.exec({
+      exec(list, {
         LOADING: () => {
           axios
             .get('/list')
-            .then(response => {
-              list.dispatch({ type: 'FETCH_SUCCESS', data: response.data });
+            .then((response) => {
+              dispatch({ type: 'FETCH_SUCCESS', data: response.data });
             })
-            .catch(error => {
-              list.dispatch({ type: 'FETCH_ERROR', error: error.message });
+            .catch((error) => {
+              dispatch({ type: 'FETCH_ERROR', error: error.message });
             });
         },
       }),
@@ -378,25 +406,20 @@ const Tabs = () => {
 Now it does not matter how many times the `List` component mounts. There will only be a single fetching of the list. If you wanted to fetch the list again when it was already loaded you could just do the following change:
 
 ```ts
-const list = useStates(
-  {
-    NOT_LOADED: {
-      FETCH: () => ({ state: 'LOADING' }),
-    },
-    LOADING: {
-      FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-      FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
-    },
-    LOADED: {
-      // We allow fetching again when we have loaded the data
-      FETCH: () => ({ state: 'LOADING' }),
-    },
-    ERROR: {},
+const reducer = transitions({
+  NOT_LOADED: {
+    FETCH: () => ({ state: 'LOADING' }),
   },
-  {
-    state: 'NOT_LOADED',
+  LOADING: {
+    FETCH_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
+    FETCH_ERROR: ({ error }) => ({ state: 'LOADED', error }),
   },
-);
+  LOADED: {
+    // We allow fetching again when we have loaded the data
+    FETCH: () => ({ state: 'LOADING' }),
+  },
+  ERROR: {},
+});
 ```
 
 But we would still never get into a situation when we are loading the list, that we start loading it again.
@@ -415,94 +438,93 @@ Imagine you want to add and remove items from the list, where any new items are 
 We will only care about the `LOADED` state in this example and we introduce the same explicit state to every item:
 
 ```tsx
-const Items = () => {
-  const items = useStates(
-    {
-      LOADED: {
-        ADD_ITEM: ({ id, title }, { data }) => ({
-          state: 'LOADED',
-          data: { ...data, [id]: { id, title, state: 'QUEUED_CREATE' } },
-        }),
-        CHANGE_ITEM: ({ id, title }, { data }) => ({
-          state: 'LOADED',
-          data: {
-            ...data,
-            [id]: {
-              id,
-              title,
-              state:
-                data[id].state === 'CREATING' || data[id].state === 'UPDATING'
-                  ? 'QUEUED_DIRTY'
-                  : data[id].state === 'CREATE_ERROR'
-                  ? 'QUEUED_CREATE'
-                  : 'QUEUED_UPDATE',
-            },
-          },
-        }),
-        CREATE_ITEM: ({ id }, { data }) => ({
-          state: 'LOADED',
-          data: { ...data, [id]: { ...data[id], state: 'CREATING' } },
-        }),
-        CREATE_ITEM_SUCCESS: ({ id }, { data }) => ({
-          state: 'LOADED',
-          data: {
-            ...data,
-            [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'CREATED' },
-          },
-        }),
-        CREATE_ITEM_ERROR: ({ id, error }, { data }) => ({
-          state: 'LOADED',
-          data: { ...data, [id]: { ...data[id], state: 'CREATE_ERROR', error } },
-        }),
-        UPDATE_ITEM: ({ id }, { data }) => ({
-          state: 'LOADED',
-          data: { ...data, [id]: { ...data[id], state: 'UPDATING' } },
-        }),
-        UPDATE_ITEM_SUCCESS: ({ id }, { data }) => ({
-          state: 'LOADED',
-          data: {
-            ...data,
-            [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'UPDATED' },
-          },
-        }),
-        UPDATE_ITEM_ERROR: ({ id, error }, { data }) => ({
-          state: 'LOADED',
-          data: { ...data, [id]: { ...data[id], state: 'UPDATE_ERROR', error } },
-        }),
+const reducer = transitions({
+  LOADED: {
+    ADD_ITEM: ({ id, title }, { data }) => ({
+      state: 'LOADED',
+      data: { ...data, [id]: { id, title, state: 'QUEUED_CREATE' } },
+    }),
+    CHANGE_ITEM: ({ id, title }, { data }) => ({
+      state: 'LOADED',
+      data: {
+        ...data,
+        [id]: {
+          id,
+          title,
+          state:
+            data[id].state === 'CREATING' || data[id].state === 'UPDATING'
+              ? 'QUEUED_DIRTY'
+              : data[id].state === 'CREATE_ERROR'
+              ? 'QUEUED_CREATE'
+              : 'QUEUED_UPDATE',
+        },
       },
-    },
-    { state: 'NOT_LOADED' },
-  );
+    }),
+    CREATE_ITEM: ({ id }, { data }) => ({
+      state: 'LOADED',
+      data: { ...data, [id]: { ...data[id], state: 'CREATING' } },
+    }),
+    CREATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+      state: 'LOADED',
+      data: {
+        ...data,
+        [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'CREATED' },
+      },
+    }),
+    CREATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+      state: 'LOADED',
+      data: { ...data, [id]: { ...data[id], state: 'CREATE_ERROR', error } },
+    }),
+    UPDATE_ITEM: ({ id }, { data }) => ({
+      state: 'LOADED',
+      data: { ...data, [id]: { ...data[id], state: 'UPDATING' } },
+    }),
+    UPDATE_ITEM_SUCCESS: ({ id }, { data }) => ({
+      state: 'LOADED',
+      data: {
+        ...data,
+        [id]: { ...data[id], state: data[id].state === 'QUEUED_DIRTY' ? 'QUEUED_UPDATE' : 'UPDATED' },
+      },
+    }),
+    UPDATE_ITEM_ERROR: ({ id, error }, { data }) => ({
+      state: 'LOADED',
+      data: { ...data, [id]: { ...data[id], state: 'UPDATE_ERROR', error } },
+    }),
+  },
+});
+
+const Items = () => {
+  const [items, dispatch] = useReducer(reducer, { state: 'NOT_LOADED' });
 
   useEffect(
     () =>
-      items.exec({
+      exec(items, {
         LOADED: () => {
-          const queuedCreate = Object.values(data).find(item => item.state === 'QUEUED_CREATE');
+          const queuedCreate = Object.values(data).find((item) => item.state === 'QUEUED_CREATE');
 
           if (queuedCreate) {
-            items.dispatch({ type: 'CREATE_ITEM', id: queuedCreate.id });
+            dispatch({ type: 'CREATE_ITEM', id: queuedCreate.id });
             axios
               .post('/items', queuedCreate)
-              .then(response => {
-                items.dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
+              .then((response) => {
+                dispatch({ type: 'CREATE_ITEM_SUCCESS', data: response.data });
               })
-              .catch(error => {
-                items.dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
+              .catch((error) => {
+                dispatch({ type: 'CREATE_ITEM_ERROR', error: error.message });
               });
           }
 
-          const queuedUpdate = Object.values(data).find(item => item.state === 'QUEUED_UPDATE');
+          const queuedUpdate = Object.values(data).find((item) => item.state === 'QUEUED_UPDATE');
 
           if (queuedUpdate) {
-            items.dispatch({ type: 'UPDATE_ITEM', id: queuedUpdate.id });
+            dispatch({ type: 'UPDATE_ITEM', id: queuedUpdate.id });
             axios
               .patch('/items', queuedUpdate)
-              .then(response => {
-                items.dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
+              .then((response) => {
+                dispatch({ type: 'UPDATE_ITEM_SUCCESS', data: response.data });
               })
-              .catch(error => {
-                items.dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
+              .catch((error) => {
+                dispatch({ type: 'UPDATE_ITEM_ERROR', error: error.message });
               });
           }
         },
@@ -535,34 +557,33 @@ const context = createContext(null);
 
 export const useAuth = () => useContext(context);
 
+const reducer = transitions({
+  UNAUTHENTICATED: {
+    SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
+  },
+  AUTHENTICATING: {
+    SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
+    SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+  },
+  AUTHENTICATED: {},
+  ERROR: {},
+});
+
 export const AuthProvider = ({ children }) => {
-  const auth = useStates(
-    {
-      UNAUTHENTICATED: {
-        SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
-      },
-      AUTHENTICATING: {
-        SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
-        SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
-      },
-      AUTHENTICATED: {},
-      ERROR: {},
-    },
-    {
-      state: 'UNAUTHENTICATED',
-    },
-  );
+  const [auth, dispatch] = useStates(reducer, {
+    state: 'UNAUTHENTICATED',
+  });
 
   useEffect(
     () =>
-      auth.exec({
+      exec(auth, {
         AUTHENTICATING: () => {
           axios
             .get('/signin')
-            .then(response => {
+            .then((response) => {
               dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
-            .catch(error => {
+            .catch((error) => {
               dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
@@ -599,13 +620,13 @@ const reducer = (state, action) =>
   });
 ```
 
-## Map all the things
+## Match all the things
 
-You can use `map` for more than rendering a specific UI. You can for example use it for styling:
+You can use `match` for more than rendering a specific UI. You can for example use it for styling:
 
 ```tsx
 <div
-  css={someContext.map({
+  css={match(someContext, {
     STATE_A: () => ({ opacity: 1 }),
     STATE_B: () => ({ opacity: 0.5 }),
   })}
@@ -615,7 +636,7 @@ You can use `map` for more than rendering a specific UI. You can for example use
 You can even create your own UI metadata related to a state which can be consumed throughout your UI definition:
 
 ```ts
-const ui = someContext.map({
+const ui = match(someContext, {
   STATE_A: () => ({ icon: <IconA />, text: 'foo', buttonStyle: { color: 'red' } }),
   STATE_B: () => ({ icon: <IconB />, text: 'bar', buttonStyle: { color: 'blue' } }),
 });
@@ -791,55 +812,18 @@ const foo = useStates<Context, Action>({
 
 # API
 
-## useStates
+## transitions
 
-This is the opinoinated single API. You can go lower level to control things more explicitly with the specific 3 helper functions, **transition**, **exec** and **transform**, seen below.
+Creates a reducer
 
 ```ts
-const foo = useStates(
-  {
-    SOME_STATE: {
-      SOME_ACTION_TYPE: (action, currentContext) => ({ state: 'NEW_STATE' }),
-    },
-    NEW_STATE: {},
+const reducer = transitions({
+  SOME_STATE: {
+    SOME_ACTION_TYPE: (action, currentState) => ({ state: 'NEW_STATE' }),
   },
-  {
-    state: 'SOME_STATE',
-  },
-);
-
-React.useEffect(
-  () =>
-    foo.exec({
-      NEW_STATE: context => {
-        // Do something when moving into NEW_STATE
-      },
-    }),
-  [foo],
-);
-
-// Map a state into a value, typically react nodes
-const value = foo.map({
-  SOME_STATE: context => 'foo',
-  NEW_STATE: context => 'bar',
 });
 
-// Check if in a specific state
-if (foo.is('AUTHENTICATED')) {
-  // foo.context.state is 'AUTHENTICATED'
-}
-```
-
-## transition
-
-```ts
-useReducer((state, action) =>
-  transition(state, action, {
-    SOME_STATE: {
-      SOME_ACTION_TYPE: (action, currentState) => ({ state: 'NEW_STATE' }),
-    },
-  }),
-);
+useReducer(reducer);
 ```
 
 `transition` expects that your reducer state has a **state** property:
@@ -866,7 +850,7 @@ useReducer((state, action) =>
 useEffect(
   () =>
     exec(someState, {
-      SOME_STATE: currentState => {},
+      SOME_STATE: (currentState) => {},
     }),
   [someState],
 );
@@ -892,7 +876,7 @@ useEffect(
 
 ```tsx
 const result = map(state, {
-  SOME_STATE: currentState => 'foo',
+  SOME_STATE: (currentState) => 'foo',
 });
 ```
 
@@ -906,7 +890,7 @@ return (
       LOADING: () => 'Loading...',
       LOADED: ({ data }) => (
         <ul>
-          {data.map(todo => (
+          {data.map((todo) => (
             <li>{todo.title}</li>
           ))}
         </ul>
