@@ -12,6 +12,10 @@
       "import": "./index.js",
       "require": "./cjs/index.js"
     },
+    "./cjs": {
+      "import": "./index.js",
+      "require": "./cjs/index.js"
+    },
     "./devtools": {
       "import": "./devtools/index.js",
       "require": "./cjs/devtools/index.js"

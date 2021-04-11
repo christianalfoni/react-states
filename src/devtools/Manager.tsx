@@ -105,6 +105,16 @@ export class Manager {
         };
         break;
       }
+      case 'transitions': {
+        this.states = {
+          ...this.states,
+          [id]: {
+            ...this.states[id],
+            transitions: message.transitions,
+          },
+        };
+        break;
+      }
       case 'dispatch': {
         this.states = {
           ...this.states,

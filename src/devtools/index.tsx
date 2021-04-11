@@ -119,7 +119,12 @@ export const useDevtools = (id: string, reducer: StatesReducer<any, any>) => {
 };
 
 export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
-  return <managerContext.Provider value={new Manager()}>{children}</managerContext.Provider>;
+  return (
+    <managerContext.Provider value={new Manager()}>
+      <DevtoolsManager />
+      {children}
+    </managerContext.Provider>
+  );
 };
 
 const IS_OPEN_STORAGE_KEY = 'react_states_isOpen';
