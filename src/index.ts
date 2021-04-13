@@ -82,7 +82,7 @@ export function match<C extends TContext, T extends TMatch<C>>(
 
 export function matches<C extends TContext, A extends TAction, S extends C['state']>(
   reducer: StatesReducer<C, A>,
-  state: S,
+  state: S | undefined,
 ): reducer is StatesReducer<C & { state: S }, A> {
   if (reducer[0].state === state) {
     return true;
