@@ -336,7 +336,7 @@ export const AuthProvider = ({ children }) => {
 Sometimes you might have one or multiple handlers across states. You can lift them up and compose them back into your transitions.
 
 ```ts
-import { PickAction } from 'react-states';
+import { PickAction, transitions } from 'react-states';
 
 const globalActions = {
   CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, context: Context) => ({
@@ -345,7 +345,7 @@ const globalActions = {
   }),
 };
 
-const reducer = transition<Action, Context>({
+const reducer = transitions<Action, Context>({
   FOO: {
     ...globalActions,
   },
