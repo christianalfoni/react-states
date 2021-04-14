@@ -14,7 +14,7 @@
 - **transition** is now **transitions** and it returns a reducer
 - **map** is now **match** with improved typing
 - No need to add **DevtoolManager** anymore
-- There is a new **renderStatesReducer** test helper
+- There is a new **renderReducerHook** test helper
 
 ---
 
@@ -33,6 +33,7 @@
   - [transitions](#transitions)
   - [exec](#exec)
   - [match](#match)
+  - [matches](#matches)
   - [result](#result)
   - [renderReducerHook](#renderreducerhook)
   - [PickState and PickAction](#pickstate-and-pickaction)
@@ -82,10 +83,10 @@ const fetchTodos = React.useCallback(() => {
   dispatch({ type: 'FETCH_TODOS' });
   axios
     .get('/todos')
-    .then((response) => {
+    .then(response => {
       dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
     })
-    .catch((error) => {
+    .catch(error => {
       dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
     });
 }, []);
@@ -109,7 +110,7 @@ const Todos = ({ todos }) => {
   } else {
     content = (
       <ul>
-        {todos.map((todo) => (
+        {todos.map(todo => (
           <li>{todo.title}</li>
         ))}
       </ul>
@@ -179,10 +180,10 @@ const Todos = () => {
         LOADING: () => {
           axios
             .get('/todos')
-            .then((response) => {
+            .then(response => {
               dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
             })
-            .catch((error) => {
+            .catch(error => {
               dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
             });
         },
@@ -197,7 +198,7 @@ const Todos = () => {
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
           <ul>
-            {data.map((todo) => (
+            {data.map(todo => (
               <li>{todo.title}</li>
             ))}
           </ul>
@@ -313,10 +314,10 @@ export const AuthProvider = ({ children }) => {
         AUTHENTICATING: () => {
           axios
             .get('/signin')
-            .then((response) => {
+            .then(response => {
               dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
-            .catch((error) => {
+            .catch(error => {
               dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
@@ -532,7 +533,7 @@ The state argument is called **context** as it represents multiple states. The *
 useEffect(
   () =>
     exec(someContext, {
-      SOME_STATE: (currentContext) => {},
+      SOME_STATE: currentContext => {},
     }),
   [someContext],
 );
@@ -560,7 +561,7 @@ The **exec** is not exhaustive, meaning that you only add the states necessary.
 
 ```tsx
 const result = match(context, {
-  SOME_STATE: (currentContext) => 'foo',
+  SOME_STATE: currentContext => 'foo',
 });
 ```
 
@@ -574,7 +575,7 @@ return (
       LOADING: () => 'Loading...',
       LOADED: ({ data }) => (
         <ul>
-          {data.map((todo) => (
+          {data.map(todo => (
             <li>{todo.title}</li>
           ))}
         </ul>
@@ -587,6 +588,30 @@ return (
 
 The **match** is exhaustive, meaning you have to add all states. This ensures predictability in the UI.
 
+## matches
+
+You can check if the result of **useReducer** matches a specific state. This is useful when creating hooks for your context providers.
+
+```ts
+export const useAuth = <T extends Context['state']>(state?: T) => {
+  const reducer = useContext(context);
+  if (matches(reducer, state)) {
+    return reducer;
+  }
+
+  throw new Error('Not valid use of hook');
+};
+```
+
+Now you can consume your reducer in specific states.
+
+```tsx
+const SomeComponent = () => {
+  // Typed to AUTHENTICATED
+  const [auth] = useAuth('AUTHENTICATED');
+};
+```
+
 ## result
 
 Safe async resolvement. The API looks much like the Promise API, though it has cancellation and strong typing built in. This is inspired by the [Rust](https://www.rust-lang.org/) language.
@@ -598,16 +623,16 @@ const res = result<{}, { type: 'ERROR'; data: string }>((ok, err) =>
   // You return a promise from a result, this promise
   // should never throw, but rather return an "ok" or "err"
   doSomethingAsync()
-    .then((data) => {
+    .then(data => {
       return ok(data);
     })
-    .catch((error) => {
+    .catch(error => {
       return err('ERROR', error.message);
     }),
 );
 
-const cancel = res.resolve((data) => {}, {
-  ERROR: (data) => {},
+const cancel = res.resolve(data => {}, {
+  ERROR: data => {},
 });
 
 // Cancels the resolver
@@ -626,7 +651,7 @@ import { renderReducerHook } from 'react-states/test';
 test('should go to FOO when switching', () => {
   const [context, dispatch] = renderReducerHook(
     () => useSomeContextProviderExposingAReducer(),
-    (HookComponent) => (
+    HookComponent => (
       <ContextProviderExposingReducer>
         <HookComponent />
       </ContextProviderExposingReducer>
