@@ -29,6 +29,7 @@
   - [Subtype context for match](#subtype-context-for-match)
   - [Base contexts](#base-contexts)
   - [Nested contexts](#nested-contexts)
+  - [Controlling effects](#controlling-effects)
 - [API](#api)
   - [transitions](#transitions)
   - [exec](#exec)
@@ -83,10 +84,10 @@ const fetchTodos = React.useCallback(() => {
   dispatch({ type: 'FETCH_TODOS' });
   axios
     .get('/todos')
-    .then(response => {
+    .then((response) => {
       dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
     })
-    .catch(error => {
+    .catch((error) => {
       dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
     });
 }, []);
@@ -110,7 +111,7 @@ const Todos = ({ todos }) => {
   } else {
     content = (
       <ul>
-        {todos.map(todo => (
+        {todos.map((todo) => (
           <li>{todo.title}</li>
         ))}
       </ul>
@@ -180,10 +181,10 @@ const Todos = () => {
         LOADING: () => {
           axios
             .get('/todos')
-            .then(response => {
+            .then((response) => {
               dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
             })
-            .catch(error => {
+            .catch((error) => {
               dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
             });
         },
@@ -198,7 +199,7 @@ const Todos = () => {
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
           <ul>
-            {data.map(todo => (
+            {data.map((todo) => (
               <li>{todo.title}</li>
             ))}
           </ul>
@@ -314,10 +315,10 @@ export const AuthProvider = ({ children }) => {
         AUTHENTICATING: () => {
           axios
             .get('/signin')
-            .then(response => {
+            .then((response) => {
               dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
-            .catch(error => {
+            .catch((error) => {
               dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
@@ -478,6 +479,55 @@ match(context, {
 });
 ```
 
+## Controlling effects
+
+You can control effects in four ways.
+
+```ts
+// 1. The FOO effect runs every time
+// it enters the FOO state, and
+// disposes entering any new state, including
+// entering FOO again
+useEffect(
+  () =>
+    exec(context, {
+      FOO: () => {},
+    }),
+  [context],
+);
+
+// 2. The FOO effect runs every time
+// it enters the FOO state, and
+// disposes only when moving out of the
+// FOO state
+useEffect(
+  () =>
+    exec(context, {
+      FOO: () => {},
+      BAR: () => {},
+    }),
+  [context.state],
+);
+
+// 3. The FOO effect runs every time
+// it enters the FOO state, and
+// disposes when moving to BAZ state, or
+// unmounts
+const shouldSubscribe = match(context, {
+  FOO: () => true,
+  BAR: () => true,
+  BAZ: () => false,
+});
+useEffect(
+  () =>
+    shouldSubscribe &&
+    exec(context, {
+      FOO: () => {},
+    }),
+  [shouldSubscribe],
+);
+```
+
 # API
 
 ## transitions
@@ -533,7 +583,7 @@ The state argument is called **context** as it represents multiple states. The *
 useEffect(
   () =>
     exec(someContext, {
-      SOME_STATE: currentContext => {},
+      SOME_STATE: (currentContext) => {},
     }),
   [someContext],
 );
@@ -561,7 +611,7 @@ The **exec** is not exhaustive, meaning that you only add the states necessary.
 
 ```tsx
 const result = match(context, {
-  SOME_STATE: currentContext => 'foo',
+  SOME_STATE: (currentContext) => 'foo',
 });
 ```
 
@@ -575,7 +625,7 @@ return (
       LOADING: () => 'Loading...',
       LOADED: ({ data }) => (
         <ul>
-          {data.map(todo => (
+          {data.map((todo) => (
             <li>{todo.title}</li>
           ))}
         </ul>
@@ -623,16 +673,16 @@ const res = result<{}, { type: 'ERROR'; data: string }>((ok, err) =>
   // You return a promise from a result, this promise
   // should never throw, but rather return an "ok" or "err"
   doSomethingAsync()
-    .then(data => {
+    .then((data) => {
       return ok(data);
     })
-    .catch(error => {
+    .catch((error) => {
       return err('ERROR', error.message);
     }),
 );
 
-const cancel = res.resolve(data => {}, {
-  ERROR: data => {},
+const cancel = res.resolve((data) => {}, {
+  ERROR: (data) => {},
 });
 
 // Cancels the resolver
@@ -651,7 +701,7 @@ import { renderReducerHook } from 'react-states/test';
 test('should go to FOO when switching', () => {
   const [context, dispatch] = renderReducerHook(
     () => useSomeContextProviderExposingAReducer(),
-    HookComponent => (
+    (HookComponent) => (
       <ContextProviderExposingReducer>
         <HookComponent />
       </ContextProviderExposingReducer>
