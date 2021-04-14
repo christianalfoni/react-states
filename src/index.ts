@@ -28,7 +28,7 @@ export type TMatch<C extends TContext> = {
   [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
 };
 
-export type StatesReducer<C extends TContext, A extends TAction> = [C, React.Dispatch<A>];
+export type TransitionsReducer<C extends TContext, A extends TAction> = [C, React.Dispatch<A>];
 
 export type PickState<C extends { state: string }, SS extends C['state']> = C extends { state: SS } ? C : never;
 
@@ -81,9 +81,9 @@ export function match<C extends TContext, T extends TMatch<C>>(
 }
 
 export function matches<C extends TContext, A extends TAction, S extends C['state']>(
-  reducer: StatesReducer<C, A>,
+  reducer: TransitionsReducer<C, A>,
   state: S | undefined,
-): reducer is StatesReducer<C & { state: S }, A> {
+): reducer is TransitionsReducer<C & { state: S }, A> {
   if (reducer[0].state === state) {
     return true;
   }

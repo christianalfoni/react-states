@@ -8,7 +8,7 @@ import {
   DEBUG_EXEC,
   RESOLVER_PROMISE,
   DEBUG_IS_ACTION_IGNORED,
-  StatesReducer,
+  TransitionsReducer,
 } from '../';
 
 import { Manager } from './Manager';
@@ -41,7 +41,7 @@ function applyExecDebugToContext(
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, reducer: StatesReducer<any, any>) => {
+export const useDevtools = (id: string, reducer: TransitionsReducer<any, any>) => {
   const manager = React.useContext(managerContext);
   const [context, dispatch] = reducer;
 

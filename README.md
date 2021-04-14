@@ -158,7 +158,7 @@ type Action =
       error: string;
     };
 
-const reducer = transitions<Context, Action>({
+const todosReducer = transitions<Context, Action>({
   NOT_LOADED: {
     FETCH_TODOS: () => ({ state: 'LOADING' }),
   },
@@ -171,7 +171,7 @@ const reducer = transitions<Context, Action>({
 });
 
 const Todos = () => {
-  const [todos, dispatch] = useReducer(reducer, { state: 'NOT_LOADED' });
+  const [todos, dispatch] = useReducer(todosReducer, { state: 'NOT_LOADED' });
 
   useEffect(
     () =>
@@ -288,7 +288,7 @@ type Action =
 
 export const useAuth = () => useContext(context);
 
-const reducer = transitions<COntext, Action>({
+const authReducer = transitions<COntext, Action>({
   UNAUTHENTICATED: {
     SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
   },
@@ -301,11 +301,11 @@ const reducer = transitions<COntext, Action>({
 });
 
 export const AuthProvider = ({ children }) => {
-  const authReducer = useReducer(reducer, {
+  const value = useReducer(authReducer, {
     state: 'UNAUTHENTICATED',
   });
 
-  const [auth, dispatch] = authReducer;
+  const [auth, dispatch] = value;
 
   useEffect(
     () =>
@@ -324,7 +324,7 @@ export const AuthProvider = ({ children }) => {
     [auth],
   );
 
-  return <context.Provider value={authReducer}>{children}</context.Provider>;
+  return <context.Provider value={value}>{children}</context.Provider>;
 };
 ```
 
@@ -673,7 +673,7 @@ const actions = {
   B: (action: PickAction<Action, 'B'>, context: PickState<Context, 'FOO'>) => {},
 };
 
-const foo = useStates<Context, Action>({
+const reducer = transitions<Context, Action>({
   FOO: {
     ...actions,
   },
