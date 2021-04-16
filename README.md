@@ -84,10 +84,10 @@ const fetchTodos = React.useCallback(() => {
   dispatch({ type: 'FETCH_TODOS' });
   axios
     .get('/todos')
-    .then((response) => {
+    .then(response => {
       dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
     })
-    .catch((error) => {
+    .catch(error => {
       dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
     });
 }, []);
@@ -111,7 +111,7 @@ const Todos = ({ todos }) => {
   } else {
     content = (
       <ul>
-        {todos.map((todo) => (
+        {todos.map(todo => (
           <li>{todo.title}</li>
         ))}
       </ul>
@@ -181,10 +181,10 @@ const Todos = () => {
         LOADING: () => {
           axios
             .get('/todos')
-            .then((response) => {
+            .then(response => {
               dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
             })
-            .catch((error) => {
+            .catch(error => {
               dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
             });
         },
@@ -199,7 +199,7 @@ const Todos = () => {
         LOADING: () => 'Loading...',
         LOADED: ({ data }) => (
           <ul>
-            {data.map((todo) => (
+            {data.map(todo => (
               <li>{todo.title}</li>
             ))}
           </ul>
@@ -315,10 +315,10 @@ export const AuthProvider = ({ children }) => {
         AUTHENTICATING: () => {
           axios
             .get('/signin')
-            .then((response) => {
+            .then(response => {
               dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
             })
-            .catch((error) => {
+            .catch(error => {
               dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
             });
         },
@@ -336,22 +336,57 @@ export const AuthProvider = ({ children }) => {
 
 Sometimes you might have one or multiple handlers across states. You can lift them up and compose them back into your transitions.
 
-```ts
-import { PickAction, transitions } from 'react-states';
+There are three parts to this patterns:
 
-const globalActions = {
-  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, context: Context) => ({
-    ...context,
+1. Only type what you need from an action, not the actions themselves
+2. If you are consuming the current context, type it as any context (`Context`) and optionally restrict it with properties
+   and values you want to be available on that context
+3. Always give any context (`Context`) as the return type
+
+You can define a single action handler:
+
+```ts
+import { transitions } from 'react-states';
+
+const handleChangeDescription = (
+  // Expressing what we want from the action
+  { description }: { description: string },
+  // Expressing that we allow any context, as long as it has an existing "description" on it
+  currentContext: Context & { description: string },
+  // Allowing us to move into any context
+): Context => ({
+  ...currentContext,
+  description,
+});
+
+const reducer = transitions<Action, Context>({
+  FOO: {
+    CHANGE_DESCRIPTION: handleChangeDescription,
+  },
+  BAR: {
+    CHANGE_DESCRIPTION: handleChangeDescription,
+  },
+});
+```
+
+Or multiple action handlers:
+
+```ts
+import { transitions } from 'react-states';
+
+const globalActionHandlers = {
+  CHANGE_DESCRIPTION: ({ description }: { description: string }, currentContext: Context): Context => ({
+    ...currentContext,
     description,
   }),
 };
 
 const reducer = transitions<Action, Context>({
   FOO: {
-    ...globalActions,
+    ...globalActionHandlers,
   },
   BAR: {
-    ...globalActions,
+    ...globalActionHandlers,
   },
 });
 ```
@@ -583,7 +618,7 @@ The state argument is called **context** as it represents multiple states. The *
 useEffect(
   () =>
     exec(someContext, {
-      SOME_STATE: (currentContext) => {},
+      SOME_STATE: currentContext => {},
     }),
   [someContext],
 );
@@ -611,7 +646,7 @@ The **exec** is not exhaustive, meaning that you only add the states necessary.
 
 ```tsx
 const result = match(context, {
-  SOME_STATE: (currentContext) => 'foo',
+  SOME_STATE: currentContext => 'foo',
 });
 ```
 
@@ -625,7 +660,7 @@ return (
       LOADING: () => 'Loading...',
       LOADED: ({ data }) => (
         <ul>
-          {data.map((todo) => (
+          {data.map(todo => (
             <li>{todo.title}</li>
           ))}
         </ul>
@@ -673,16 +708,16 @@ const res = result<{}, { type: 'ERROR'; data: string }>((ok, err) =>
   // You return a promise from a result, this promise
   // should never throw, but rather return an "ok" or "err"
   doSomethingAsync()
-    .then((data) => {
+    .then(data => {
       return ok(data);
     })
-    .catch((error) => {
+    .catch(error => {
       return err('ERROR', error.message);
     }),
 );
 
-const cancel = res.resolve((data) => {}, {
-  ERROR: (data) => {},
+const cancel = res.resolve(data => {}, {
+  ERROR: data => {},
 });
 
 // Cancels the resolver
@@ -701,7 +736,7 @@ import { renderReducerHook } from 'react-states/test';
 test('should go to FOO when switching', () => {
   const [context, dispatch] = renderReducerHook(
     () => useSomeContextProviderExposingAReducer(),
-    (HookComponent) => (
+    HookComponent => (
       <ContextProviderExposingReducer>
         <HookComponent />
       </ContextProviderExposingReducer>
