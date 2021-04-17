@@ -162,11 +162,11 @@ type Action =
 
 const todosReducer = transitions<Context, Action>({
   NOT_LOADED: {
-    FETCH_TODOS: () => ({ state: 'LOADING' }),
+    FETCH_TODOS: (): Context => ({ state: 'LOADING' }),
   },
   LOADING: {
-    FETCH_TODOS_SUCCESS: ({ data }) => ({ state: 'LOADED', data }),
-    FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+    FETCH_TODOS_SUCCESS: ({ data }): Context => ({ state: 'LOADED', data }),
+    FETCH_TODOS_ERROR: ({ error }): Context => ({ state: 'ERROR', error }),
   },
   LOADED: {},
   ERROR: {},
@@ -290,13 +290,13 @@ type Action =
 
 export const useAuth = () => useContext(context);
 
-const authReducer = transitions<COntext, Action>({
+const authReducer = transitions<Context, Action>({
   UNAUTHENTICATED: {
-    SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
+    SIGN_IN: (): Context => ({ state: 'AUTHENTICATING' }),
   },
   AUTHENTICATING: {
-    SIGN_IN_SUCCESS: ({ user }) => ({ state: 'AUTHENTICATED', user }),
-    SIGN_IN_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+    SIGN_IN_SUCCESS: ({ user }): Context => ({ state: 'AUTHENTICATED', user }),
+    SIGN_IN_ERROR: ({ error }): Context => ({ state: 'ERROR', error }),
   },
   AUTHENTICATED: {},
   ERROR: {},
@@ -340,7 +340,7 @@ Sometimes you might have one or multiple handlers across states. You can lift th
 import { PickAction, transitions } from 'react-states';
 
 const globalActions = {
-  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, context: Context) => ({
+  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, context: Context): Context => ({
     ...context,
     description,
   }),
@@ -549,10 +549,13 @@ type Action = {
 
 const reducer = transitions<Context, Action>({
   FOO: {
-    SWITCH: (action, currentContext) => ({ state: 'BAR' }),
+    // Currently you should explicitly set the return type of the
+    // handlers to the context, this will be resolved when
+    // TypeScript gets Exact types: https://github.com/Microsoft/TypeScript/issues/12936
+    SWITCH: (action, currentContext): Context => ({ state: 'BAR' }),
   },
   BAR: {
-    SWITCH: (action, currentContext) => ({ state: 'FOO' }),
+    SWITCH: (action, currentContext): Context => ({ state: 'FOO' }),
   },
 });
 
