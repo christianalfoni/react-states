@@ -84,13 +84,9 @@ export function matches<C extends TContext, A extends TAction, S extends C['stat
   reducer: TransitionsReducer<C, A>,
   state: S | undefined,
 ): reducer is TransitionsReducer<C & { state: S }, A> {
-  if (reducer[0].state === state) {
+  if (state && reducer[0].state === state) {
     return true;
   }
 
-  return false;
-}
-
-export function invalidReducerStateMessage(name: string, reducer: TransitionsReducer<any, any>, state: string) {
-  return `You can not use "${name}" in "${state}" as the current state is "${reducer[0].state}"`;
+  throw new Error(`You can not use "${state}" as the current state is "${reducer[0].state}"`);
 }
