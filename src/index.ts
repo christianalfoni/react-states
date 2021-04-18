@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+
 export * from './result';
 
 export const DEBUG_IS_ACTION_IGNORED = Symbol('DEBUG_IS_ACTION_IGNORED');
@@ -80,13 +82,18 @@ export function match<C extends TContext, T extends TMatch<C>>(
   return matches[context.state] ? matches[context.state](context) : null;
 }
 
-export function matches<C extends TContext, A extends TAction, S extends C['state']>(
-  reducer: TransitionsReducer<C, A>,
-  state: S | undefined,
-): reducer is TransitionsReducer<C & { state: S }, A> {
-  if (state && reducer[0].state === state) {
-    return true;
-  }
+export function createUseFeature<T extends TransitionsReducer<any, any>>(
+  reducerContext: React.Context<T>,
+): T extends TransitionsReducer<infer C, infer A>
+  ? <S extends T[0]['state']>(state?: S) => TransitionsReducer<C & { state: S }, A>
+  : never {
+  return ((state: string) => {
+    const feature = useContext<T>(reducerContext);
 
-  throw new Error(`You can not use "${state}" as the current state is "${reducer[0].state}"`);
+    if (!state || feature[0].state === state) {
+      return feature;
+    }
+
+    throw new Error(`You can not use "${state}" as the current state is "${feature[0].state}"`);
+  }) as any;
 }

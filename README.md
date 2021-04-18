@@ -34,7 +34,6 @@
   - [transitions](#transitions)
   - [exec](#exec)
   - [match](#match)
-  - [matches](#matches)
   - [result](#result)
   - [renderReducerHook](#renderreducerhook)
   - [PickState and PickAction](#pickstate-and-pickaction)
@@ -675,30 +674,6 @@ return (
 ```
 
 The **match** is exhaustive, meaning you have to add all states. This ensures predictability in the UI.
-
-## matches
-
-You can check if the result of **useReducer** matches a specific state. This is useful when creating hooks for your context providers.
-
-```ts
-export const useAuth = <T extends Context['state']>(state?: T) => {
-  const reducer = useContext(context);
-  if (matches(reducer, state)) {
-    return reducer;
-  }
-
-  throw new Error('Not valid use of hook');
-};
-```
-
-Now you can consume your reducer in specific states.
-
-```tsx
-const SomeComponent = () => {
-  // Typed to AUTHENTICATED
-  const [auth] = useAuth('AUTHENTICATED');
-};
-```
 
 ## result
 
