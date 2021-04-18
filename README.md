@@ -336,22 +336,57 @@ export const AuthProvider = ({ children }) => {
 
 Sometimes you might have one or multiple handlers across states. You can lift them up and compose them back into your transitions.
 
-```ts
-import { PickAction, transitions } from 'react-states';
+There are three parts to this patterns:
 
-const globalActions = {
-  CHANGE_DESCRIPTION: ({ description }: PickAction<Action, 'CHANGE_DESCRIPTION'>, context: Context): Context => ({
-    ...context,
+1. Only type what you need from an action, not the actions themselves
+2. If you are consuming the current context, type it as any context (`Context`) and optionally restrict it with properties
+   and values you want to be available on that context
+3. Always give any context (`Context`) as the return type
+
+You can define a single action handler:
+
+```ts
+import { transitions } from 'react-states';
+
+const handleChangeDescription = (
+  // Expressing what we want from the action
+  { description }: { description: string },
+  // Expressing that we allow any context, as long as it has an existing "description" on it
+  currentContext: Context & { description: string },
+  // Allowing us to move into any context
+): Context => ({
+  ...currentContext,
+  description,
+});
+
+const reducer = transitions<Action, Context>({
+  FOO: {
+    CHANGE_DESCRIPTION: handleChangeDescription,
+  },
+  BAR: {
+    CHANGE_DESCRIPTION: handleChangeDescription,
+  },
+});
+```
+
+Or multiple action handlers:
+
+```ts
+import { transitions } from 'react-states';
+
+const globalActionHandlers = {
+  CHANGE_DESCRIPTION: ({ description }: { description: string }, currentContext: Context): Context => ({
+    ...currentContext,
     description,
   }),
 };
 
 const reducer = transitions<Action, Context>({
   FOO: {
-    ...globalActions,
+    ...globalActionHandlers,
   },
   BAR: {
-    ...globalActions,
+    ...globalActionHandlers,
   },
 });
 ```
