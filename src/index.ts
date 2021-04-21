@@ -82,7 +82,7 @@ export function match<C extends TContext, T extends TMatch<C>>(
   return matches[context.state] ? matches[context.state](context) : null;
 }
 
-export function createUseFeature<T extends TransitionsReducer<any, any>>(
+export function createTransitionsReducerHook<T extends TransitionsReducer<any, any>>(
   reducerContext: React.Context<T>,
 ): T extends TransitionsReducer<infer C, infer E>
   ? <S extends T[0]['state']>(state?: S) => TransitionsReducer<C & { state: S }, E>
