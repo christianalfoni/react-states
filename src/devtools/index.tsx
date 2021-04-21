@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import {
-  TAction,
+  TEvent,
   TContext,
   TEffect,
   DEBUG_TRANSITIONS,
   DEBUG_EXEC,
   RESOLVER_PROMISE,
-  DEBUG_IS_ACTION_IGNORED,
+  DEBUG_IS_EVENT_IGNORED,
   TransitionsReducer,
 } from '../';
 
@@ -31,7 +31,7 @@ function applyExecDebugToContext(
     return cb(effect, context, path);
   };
 
-  Object.keys(context).forEach((key) => {
+  Object.keys(context).forEach(key => {
     const value = (context as any)[key];
     if (!Array.isArray(value) && typeof value === 'object' && value !== null && typeof value.state === 'string') {
       applyExecDebugToContext(value, cb, path.concat(key));
@@ -102,18 +102,18 @@ export const useDevtools = (id: string, reducer: TransitionsReducer<any, any>) =
     return returnedValue;
   });
 
-  reducer[1] = (action: any) => {
-    action[DEBUG_IS_ACTION_IGNORED] = false;
-    dispatch(action);
+  reducer[1] = (event: any) => {
+    event[DEBUG_IS_EVENT_IGNORED] = false;
+    dispatch(event);
 
-    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
+    if (event.type === DEBUG_TRIGGER_TRANSITIONS) {
       return;
     }
 
     manager.onMessage(id, {
       type: 'dispatch',
-      action,
-      ignored: action[DEBUG_IS_ACTION_IGNORED],
+      event,
+      ignored: event[DEBUG_IS_EVENT_IGNORED],
     });
   };
 };
@@ -145,9 +145,9 @@ export const DevtoolsManager = () => {
   }, [targetEl]);
 
   const toggleExpanded = React.useCallback(
-    (id) => {
-      setExpandedStates((current) =>
-        current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
+    id => {
+      setExpandedStates(current =>
+        current.includes(id) ? current.filter(existingId => existingId !== id) : current.concat(id),
       );
     },
     [setExpandedStates],
@@ -180,7 +180,7 @@ export const DevtoolsManager = () => {
           cursor: 'pointer',
           color: colors.text,
         }}
-        onClick={() => toggleOpen((current) => !current)}
+        onClick={() => toggleOpen(current => !current)}
       >
         {isOpen ? '⇨' : '⇦'}
       </div>
@@ -191,7 +191,7 @@ export const DevtoolsManager = () => {
             padding: 0,
           }}
         >
-          {Object.keys(statesData).map((id) => {
+          {Object.keys(statesData).map(id => {
             const data = statesData[id];
 
             return (

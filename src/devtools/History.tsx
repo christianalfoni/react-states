@@ -61,8 +61,8 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
 
         return (
           <li key={index} style={{ display: 'flex', opacity: item.ignored ? 0.5 : 1 }}>
-            <span style={{ marginRight: '0.25rem', color: colors.purple }}>{String(item.action.type)}</span>
-            <ValueInspector value={item.action} small />
+            <span style={{ marginRight: '0.25rem', color: colors.purple }}>{String(item.event.type)}</span>
+            <ValueInspector value={item.event} small />
           </li>
         );
       })}

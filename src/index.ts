@@ -2,7 +2,7 @@ import { useContext } from 'react';
 
 export * from './result';
 
-export const DEBUG_IS_ACTION_IGNORED = Symbol('DEBUG_IS_ACTION_IGNORED');
+export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_EXEC = Symbol('DEBUG_EXEC');
 
@@ -10,7 +10,7 @@ export interface TContext {
   state: string;
 }
 
-export interface TAction {
+export interface TEvent {
   type: string | symbol;
 }
 
@@ -30,28 +30,28 @@ export type TMatch<C extends TContext> = {
   [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
 };
 
-export type TransitionsReducer<C extends TContext, A extends TAction> = [C, React.Dispatch<A>];
+export type TransitionsReducer<C extends TContext, E extends TEvent> = [C, React.Dispatch<E>];
 
 export type PickState<C extends { state: string }, SS extends C['state']> = C extends { state: SS } ? C : never;
 
-export type PickAction<E extends { type: string }, T extends E['type']> = E extends { type: T } ? E : never;
+export type PickEvent<E extends { type: string }, T extends E['type']> = E extends { type: T } ? E : never;
 
-export function transitions<C extends TContext, A extends TAction>(
+export function transitions<C extends TContext, E extends TEvent>(
   transitions: {
     [State in C['state']]: {
-      [Type in A['type']]?: (action: A & { type: Type }, context: C & { state: State }) => C;
+      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C;
     };
   },
-): (context: C, action: A) => C {
-  return (context, action) => {
+): (context: C, event: E) => C {
+  return (context, event) => {
     let newContext = context;
     // @ts-ignore
-    if (transitions[context.state] && transitions[context.state][action.type]) {
+    if (transitions[context.state] && transitions[context.state][event.type]) {
       // @ts-ignore
-      newContext = transitions[context.state][action.type](action, context);
+      newContext = transitions[context.state][event.type](event, context);
     } else {
       // @ts-ignore
-      action[DEBUG_IS_ACTION_IGNORED] = true;
+      event[DEBUG_IS_EVENT_IGNORED] = true;
     }
 
     // @ts-ignore
@@ -84,8 +84,8 @@ export function match<C extends TContext, T extends TMatch<C>>(
 
 export function createUseFeature<T extends TransitionsReducer<any, any>>(
   reducerContext: React.Context<T>,
-): T extends TransitionsReducer<infer C, infer A>
-  ? <S extends T[0]['state']>(state?: S) => TransitionsReducer<C & { state: S }, A>
+): T extends TransitionsReducer<infer C, infer E>
+  ? <S extends T[0]['state']>(state?: S) => TransitionsReducer<C & { state: S }, E>
   : never {
   return ((state: string) => {
     const feature = useContext<T>(reducerContext);

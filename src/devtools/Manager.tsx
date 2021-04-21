@@ -1,9 +1,9 @@
-import { TAction, TContext, TTransitions, Err, Ok } from '../';
+import { TEvent, TContext, TTransitions, Err, Ok } from '../';
 
 export type DevtoolMessage =
   | {
       type: 'dispatch';
-      action: TAction;
+      event: TEvent;
       ignored: boolean;
     }
   | {
@@ -60,8 +60,8 @@ export type HistoryItem =
       triggerTransitions: () => void;
     }
   | {
-      type: 'action';
-      action: TAction;
+      type: 'event';
+      event: TEvent;
       ignored: boolean;
     };
 
@@ -80,7 +80,7 @@ export class Manager {
   private subscriptions: Function[] = [];
   states: StatesData = {};
   private notify() {
-    this.subscriptions.forEach((cb) => cb(this.states));
+    this.subscriptions.forEach(cb => cb(this.states));
   }
   onMessage(id: string, message: DevtoolMessage) {
     switch (message.type) {
@@ -122,8 +122,8 @@ export class Manager {
             ...this.states[id],
             history: [
               {
-                type: 'action',
-                action: message.action,
+                type: 'event',
+                event: message.event,
                 ignored: message.ignored,
               },
               ...this.states[id].history,
@@ -133,7 +133,7 @@ export class Manager {
         break;
       }
       case 'exec': {
-        const lastStateEntryIndex = this.states[id].history.findIndex((item) => item.type === 'state')!;
+        const lastStateEntryIndex = this.states[id].history.findIndex(item => item.type === 'state')!;
         const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
         this.states = {
           ...this.states,
@@ -156,7 +156,7 @@ export class Manager {
       }
       case 'exec-resolved': {
         const lastStateEntryIndex = this.states[id].history.findIndex(
-          (item) => item.type === 'state' && item.context.state === message.context.state,
+          item => item.type === 'state' && item.context.state === message.context.state,
         )!;
         const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
         this.states = {
