@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useAuth } from './AuthFeature';
 
 const Test = () => {
-  const [user, send] = useAuth('AUTHENTICATED', ({ user }) => user);
+  const [auth, send] = useAuth('AUTHENTICATED');
 
   return (
     <h2
@@ -12,7 +12,7 @@ const Test = () => {
         });
       }}
     >
-      Start editing to see some magic {user.name}!
+      Start editing to see some magic {auth.user.name}!
     </h2>
   );
 };

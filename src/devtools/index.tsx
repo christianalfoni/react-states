@@ -8,7 +8,7 @@ import {
   DEBUG_EXEC,
   RESOLVER_PROMISE,
   DEBUG_IS_EVENT_IGNORED,
-  TransitionsReducer,
+  States,
 } from '../';
 
 import { Manager } from './Manager';
@@ -31,7 +31,7 @@ function applyExecDebugToContext(
     return cb(effect, context, path);
   };
 
-  Object.keys(context).forEach(key => {
+  Object.keys(context).forEach((key) => {
     const value = (context as any)[key];
     if (!Array.isArray(value) && typeof value === 'object' && value !== null && typeof value.state === 'string') {
       applyExecDebugToContext(value, cb, path.concat(key));
@@ -41,7 +41,7 @@ function applyExecDebugToContext(
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, reducer: TransitionsReducer<any, any>) => {
+export const useDevtools = (id: string, reducer: States<any, any>) => {
   const manager = React.useContext(managerContext);
   const [context, dispatch] = reducer;
 
@@ -145,9 +145,9 @@ export const DevtoolsManager = () => {
   }, [targetEl]);
 
   const toggleExpanded = React.useCallback(
-    id => {
-      setExpandedStates(current =>
-        current.includes(id) ? current.filter(existingId => existingId !== id) : current.concat(id),
+    (id) => {
+      setExpandedStates((current) =>
+        current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
       );
     },
     [setExpandedStates],
@@ -180,7 +180,7 @@ export const DevtoolsManager = () => {
           cursor: 'pointer',
           color: colors.text,
         }}
-        onClick={() => toggleOpen(current => !current)}
+        onClick={() => toggleOpen((current) => !current)}
       >
         {isOpen ? '⇨' : '⇦'}
       </div>
@@ -191,7 +191,7 @@ export const DevtoolsManager = () => {
             padding: 0,
           }}
         >
-          {Object.keys(statesData).map(id => {
+          {Object.keys(statesData).map((id) => {
             const data = statesData[id];
 
             return (

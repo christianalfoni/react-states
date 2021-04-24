@@ -1,11 +1,5 @@
 import * as React from 'react';
-import {
-  exec,
-  transitions,
-  createExperimentalTransitionsReducerContext,
-  createExperimentalTransitionsReducerHook,
-  useExperimentalTransitionsReducer,
-} from '../src';
+import { createStatesContext, createStatesHook, createStatesReducer, exec } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Context =
@@ -38,11 +32,7 @@ type Event =
       type: typeof SIGN_IN_ERROR;
     };
 
-const context = createExperimentalTransitionsReducerContext<Context, Event>();
-
-export const useAuth = createExperimentalTransitionsReducerHook(context);
-
-const reducer = transitions<Context, Event>({
+const reducer = createStatesReducer<Context, Event>({
   UNAUTHENTICATED: {
     SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
   },
@@ -57,26 +47,30 @@ const reducer = transitions<Context, Event>({
   },
 });
 
+const context = createStatesContext<Context, Event>();
+
+export const useAuth = createStatesHook(context);
+
 export function AuthFeature({ children }: { children: React.ReactNode }) {
-  const authReducer = useExperimentalTransitionsReducer(reducer, {
+  const authStates = React.useReducer(reducer, {
     state: 'UNAUTHENTICATED',
   });
 
-  useDevtools('Auth', authReducer);
+  useDevtools('Auth', authStates);
 
-  const [auth, dispatch] = authReducer;
+  const [auth, send] = authStates;
 
   React.useEffect(
     () =>
       exec(auth, {
         AUTHENTICATING: function authenticate() {
           new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
-            dispatch({ type: SIGN_IN_SUCCESS, user: { name: 'Alice' } });
+            send({ type: SIGN_IN_SUCCESS, user: { name: 'Alice' } });
           });
         },
       }),
     [auth],
   );
 
-  return <context.Provider value={authReducer}>{children}</context.Provider>;
+  return <context.Provider value={authStates}>{children}</context.Provider>;
 }
