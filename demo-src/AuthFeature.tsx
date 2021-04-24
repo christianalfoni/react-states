@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { exec, StatesReducer, transitions } from '../src';
+import {
+  exec,
+  transitions,
+  createExperimentalTransitionsReducerContext,
+  createExperimentalTransitionsReducerHook,
+  useExperimentalTransitionsReducer,
+} from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Context =
@@ -17,9 +23,12 @@ type Context =
 const SIGN_IN_SUCCESS = Symbol('SIGN_IN_SUCCESS');
 const SIGN_IN_ERROR = Symbol('SIGN_IN_ERROR');
 
-type Action =
+type Event =
   | {
       type: 'SIGN_IN';
+    }
+  | {
+      type: 'UPDATE_NAME';
     }
   | {
       type: typeof SIGN_IN_SUCCESS;
@@ -29,22 +38,27 @@ type Action =
       type: typeof SIGN_IN_ERROR;
     };
 
-const context = React.createContext({} as StatesReducer<Context, Action>);
+const context = createExperimentalTransitionsReducerContext<Context, Event>();
 
-export const useAuth = () => React.useContext(context);
+export const useAuth = createExperimentalTransitionsReducerHook(context);
 
-const reducer = transitions<Context, Action>({
+const reducer = transitions<Context, Event>({
   UNAUTHENTICATED: {
     SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
   },
   AUTHENTICATING: {
     [SIGN_IN_SUCCESS]: ({ user }) => ({ state: 'AUTHENTICATED', user }),
   },
-  AUTHENTICATED: {},
+  AUTHENTICATED: {
+    UPDATE_NAME: () => ({
+      state: 'AUTHENTICATED',
+      user: { name: 'BOB' },
+    }),
+  },
 });
 
 export function AuthFeature({ children }: { children: React.ReactNode }) {
-  const authReducer = React.useReducer(reducer, {
+  const authReducer = useExperimentalTransitionsReducer(reducer, {
     state: 'UNAUTHENTICATED',
   });
 
