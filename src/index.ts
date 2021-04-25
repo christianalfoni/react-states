@@ -43,7 +43,7 @@ export function transition<C extends TContext, E extends TEvent>(
   event: E,
   transitions: {
     [State in C['state']]: {
-      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C;
+      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C | undefined;
     };
   },
 ) {
@@ -51,7 +51,7 @@ export function transition<C extends TContext, E extends TEvent>(
   // @ts-ignore
   if (transitions[context.state] && transitions[context.state][event.type]) {
     // @ts-ignore
-    newContext = transitions[context.state][event.type](event, context);
+    newContext = transitions[context.state][event.type](event, context) || context;
   } else {
     // @ts-ignore
     event[DEBUG_IS_EVENT_IGNORED] = true;
@@ -92,7 +92,7 @@ export interface StatesHook<C extends TContext, E extends TEvent> {
 export function createStatesReducer<C extends TContext, E extends TEvent>(
   transitions: {
     [State in C['state']]: {
-      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C;
+      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C | undefined;
     };
   },
 ) {

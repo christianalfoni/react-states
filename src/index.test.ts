@@ -1,11 +1,11 @@
-import { exec, match, transitions } from '.';
+import { exec, match, createStatesReducer } from '.';
 
 describe('react-states', () => {
   test('should transition states', () => {
     const context = {
       state: 'FOO',
     };
-    const transition = transitions({
+    const transition = createStatesReducer({
       FOO: {
         SWITCH: () => ({ state: 'BAR' }),
       },
@@ -20,7 +20,7 @@ describe('react-states', () => {
     const state = {
       state: 'FOO',
     };
-    const transition = transitions({
+    const transition = createStatesReducer({
       FOO: {},
     });
     expect(
