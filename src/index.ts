@@ -26,8 +26,8 @@ export type TEffects<C extends TContext> = {
   [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
-export type TMatch<C extends TContext> = {
-  [State in C['state']]: (state: C extends { state: State } ? C : never) => any;
+export type TMatch<C extends TContext, R = any> = {
+  [State in C['state']]: (state: C extends { state: State } ? C : never) => R;
 };
 
 export type States<C extends TContext, E extends TEvent> = [C, React.Dispatch<E>];
@@ -73,17 +73,32 @@ export function exec<C extends TContext>(context: C, effects: TEffects<C>) {
 
 export function match<C extends TContext, T extends TMatch<C>>(
   context: C,
+): <R>(
+  matches: TMatch<C, R>,
+) => {
+  [K in keyof T]: R;
+}[keyof T];
+export function match<C extends TContext, T extends TMatch<C>>(
+  context: C,
   matches: T &
     {
       [K in keyof T]: K extends C['state'] ? T[K] : never;
     },
 ): {
   [K in keyof T]: T[K] extends () => infer R ? R : never;
-}[keyof T] {
-  // @ts-ignore This is an exhaustive check
-  return matches[context.state](context);
-}
+}[keyof T];
+export function match() {
+  const context = arguments[0];
+  const matches = arguments[1];
 
+  if (matches) {
+    // @ts-ignore This is an exhaustive check
+    return matches[context.state](context);
+  }
+
+  // @ts-ignore Too complex for TS to do this correctly
+  return matches => matches[context.state](context);
+}
 export interface StatesHook<C extends TContext, E extends TEvent> {
   (): States<C, E>;
   <S extends C['state']>(state: S): States<C & { state: S }, E>;
@@ -145,7 +160,7 @@ export const createExperimentalStatesHook = <C extends TContext, E extends TEven
 
     React.useEffect(
       () =>
-        context.subscribe((newTransitionsReducer) => {
+        context.subscribe(newTransitionsReducer => {
           if (!selector || selector(transitionsReducer[0]) !== selector(newTransitionsReducer[0])) {
             setTransitionsReducer(newTransitionsReducer);
           }
@@ -182,7 +197,7 @@ export const useExperimentalStatesReducer = <C extends TContext, E extends TEven
   });
 
   React.useEffect(() => {
-    subscribers.forEach((listener) => {
+    subscribers.forEach(listener => {
       listener(reducer);
     });
   }, [reducer]);
