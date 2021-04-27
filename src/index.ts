@@ -38,6 +38,16 @@ export type PickEvent<E extends TEvent, T extends E['type']> = E extends { type:
 
 export type Send<E extends TEvent> = (event: E) => void;
 
+type ValidateContext<T, Struct> = T extends Struct ? (Exclude<keyof T, keyof Struct> extends never ? T : never) : never;
+
+export function exactContext<C extends TContext>() {
+  return function <T extends TContext, S extends C['state']>(
+    context: { state: S } & ValidateContext<T, C & { state: S }>,
+  ) {
+    return context;
+  };
+}
+
 export function transition<C extends TContext, E extends TEvent>(
   context: C,
   event: E,
@@ -97,7 +107,7 @@ export function match() {
   }
 
   // @ts-ignore Too complex for TS to do this correctly
-  return matches => matches[context.state](context);
+  return (matches) => matches[context.state](context);
 }
 export interface StatesHook<C extends TContext, E extends TEvent> {
   (): States<C, E>;
@@ -160,7 +170,7 @@ export const createExperimentalStatesHook = <C extends TContext, E extends TEven
 
     React.useEffect(
       () =>
-        context.subscribe(newTransitionsReducer => {
+        context.subscribe((newTransitionsReducer) => {
           if (!selector || selector(transitionsReducer[0]) !== selector(newTransitionsReducer[0])) {
             setTransitionsReducer(newTransitionsReducer);
           }
@@ -197,7 +207,7 @@ export const useExperimentalStatesReducer = <C extends TContext, E extends TEven
   });
 
   React.useEffect(() => {
-    subscribers.forEach(listener => {
+    subscribers.forEach((listener) => {
       listener(reducer);
     });
   }, [reducer]);
