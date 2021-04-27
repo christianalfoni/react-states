@@ -38,8 +38,9 @@ export type PickEvent<E extends TEvent, T extends E['type']> = E extends { type:
 
 export type Send<E extends TEvent> = (event: E) => void;
 
-type ValidateContext<T, Struct> = T extends Struct ? (Exclude<keyof T, keyof Struct> extends never ? T : never) : never;
-
+type ValidateContext<T extends TContext, Struct extends TContext> = {
+  [U in keyof T]: U extends Exclude<keyof T, keyof Struct> ? never : T[U];
+};
 export function exactContext<C extends TContext>() {
   return function <T extends TContext, S extends C['state']>(
     context: { state: S } & ValidateContext<T, C & { state: S }>,
