@@ -54,10 +54,6 @@ export type HistoryItem =
             state: 'CANCELLED';
             name: string;
           };
-      transitions: {
-        [state: string]: string[];
-      };
-      triggerTransitions: () => void;
     }
   | {
       type: 'event';
@@ -85,8 +81,13 @@ export class Manager {
   onMessage(id: string, message: DevtoolMessage) {
     switch (message.type) {
       case 'state': {
-        // No idea what TypeScript complains here, but not below
-        // @ts-ignore
+        const firstHistoryItem = this.states[id].history[0];
+        // This happens on mount, where we immediately add the current context,
+        // but also the updating useEffect will also add the same context
+        if (firstHistoryItem.type === 'state' && firstHistoryItem.context === message.context) {
+          return;
+        }
+
         this.states = {
           ...this.states,
           [id]: {
@@ -188,13 +189,22 @@ export class Manager {
     }
     this.notify();
   }
-  mount(id: string, triggerTransitions: () => void) {
+  mount(id: string, context: TContext, triggerTransitions: () => void) {
     this.states = {
       ...this.states,
       [id]: {
         isMounted: true,
-        history: [],
-        transitions: {},
+        history: [
+          {
+            type: 'state',
+            context,
+            exec: {
+              state: 'IDLE',
+            },
+          },
+        ],
+        // @ts-ignore
+        transitions: context[DEBUG_TRANSITIONS],
         triggerTransitions,
       },
     };
