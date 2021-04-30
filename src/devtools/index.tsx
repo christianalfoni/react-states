@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import {
-  TEvent,
   TContext,
   TEffect,
   DEBUG_TRANSITIONS,
