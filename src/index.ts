@@ -1,4 +1,4 @@
-import React, { useContext, useReducer } from 'react';
+import React, { useContext, useEffect, useReducer } from 'react';
 
 export * from './result';
 
@@ -38,23 +38,15 @@ export type PickEvent<E extends TEvent, T extends E['type']> = E extends { type:
 
 export type Send<E extends TEvent> = (event: E) => void;
 
-type ValidateContext<T extends TContext, Struct extends TContext> = {
-  [U in keyof T]: U extends Exclude<keyof T, keyof Struct> ? never : T[U];
-};
-export function exactContext<C extends TContext>() {
-  return function <T extends TContext, S extends C['state']>(
-    context: { state: S } & ValidateContext<T, C & { state: S }>,
-  ) {
-    return context;
-  };
-}
-
 export function transition<C extends TContext, E extends TEvent>(
   context: C,
   event: E,
   transitions: {
     [State in C['state']]: {
-      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C;
+      [Type in E['type']]?: (
+        event: E extends { type: Type } ? E : never,
+        context: C extends { state: State } ? C : never,
+      ) => C;
     };
   },
 ) {
@@ -74,12 +66,68 @@ export function transition<C extends TContext, E extends TEvent>(
   return newContext;
 }
 
-export function exec<C extends TContext>(context: C, effects: TEffects<C>) {
-  // @ts-ignore
-  if (effects[context.state]) {
-    // @ts-ignore
-    return context[DEBUG_EXEC] ? context[DEBUG_EXEC](effects[context.state]) : effects[context.state](context);
-  }
+export function useUpdateEffect<C extends TContext, S extends C['state']>(
+  context: C,
+  state: S,
+  effect: TEffect<C extends { state: S } ? C : never>,
+) {
+  useEffect(() => {
+    if (context.state === state) {
+      // @ts-ignore
+      return effect(context);
+    }
+  }, [context]);
+}
+
+export function useEnterEffect<C extends TContext, S extends C['state']>(
+  context: C,
+  state: S,
+  effect: TEffect<C extends { state: S } ? C : never>,
+) {
+  useEffect(() => {
+    if (context.state === state) {
+      // @ts-ignore
+      return effect(context);
+    }
+  }, [context.state === state]);
+}
+
+export function useExitEffect<C extends TContext, S extends C['state']>(
+  context: C,
+  state: S,
+  effect: TEffect<C extends { state: S } ? C : never>,
+) {
+  useEffect(() => {
+    if (context.state === state) {
+      return () => {
+        // @ts-ignore
+        effect(context);
+      };
+    }
+  }, [context.state === state]);
+}
+
+export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>(
+  context: C,
+  matches: T,
+  effect: TEffect<
+    C extends {
+      state: {
+        [U in keyof T]: T[U] extends () => infer R ? (R extends true ? U : never) : never;
+      }[keyof T];
+    }
+      ? C
+      : never
+  >,
+) {
+  const shouldRun = match(context, matches as any);
+
+  useEffect(() => {
+    if (shouldRun) {
+      // @ts-ignore
+      return effect(context);
+    }
+  }, [shouldRun]);
 }
 
 export function match<C extends TContext, T extends TMatch<C>>(
@@ -112,24 +160,28 @@ export function match() {
 }
 export interface StatesHook<C extends TContext, E extends TEvent> {
   (): States<C, E>;
-  <S extends C['state']>(state: S): States<C & { state: S }, E>;
+  <S extends C['state']>(state: S): States<C extends { state: S } ? C : never, E>;
 }
 
-export function createStatesReducer<C extends TContext, E extends TEvent>(
+export function createReducer<C extends TContext, E extends TEvent>(
   transitions: {
     [State in C['state']]: {
-      [Type in E['type']]?: (event: E & { type: Type }, context: C & { state: State }) => C;
+      [Type in E['type']]?: (
+        event: E extends { type: Type } ? E : never,
+        context: C extends { state: State } ? C : never,
+      ) => C;
     };
   },
 ) {
+  // @ts-ignore
   return (context: C, event: E) => transition(context, event, transitions);
 }
 
-export function createStatesContext<C extends TContext, E extends TEvent>() {
+export function createContext<C extends TContext, E extends TEvent>() {
   return React.createContext({} as States<C, E>);
 }
 
-export function createStatesHook<C extends TContext, E extends TEvent>(
+export function createHook<C extends TContext, E extends TEvent>(
   statesContext: React.Context<States<C, E>>,
 ): StatesHook<C, E> {
   return ((state: string) => {
@@ -146,25 +198,25 @@ export function createStatesHook<C extends TContext, E extends TEvent>(
 /*
   EXPERIMENTAL
 */
-export interface ExperimentalStatesReducerHook<C extends TContext, E extends TEvent> {
+export interface ExperimentalReducerHook<C extends TContext, E extends TEvent> {
   (): States<C, E>;
-  <S extends C['state']>(state: S): States<C & { state: S }, E>;
-  <S extends C['state'], O>(state: S, selector: (context: C & { state: S }) => O): [O, Send<E>];
+  <S extends C['state']>(state: S): States<C extends { state: S } ? C : never, E>;
+  <S extends C['state'], O>(state: S, selector: (context: C extends { state: S } ? C : never) => O): [O, Send<E>];
 }
 
-interface StatesListener<C extends TContext, E extends TEvent> {
+interface ContextListener<C extends TContext, E extends TEvent> {
   (newTransitionsReducer: States<C, E>): void;
 }
 type StatesContext<C extends TContext, E extends TEvent> = States<C, E> & {
-  subscribe: (listener: StatesListener<C, E>) => () => void;
+  subscribe: (listener: ContextListener<C, E>) => () => void;
 };
 
-export const createExperimentalStatesContext = <C extends TContext, E extends TEvent>() =>
+export const createExperimentalContext = <C extends TContext, E extends TEvent>() =>
   React.createContext({} as StatesContext<C, E>);
 
-export const createExperimentalStatesHook = <C extends TContext, E extends TEvent>(
+export const createExperimentalHook = <C extends TContext, E extends TEvent>(
   transitionsReducerContext: React.Context<StatesContext<C, E>>,
-): ExperimentalStatesReducerHook<C, E> => {
+): ExperimentalReducerHook<C, E> => {
   return ((state?: string, selector?: (context: C) => any) => {
     const context = useContext<StatesContext<C, E>>(transitionsReducerContext);
     const [transitionsReducer, setTransitionsReducer] = React.useState<States<C, E>>(context);
@@ -187,18 +239,18 @@ export const createExperimentalStatesHook = <C extends TContext, E extends TEven
   }) as any;
 };
 
-export const useExperimentalStatesReducer = <C extends TContext, E extends TEvent>(
+export const useExperimentalReducer = <C extends TContext, E extends TEvent>(
   statesReducer: (context: C, event: E) => C,
   initialContext: C,
 ): StatesContext<C, E> => {
   const reducer = useReducer(statesReducer, initialContext);
   // This ensures a single value is created
   const [{ subscribe, subscribers }] = React.useState(() => {
-    const subscribers: StatesListener<C, E>[] = [];
+    const subscribers: ContextListener<C, E>[] = [];
 
     return {
       subscribers,
-      subscribe: (listener: StatesListener<C, E>) => {
+      subscribe: (listener: ContextListener<C, E>) => {
         subscribers.push(listener);
         return () => {
           subscribers.splice(subscribers.indexOf(listener), 1);
@@ -216,4 +268,28 @@ export const useExperimentalStatesReducer = <C extends TContext, E extends TEven
   return Object.assign(reducer, {
     subscribe,
   });
+};
+
+export class Events<E extends TEvent> {
+  private subscriptions: Array<(event: E) => void> = [];
+  emit(event: E) {
+    this.subscriptions.forEach((listener) => listener(event));
+  }
+  subscribe(listener: (event: E) => void) {
+    this.subscriptions.push(listener);
+
+    return () => {
+      this.subscriptions.splice(this.subscriptions.indexOf(listener), 1);
+    };
+  }
+}
+
+export const events = <E extends TEvent>() => new Events<E>();
+
+export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) => {
+  useEffect(() =>
+    events.subscribe((event) => {
+      send(event);
+    }),
+  );
 };

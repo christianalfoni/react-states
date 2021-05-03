@@ -1,11 +1,11 @@
-import { exec, match, createStatesReducer } from '.';
+import { match, createReducer } from '.';
 
 describe('react-states', () => {
   test('should transition states', () => {
     const context = {
       state: 'FOO',
     };
-    const transition = createStatesReducer({
+    const transition = createReducer({
       FOO: {
         SWITCH: () => ({ state: 'BAR' }),
       },
@@ -20,7 +20,7 @@ describe('react-states', () => {
     const state = {
       state: 'FOO',
     };
-    const transition = createStatesReducer({
+    const transition = createReducer({
       FOO: {},
     });
     expect(
@@ -34,7 +34,7 @@ describe('react-states', () => {
       state: 'FOO',
     };
     let hasRun = false;
-    exec(state, {
+    match(state, {
       FOO: () => {
         hasRun = true;
       },
@@ -46,7 +46,7 @@ describe('react-states', () => {
       state: 'FOO',
     };
     let hasRun = false;
-    exec(state, {
+    match(state, {
       BAR: () => {
         hasRun = true;
       },
@@ -58,7 +58,7 @@ describe('react-states', () => {
       state: 'FOO',
     };
     let isDisposed = false;
-    const disposer = exec(state, {
+    const disposer = match(state, {
       FOO: () => () => {
         isDisposed = true;
       },
