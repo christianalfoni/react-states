@@ -117,7 +117,6 @@ export class Manager {
         triggerTransitions,
       },
     };
-    this.notify();
   }
   dispose(id: string) {
     this.states = {
