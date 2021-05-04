@@ -1,14 +1,6 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
-import {
-  TContext,
-  TEffect,
-  DEBUG_TRANSITIONS,
-  DEBUG_EXEC,
-  RESOLVER_PROMISE,
-  DEBUG_IS_EVENT_IGNORED,
-  States,
-} from '../';
+import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, States } from '../';
 
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
@@ -19,24 +11,6 @@ const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 const managerContext = React.createContext({} as Manager);
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
-
-function applyExecDebugToContext(
-  context: TContext,
-  cb: (effect: TEffect<any>, context: TContext, path: string[]) => void,
-  path: string[] = [],
-) {
-  // @ts-ignore
-  context[DEBUG_EXEC] = (effect: TEffect<any>) => {
-    return cb(effect, context, path);
-  };
-
-  Object.keys(context).forEach(key => {
-    const value = (context as any)[key];
-    if (!Array.isArray(value) && typeof value === 'object' && value !== null && typeof value.state === 'string') {
-      applyExecDebugToContext(value, cb, path.concat(key));
-    }
-  });
-}
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
@@ -71,33 +45,6 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
       transitions: context[DEBUG_TRANSITIONS],
     });
   }, [id, manager, context]);
-
-  applyExecDebugToContext(context, (effect, contextLevel, path) => {
-    const returnedValue = effect(contextLevel);
-    const name = path.concat(effect.name).join('.');
-    // @ts-ignore
-    if (returnedValue && returnedValue[RESOLVER_PROMISE]) {
-      // @ts-ignore
-      returnedValue[RESOLVER_PROMISE].then((result: any) => {
-        manager.onMessage(id, {
-          type: 'exec-resolved',
-          context,
-          name,
-          result,
-        });
-      }).catch(() => {
-        // Something really bad happened, ignore it
-      });
-    }
-
-    manager.onMessage(id, {
-      type: 'exec',
-      context,
-      name,
-    });
-
-    return returnedValue;
-  });
 
   reducer[1] = (event: any) => {
     event[DEBUG_IS_EVENT_IGNORED] = false;
@@ -142,9 +89,9 @@ export const DevtoolsManager = () => {
   }, [targetEl]);
 
   const toggleExpanded = React.useCallback(
-    id => {
-      setExpandedStates(current =>
-        current.includes(id) ? current.filter(existingId => existingId !== id) : current.concat(id),
+    (id) => {
+      setExpandedStates((current) =>
+        current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
       );
     },
     [setExpandedStates],
@@ -177,7 +124,7 @@ export const DevtoolsManager = () => {
           cursor: 'pointer',
           color: colors.text,
         }}
-        onClick={() => toggleOpen(current => !current)}
+        onClick={() => toggleOpen((current) => !current)}
       >
         {isOpen ? '⇨' : '⇦'}
       </div>
@@ -188,7 +135,7 @@ export const DevtoolsManager = () => {
             padding: 0,
           }}
         >
-          {Object.keys(statesData).map(id => {
+          {Object.keys(statesData).map((id) => {
             const data = statesData[id];
 
             return (

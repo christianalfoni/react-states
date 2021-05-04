@@ -3,30 +3,6 @@ import { HistoryItem } from './Manager';
 import { colors } from './styles';
 import ValueInspector from './ValueInspector';
 
-const renderExec = (historyItem: HistoryItem & { type: 'state' }) => {
-  switch (historyItem.exec.state) {
-    case 'CANCELLED': {
-      return <span style={{ marginLeft: '0.25rem', color: colors.red }}>{historyItem.exec.name}</span>;
-    }
-    case 'IDLE': {
-      return null;
-    }
-    case 'PENDING': {
-      return <span style={{ marginLeft: '0.25rem', color: colors.blue }}>{historyItem.exec.name}...</span>;
-    }
-    case 'RESOLVED': {
-      return (
-        <div style={{ display: 'flex' }}>
-          <span style={{ marginLeft: '0.25rem', marginRight: '0.25rem', color: colors.blue }}>
-            {historyItem.exec.name}
-          </span>
-          <ValueInspector value={historyItem.exec.result} small />
-        </div>
-      );
-    }
-  }
-};
-
 export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
   return (
     <ul
@@ -54,7 +30,6 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
                 {item.context.state}
               </span>
               <ValueInspector value={item.context} small />
-              {renderExec(item)}
             </li>
           );
         }

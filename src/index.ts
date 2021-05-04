@@ -1,10 +1,7 @@
 import React, { useContext, useEffect, useReducer } from 'react';
 
-export * from './result';
-
 export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
-export const DEBUG_EXEC = Symbol('DEBUG_EXEC');
 
 export interface TContext {
   state: string;

@@ -1,4 +1,4 @@
-import { TEvent, TContext, TTransitions, Err, Ok, DEBUG_TRANSITIONS } from '../';
+import { TEvent, TContext, TTransitions, DEBUG_TRANSITIONS } from '../';
 
 export type DevtoolMessage =
   | {
@@ -16,44 +16,12 @@ export type DevtoolMessage =
   | {
       type: 'transitions';
       transitions: TTransitions;
-    }
-  | {
-      type: 'exec';
-      context: {
-        state: string;
-      };
-      name: string;
-    }
-  | {
-      type: 'exec-resolved';
-      context: {
-        state: string;
-      };
-      name: string;
-      result: Ok<any> | Err<any>;
     };
 
 export type HistoryItem =
   | {
       type: 'state';
       context: TContext;
-      exec:
-        | {
-            state: 'IDLE';
-          }
-        | {
-            state: 'PENDING';
-            name: string;
-          }
-        | {
-            state: 'RESOLVED';
-            result: any;
-            name: string;
-          }
-        | {
-            state: 'CANCELLED';
-            name: string;
-          };
     }
   | {
       type: 'event';
@@ -76,7 +44,7 @@ export class Manager {
   private subscriptions: Function[] = [];
   states: StatesData = {};
   private notify() {
-    this.subscriptions.forEach(cb => cb(this.states));
+    this.subscriptions.forEach((cb) => cb(this.states));
   }
   onMessage(id: string, message: DevtoolMessage) {
     switch (message.type) {
@@ -96,9 +64,6 @@ export class Manager {
               {
                 type: 'state',
                 context: message.context,
-                exec: {
-                  state: 'IDLE',
-                },
               },
               ...this.states[id].history,
             ],
@@ -133,59 +98,6 @@ export class Manager {
         };
         break;
       }
-      case 'exec': {
-        const lastStateEntryIndex = this.states[id].history.findIndex(item => item.type === 'state')!;
-        const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              ...this.states[id].history.slice(0, lastStateEntryIndex),
-              {
-                ...lastStateEntry,
-                exec: {
-                  state: 'PENDING',
-                  name: message.name,
-                },
-              },
-              ...this.states[id].history.slice(lastStateEntryIndex + 1),
-            ],
-          },
-        };
-        break;
-      }
-      case 'exec-resolved': {
-        const lastStateEntryIndex = this.states[id].history.findIndex(
-          item => item.type === 'state' && item.context.state === message.context.state,
-        )!;
-        const lastStateEntry = this.states[id].history[lastStateEntryIndex] as HistoryItem & { type: 'state' };
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              ...this.states[id].history.slice(0, lastStateEntryIndex),
-              {
-                ...lastStateEntry,
-                exec:
-                  !message.result.ok && message.result.error.type === 'CANCELLED'
-                    ? {
-                        state: 'CANCELLED',
-                        name: message.name,
-                      }
-                    : {
-                        state: 'RESOLVED',
-                        name: message.name,
-                        result: message.result,
-                      },
-              },
-              ...this.states[id].history.slice(lastStateEntryIndex + 1),
-            ],
-          },
-        };
-        break;
-      }
     }
     this.notify();
   }
@@ -198,9 +110,6 @@ export class Manager {
           {
             type: 'state',
             context,
-            exec: {
-              state: 'IDLE',
-            },
           },
         ],
         // @ts-ignore
