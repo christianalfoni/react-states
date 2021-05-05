@@ -63,18 +63,12 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
 };
 
 export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <managerContext.Provider value={new Manager()}>
-      <DevtoolsManager />
-      {children}
-    </managerContext.Provider>
-  );
+  return <managerContext.Provider value={new Manager()}>{children}</managerContext.Provider>;
 };
 
 const IS_OPEN_STORAGE_KEY = 'react_states_isOpen';
 
 export const DevtoolsManager = () => {
-  const targetEl = React.useMemo(() => document.createElement('div'), []);
   const manager = React.useContext(managerContext);
   const [statesData, setStatesData] = React.useState(manager.states);
   const [expandedStates, setExpandedStates] = React.useState([] as string[]);
@@ -83,10 +77,6 @@ export const DevtoolsManager = () => {
   );
 
   React.useEffect(() => manager.subscribe(setStatesData), [manager]);
-
-  React.useEffect(() => {
-    document.body.appendChild(targetEl);
-  }, [targetEl]);
 
   const toggleExpanded = React.useCallback(
     (id) => {
@@ -101,7 +91,7 @@ export const DevtoolsManager = () => {
     localStorage.setItem(IS_OPEN_STORAGE_KEY, JSON.stringify(isOpen));
   }, [isOpen]);
 
-  return createPortal(
+  return (
     <div
       style={{
         position: 'fixed',
@@ -153,7 +143,6 @@ export const DevtoolsManager = () => {
           })}
         </ul>
       ) : null}
-    </div>,
-    targetEl,
+    </div>
   );
 };

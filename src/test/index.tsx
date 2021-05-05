@@ -2,8 +2,8 @@ import { render } from '@testing-library/react';
 import React from 'react';
 import { States } from '..';
 
-export function renderReducerHook<T extends States<any, any>>(
-  reducerHookCallback: () => T,
+export function renderHook<T extends States<any, any>>(
+  hookCallback: () => T,
   renderCallback: (UseStates: React.FC) => Parameters<typeof render>[0],
 ) {
   // We create an emmpty context object only used for the testing, this
@@ -11,22 +11,21 @@ export function renderReducerHook<T extends States<any, any>>(
   // NOTE! This strategy will not allow to compare the context object
   // itself in the test, but can not see any reason why you would want to
   const statesReducer: T = [{}, () => {}] as any;
-  const TransitionsReducerComponent = () => {
-    const updatedTransitionsReducer = reducerHookCallback();
+  const HookComponent = () => {
+    const updatedStatesReducer = hookCallback();
     // We clean up the testing object
     Object.keys(statesReducer[0]).forEach(key => {
       delete statesReducer[0][key];
     });
     // We update from the updated statesReducer
-    Object.keys(updatedTransitionsReducer[0]).forEach(key => {
-      statesReducer[0][key] = updatedTransitionsReducer[0][key];
+    Object.keys(updatedStatesReducer[0]).forEach(key => {
+      statesReducer[0][key] = updatedStatesReducer[0][key];
     });
     // We update the dispatcher as well, though really
     // only needed the first time
-    statesReducer[1] = updatedTransitionsReducer[1];
+    statesReducer[1] = updatedStatesReducer[1];
     return null;
   };
-  render(renderCallback(TransitionsReducerComponent));
+  render(renderCallback(HookComponent));
   return statesReducer;
 }
-//# sourceMappingURL=index.js.map
