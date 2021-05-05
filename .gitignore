@@ -2,8 +2,7 @@
 
 # Generated stuff
 .code
-devtools/*
-!devtools/package.json
+devtools
 index.js
 index.d.ts
 index.js.map
@@ -12,6 +11,7 @@ result.js
 result.js.map
 cjs
 test
+!src/*
 
 ### macOS ###
 *.DS_Store
