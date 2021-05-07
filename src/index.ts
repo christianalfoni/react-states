@@ -284,9 +284,11 @@ export class Events<E extends TEvent> {
 export const events = <E extends TEvent>() => new Events<E>();
 
 export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) => {
-  useEffect(() =>
-    events.subscribe((event) => {
-      send(event);
-    }),
+  useEffect(
+    () =>
+      events.subscribe((event) => {
+        send(event);
+      }),
+    [],
   );
 };

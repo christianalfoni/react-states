@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createStatesContext, createStatesHook, createStatesReducer, exec } from '../src';
+import { createContext, createHook, createReducer, useEnterEffect } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Context =
@@ -32,7 +32,7 @@ type Event =
       type: typeof SIGN_IN_ERROR;
     };
 
-const reducer = createStatesReducer<Context, Event>({
+const reducer = createReducer<Context, Event>({
   UNAUTHENTICATED: {
     SIGN_IN: () => ({ state: 'AUTHENTICATING' }),
   },
@@ -47,9 +47,9 @@ const reducer = createStatesReducer<Context, Event>({
   },
 });
 
-const context = createStatesContext<Context, Event>();
+const context = createContext<Context, Event>();
 
-export const useAuth = createStatesHook(context);
+export const useAuth = createHook(context);
 
 export function AuthFeature({ children }: { children: React.ReactNode }) {
   const authStates = React.useReducer(reducer, {
@@ -60,17 +60,11 @@ export function AuthFeature({ children }: { children: React.ReactNode }) {
 
   const [auth, send] = authStates;
 
-  React.useEffect(
-    () =>
-      exec(auth, {
-        AUTHENTICATING: function authenticate() {
-          new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
-            send({ type: SIGN_IN_SUCCESS, user: { name: 'Alice' } });
-          });
-        },
-      }),
-    [auth],
-  );
+  useEnterEffect(auth, 'AUTHENTICATING', () => {
+    new Promise((resolve) => setTimeout(resolve, 1000)).then(() => {
+      send({ type: SIGN_IN_SUCCESS, user: { name: 'Alice' } });
+    });
+  });
 
   return <context.Provider value={authStates}>{children}</context.Provider>;
 }
