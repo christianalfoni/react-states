@@ -63,7 +63,12 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
 };
 
 export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
-  return <managerContext.Provider value={new Manager()}>{children}</managerContext.Provider>;
+  return (
+    <managerContext.Provider value={new Manager()}>
+      <div suppressHydrationWarning>{typeof document === 'undefined' ? null : <DevtoolsManager />}</div>
+      {children}
+    </managerContext.Provider>
+  );
 };
 
 const IS_OPEN_STORAGE_KEY = 'react_states_isOpen';
@@ -93,6 +98,7 @@ export const DevtoolsManager = () => {
 
   return (
     <div
+      suppressHydrationWarning
       style={{
         position: 'fixed',
         right: 0,
