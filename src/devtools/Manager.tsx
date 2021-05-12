@@ -12,6 +12,7 @@ export type DevtoolMessage =
         state: string;
       };
       transitions: TTransitions;
+      triggerTransitions: () => void;
     }
   | {
       type: 'transitions';
@@ -49,11 +50,14 @@ export class Manager {
   onMessage(id: string, message: DevtoolMessage) {
     switch (message.type) {
       case 'state': {
-        const firstHistoryItem = this.states[id].history[0];
-        // This happens on mount, where we immediately add the current context,
-        // but also the updating useEffect will also add the same context
-        if (firstHistoryItem.type === 'state' && firstHistoryItem.context === message.context) {
-          return;
+        if (!this.states[id]) {
+          this.states[id] = {
+            isMounted: true,
+            history: [],
+            // @ts-ignore
+            transitions: {},
+            triggerTransitions: message.triggerTransitions,
+          };
         }
 
         this.states = {
@@ -101,23 +105,7 @@ export class Manager {
     }
     this.notify();
   }
-  mount(id: string, context: TContext, triggerTransitions: () => void) {
-    this.states = {
-      ...this.states,
-      [id]: {
-        isMounted: true,
-        history: [
-          {
-            type: 'state',
-            context,
-          },
-        ],
-        // @ts-ignore
-        transitions: context[DEBUG_TRANSITIONS],
-        triggerTransitions,
-      },
-    };
-  }
+
   dispose(id: string) {
     this.states = {
       ...this.states,

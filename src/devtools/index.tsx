@@ -18,39 +18,19 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
   const manager = React.useContext(managerContext);
   const [context, dispatch] = reducer;
 
-  React.useMemo(() => {
-    // @ts-ignore
-    manager.mount(id, context, () => {
-      // We dispatch to ensure the transition is run
-      dispatch({
-        type: DEBUG_TRIGGER_TRANSITIONS,
-      });
+  React.useEffect(() => () => manager.dispose(id), [id, manager]);
 
-      // No change to context, but at least we have the transitions there now
+  reducer[1] = (event: any) => {
+    event[DEBUG_IS_EVENT_IGNORED] = false;
+
+    dispatch(event);
+
+    if (event.type === DEBUG_TRIGGER_TRANSITIONS) {
       manager.onMessage(id, {
         type: 'transitions',
         // @ts-ignore
         transitions: context[DEBUG_TRANSITIONS],
       });
-    });
-  }, []);
-
-  React.useEffect(() => () => manager.dispose(id), [id, manager]);
-
-  React.useEffect(() => {
-    manager.onMessage(id, {
-      type: 'state',
-      context,
-      // @ts-ignore
-      transitions: context[DEBUG_TRANSITIONS],
-    });
-  }, [id, manager, context]);
-
-  reducer[1] = (event: any) => {
-    event[DEBUG_IS_EVENT_IGNORED] = false;
-    dispatch(event);
-
-    if (event.type === DEBUG_TRIGGER_TRANSITIONS) {
       return;
     }
 
@@ -60,6 +40,21 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
       ignored: event[DEBUG_IS_EVENT_IGNORED],
     });
   };
+
+  React.useEffect(() => {
+    manager.onMessage(id, {
+      type: 'state',
+      context,
+      // @ts-ignore
+      transitions: context[DEBUG_TRANSITIONS],
+      triggerTransitions: () => {
+        // We dispatch to ensure the transition is run
+        reducer[1]({
+          type: DEBUG_TRIGGER_TRANSITIONS,
+        });
+      },
+    });
+  }, [id, manager, context]);
 };
 
 export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
