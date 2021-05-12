@@ -11,7 +11,6 @@ export type DevtoolMessage =
       context: {
         state: string;
       };
-      transitions: TTransitions;
       triggerTransitions: () => void;
     }
   | {
@@ -47,30 +46,45 @@ export class Manager {
   private notify() {
     this.subscriptions.forEach((cb) => cb(this.states));
   }
+  private ensureStates(id: string) {
+    if (!this.states[id]) {
+      this.states[id] = {
+        isMounted: true,
+        history: [],
+        // @ts-ignore
+        transitions: {},
+        triggerTransitions: () => {},
+      };
+    }
+  }
   onMessage(id: string, message: DevtoolMessage) {
+    this.ensureStates(id);
+
     switch (message.type) {
       case 'state': {
-        if (!this.states[id]) {
-          this.states[id] = {
-            isMounted: true,
-            history: [],
-            // @ts-ignore
-            transitions: {},
-            triggerTransitions: message.triggerTransitions,
-          };
-        }
+        // You might trigger dispatches before the devtools has sent its initial state
+        const isFirstState = this.states[id].history.filter((item) => item.type === 'state').length === 0;
 
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
-            history: [
-              {
-                type: 'state',
-                context: message.context,
-              },
-              ...this.states[id].history,
-            ],
+            history: isFirstState
+              ? [
+                  ...this.states[id].history,
+                  {
+                    type: 'state',
+                    context: message.context,
+                  },
+                ]
+              : [
+                  {
+                    type: 'state',
+                    context: message.context,
+                  },
+                  ...this.states[id].history,
+                ],
+            triggerTransitions: message.triggerTransitions,
           },
         };
         break;
