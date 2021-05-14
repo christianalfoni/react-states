@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useReducer } from 'react';
 
 export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
+export const TRANSIENT_CONTEXT = Symbol('TRANSIENT_CONTEXT');
 
 export interface TContext {
   state: string;
@@ -39,19 +40,34 @@ export function transition<C extends TContext, E extends TEvent>(
   context: C,
   event: E,
   transitions: {
-    [State in C['state']]: {
-      [Type in E['type']]?: (
-        event: E extends { type: Type } ? E : never,
-        context: C extends { state: State } ? C : never,
-      ) => C;
-    };
+    [State in C['state']]:
+      | {
+          [Type in E['type']]?: (
+            event: E extends { type: Type } ? E : never,
+            context: C extends { state: State } ? C : never,
+          ) => C;
+        }
+      | ((context: C extends { state: State } ? C : never) => C);
   },
 ) {
   let newContext = context;
+
   // @ts-ignore
   if (transitions[context.state] && transitions[context.state][event.type]) {
     // @ts-ignore
     newContext = transitions[context.state][event.type](event, context);
+
+    // @ts-ignore
+    if (typeof transitions[newContext.state] === 'function') {
+      const transientContext = newContext;
+      // @ts-ignore
+      newContext = transitions[newContext.state](newContext);
+      // @ts-ignore
+      newContext[TRANSIENT_CONTEXT] = transientContext;
+    } else {
+      // @ts-ignore
+      delete newContext[TRANSIENT_CONTEXT];
+    }
   } else {
     // @ts-ignore
     event[DEBUG_IS_EVENT_IGNORED] = true;
@@ -63,45 +79,20 @@ export function transition<C extends TContext, E extends TEvent>(
   return newContext;
 }
 
-export function useUpdateEffect<C extends TContext, S extends C['state']>(
-  context: C,
-  state: S,
-  effect: TEffect<C extends { state: S } ? C : never>,
-) {
-  useEffect(() => {
-    if (context.state === state) {
-      // @ts-ignore
-      return effect(context);
-    }
-  }, [context]);
-}
-
 export function useEnterEffect<C extends TContext, S extends C['state']>(
   context: C,
   state: S,
   effect: TEffect<C extends { state: S } ? C : never>,
 ) {
-  useEffect(() => {
-    if (context.state === state) {
-      // @ts-ignore
-      return effect(context);
-    }
-  }, [context.state === state]);
-}
+  // @ts-ignore
+  const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
 
-export function useExitEffect<C extends TContext, S extends C['state']>(
-  context: C,
-  state: S,
-  effect: TEffect<C extends { state: S } ? C : never>,
-) {
   useEffect(() => {
-    if (context.state === state) {
-      return () => {
-        // @ts-ignore
-        effect(context);
-      };
+    if (evaluatedContext.state === state) {
+      // @ts-ignore
+      return effect(evaluatedContext);
     }
-  }, [context.state === state]);
+  }, [evaluatedContext.state === state]);
 }
 
 export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>(
@@ -117,12 +108,15 @@ export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>
       : never
   >,
 ) {
-  const shouldRun = match(context, matches as any);
+  // @ts-ignore
+  const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
+
+  const shouldRun = match(evaluatedContext, matches as any);
 
   useEffect(() => {
     if (shouldRun) {
       // @ts-ignore
-      return effect(context);
+      return effect(evaluatedContext);
     }
   }, [shouldRun]);
 }
@@ -162,12 +156,14 @@ export interface StatesHook<C extends TContext, E extends TEvent> {
 
 export function createReducer<C extends TContext, E extends TEvent>(
   transitions: {
-    [State in C['state']]: {
-      [Type in E['type']]?: (
-        event: E extends { type: Type } ? E : never,
-        context: C extends { state: State } ? C : never,
-      ) => C;
-    };
+    [State in C['state']]:
+      | {
+          [Type in E['type']]?: (
+            event: E extends { type: Type } ? E : never,
+            context: C extends { state: State } ? C : never,
+          ) => C;
+        }
+      | ((context: C extends { state: State } ? C : never) => C);
   },
 ) {
   // @ts-ignore

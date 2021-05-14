@@ -41,18 +41,6 @@ describe('react-states', () => {
     });
     expect(hasRun).toBe(true);
   });
-  test('should ignore effects where no matching state', () => {
-    const state = {
-      state: 'FOO',
-    };
-    let hasRun = false;
-    match(state, {
-      BAR: () => {
-        hasRun = true;
-      },
-    });
-    expect(hasRun).toBe(false);
-  });
   test('should return disposer', () => {
     const state = {
       state: 'FOO',
@@ -75,15 +63,5 @@ describe('react-states', () => {
         FOO: () => 'foo',
       }),
     ).toBe('foo');
-  });
-  test('should transform to null when no match', () => {
-    const state = {
-      state: 'FOO',
-    };
-    expect(
-      match(state, {
-        BAR: () => 'foo',
-      }),
-    ).toBe(null);
   });
 });

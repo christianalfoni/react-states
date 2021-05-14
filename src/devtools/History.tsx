@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { TRANSIENT_CONTEXT } from '..';
 import { HistoryItem } from './Manager';
 import { colors } from './styles';
 import ValueInspector from './ValueInspector';
@@ -14,9 +15,11 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
     >
       {history.map((item, index) => {
         if (item.type === 'state') {
-          return (
+          // @ts-ignore
+          const transientContext = item.context[TRANSIENT_CONTEXT];
+          const transientItem = transientContext ? (
             <li
-              key={index}
+              key={index + transientContext.state}
               style={{
                 display: 'flex',
               }}
@@ -24,13 +27,35 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
               <span
                 style={{
                   marginRight: '0.25rem',
-                  color: colors.yellow,
+                  color: colors.blue,
                 }}
               >
-                {item.context.state}
+                {transientContext.state}
               </span>
-              <ValueInspector value={item.context} small />
+              <ValueInspector value={transientContext} small />
             </li>
+          ) : null;
+
+          return (
+            <React.Fragment key={index}>
+              <li
+                key={index}
+                style={{
+                  display: 'flex',
+                }}
+              >
+                <span
+                  style={{
+                    marginRight: '0.25rem',
+                    color: colors.yellow,
+                  }}
+                >
+                  {item.context.state}
+                </span>
+                <ValueInspector value={item.context} small />
+              </li>
+              {transientItem}
+            </React.Fragment>
           );
         }
 
