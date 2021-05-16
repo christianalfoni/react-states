@@ -19,7 +19,7 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
           const transientContext = item.context[TRANSIENT_CONTEXT];
           const transientItem = transientContext ? (
             <li
-              key={index + transientContext.state}
+              key={index + transientContext.state.toString()}
               style={{
                 display: 'flex',
               }}
@@ -30,7 +30,7 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
                   color: colors.blue,
                 }}
               >
-                {transientContext.state}
+                {transientContext.state.toString().match(/Symbol\((.*)\)/)[1]}
               </span>
               <ValueInspector value={transientContext} small />
             </li>

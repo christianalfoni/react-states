@@ -13,7 +13,7 @@ export const ExpandedStates = React.memo(
     triggerTransitions,
   }: {
     transitions: TTransitions;
-    currentState: string;
+    currentState: string | symbol;
     history: HistoryItem[];
     triggerTransitions: () => void;
   }) => {
