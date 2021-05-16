@@ -5,11 +5,12 @@ export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const TRANSIENT_CONTEXT = Symbol('TRANSIENT_CONTEXT');
 
 export interface TContext {
-  state: string;
+  // Symbol is considered a transient state
+  state: string | symbol;
 }
 
 export interface TEvent {
-  type: string | symbol;
+  type: string;
 }
 
 export interface TTransitions {
@@ -24,8 +25,12 @@ export type TEffects<C extends TContext> = {
   [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
+type OmitTransientState<C extends TContext> = {
+  [T in C['state']]: T extends symbol ? never : C & { state: T };
+}[C['state']];
+
 export type TMatch<C extends TContext, R = any> = {
-  [State in C['state']]: (state: C extends { state: State } ? C : never) => R;
+  [State in OmitTransientState<C>['state']]: (state: C extends { state: State } ? C : never) => R;
 };
 
 export type States<C extends TContext, E extends TEvent> = [C, React.Dispatch<E>];
@@ -156,14 +161,14 @@ export interface StatesHook<C extends TContext, E extends TEvent> {
 
 export function createReducer<C extends TContext, E extends TEvent>(
   transitions: {
-    [State in C['state']]:
-      | {
+    [State in C['state']]: State extends symbol
+      ? (context: C extends { state: State } ? C : never) => OmitTransientState<C>
+      : {
           [Type in E['type']]?: (
             event: E extends { type: Type } ? E : never,
             context: C extends { state: State } ? C : never,
           ) => C;
-        }
-      | ((context: C extends { state: State } ? C : never) => C);
+        };
   },
 ) {
   // @ts-ignore
@@ -184,7 +189,7 @@ export function createHook<C extends TContext, E extends TEvent>(
       return states;
     }
 
-    throw new Error(`You can not use "${state}" as the current state is "${states[0].state}"`);
+    throw new Error(`You can not use "${state}" as the current state is "${String(states[0].state)}"`);
   }) as any;
 }
 
@@ -228,7 +233,7 @@ export const createExperimentalHook = <C extends TContext, E extends TEvent>(
       return selector ? [selector(transitionsReducer[0]), transitionsReducer[1]] : transitionsReducer;
     }
 
-    throw new Error(`You can not use "${state}" as the current state is "${transitionsReducer[0].state}"`);
+    throw new Error(`You can not use "${state}" as the current state is "${String(transitionsReducer[0].state)}"`);
   }) as any;
 };
 

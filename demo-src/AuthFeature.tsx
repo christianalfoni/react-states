@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createContext, createHook, createReducer, useEnterEffect } from '../src';
+import { createContext, createHook, createReducer, useEnterEffect, useMatchEffect } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -7,13 +7,15 @@ type Todo = {
   title: string;
 };
 
+const ADDING_TODO = Symbol('ADDING_TODO');
+
 type Context =
   | {
       state: 'LOADED';
       todos: Todo[];
     }
   | {
-      state: 'ADDING_TODO';
+      state: typeof ADDING_TODO;
       todo: Todo;
       todos: Todo[];
     };
@@ -31,14 +33,15 @@ type Event =
 const reducer = createReducer<Context, Event>({
   LOADED: {
     TODO_ADDED: ({ todo }, { todos }) => ({
-      state: 'ADDING_TODO',
+      state: ADDING_TODO,
       todo,
       todos,
     }),
   },
-  ADDING_TODO: ({ todo, todos }) => ({
+
+  [ADDING_TODO]: ({ todo, todos }) => ({
     state: 'LOADED',
-    todos: todos.concat(todo),
+    todos: [todo].concat(todos),
   }),
 });
 
@@ -56,7 +59,7 @@ export function AuthFeature({ children }: { children: React.ReactNode }) {
 
   const [auth, send] = authStates;
 
-  useEnterEffect(auth, 'ADD_TODO', ({ todo }) => {
+  useEnterEffect(auth, ADDING_TODO, ({ todo }) => {
     console.log('ADDING TODO', todo);
   });
 

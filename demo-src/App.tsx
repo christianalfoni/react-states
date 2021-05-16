@@ -1,8 +1,13 @@
 import * as React from 'react';
+import { match } from '../src';
 import { useAuth } from './AuthFeature';
 
 const Test = () => {
-  const [auth, send] = useAuth('LOADED');
+  const [auth, send] = useAuth();
+
+  match(auth, {
+    LOADED: () => null,
+  });
 
   return (
     <h2
