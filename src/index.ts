@@ -156,7 +156,7 @@ export function match() {
 }
 export interface StatesHook<C extends TContext, E extends TEvent> {
   (): States<C, E>;
-  <S extends C['state']>(state: S): States<C extends { state: S } ? C : never, E>;
+  <S extends C['state']>(...states: S[]): States<C extends { state: S } ? C : never, E>;
 }
 
 export function createReducer<C extends TContext, E extends TEvent>(
@@ -182,14 +182,14 @@ export function createContext<C extends TContext, E extends TEvent>() {
 export function createHook<C extends TContext, E extends TEvent>(
   statesContext: React.Context<States<C, E>>,
 ): StatesHook<C, E> {
-  return ((state: string) => {
-    const states = useContext<States<C, E>>(statesContext);
+  return ((...states: string[]) => {
+    const context = useContext<States<C, E>>(statesContext);
 
-    if (!state || states[0].state === state) {
-      return states;
+    if (!states.length || states.includes(context[0].state as string)) {
+      return context;
     }
 
-    throw new Error(`You can not use "${state}" as the current state is "${String(states[0].state)}"`);
+    throw new Error(`You can not use "${states.join('", "')}" as the current state is "${String(context[0].state)}"`);
   }) as any;
 }
 
