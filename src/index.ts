@@ -90,14 +90,29 @@ export function useEnterEffect<C extends TContext, S extends C['state']>(
   effect: TEffect<C extends { state: S } ? C : never>,
 ) {
   // @ts-ignore
+  const isTransient = context[TRANSIENT_CONTEXT];
+
+  // @ts-ignore
   const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
 
-  useEffect(() => {
-    if (evaluatedContext.state === state) {
-      // @ts-ignore
-      return effect(evaluatedContext);
-    }
-  }, [evaluatedContext.state === state]);
+  // @ts-ignore
+  if (isTransient) {
+    useEffect(() => {
+      if (evaluatedContext.state === state) {
+        // @ts-ignore
+        return effect(evaluatedContext);
+      }
+      // We always transition transient states, as they are always entered
+    }, [evaluatedContext]);
+  } else {
+    useEffect(() => {
+      if (evaluatedContext.state === state) {
+        // @ts-ignore
+        return effect(evaluatedContext);
+      }
+      // We only run the effect when actually moving to a new state
+    }, [evaluatedContext.state === state]);
+  }
 }
 
 export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>(
@@ -113,15 +128,12 @@ export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>
       : never
   >,
 ) {
-  // @ts-ignore
-  const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
-
-  const shouldRun = match(evaluatedContext, matches as any);
+  const shouldRun = match(context, matches as any);
 
   useEffect(() => {
     if (shouldRun) {
       // @ts-ignore
-      return effect(evaluatedContext);
+      return effect(context);
     }
   }, [shouldRun]);
 }

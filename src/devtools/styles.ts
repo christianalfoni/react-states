@@ -1,13 +1,14 @@
 export const colors = {
-  purple: '#c5a5c5',
-  yellow: '#fac863',
-  green: '#5bd85d',
-  blue: '#79b6f2',
-  red: '#cc0000',
-  foreground: 'hsl(206, 57%, 17%)',
-  background: 'hsl(206, 57%, 13%)',
-  border: 'hsl(206, 57%, 16%)',
-  text: 'hsl(0, 0%, 90%)',
+  purple: '#5962DF',
+  yellow: '#FCD647',
+  green: '#5DCC67',
+  blue: '#0971F1',
+  orange: '#F7A239',
+  red: '#FF3B30',
+  foreground: 'rgb(36, 36, 36)',
+  background: 'rgb(21, 21, 21)',
+  border: 'rgb(36, 36, 36)',
+  text: 'rgb(153, 153, 153)',
   highlight: 'hsl(0, 0%, 85%)',
 };
 
@@ -54,7 +55,7 @@ export const bracket = (pointer: boolean) => ({
 export const stringValue = {
   display: 'flex',
   alignItems: 'center',
-  color: colors.yellow,
+  color: colors.orange,
 };
 
 export const otherValue = {

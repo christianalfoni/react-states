@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
+import { Resizer } from './Resizer';
 import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, States } from '../';
 
 import { Manager } from './Manager';
@@ -67,6 +67,7 @@ export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) =>
 };
 
 const IS_OPEN_STORAGE_KEY = 'react_states_isOpen';
+const WIDTH_STORAGE_KEY = 'react_states_width';
 
 export const DevtoolsManager = () => {
   const manager = React.useContext(managerContext);
@@ -75,6 +76,7 @@ export const DevtoolsManager = () => {
   const [isOpen, toggleOpen] = React.useState<boolean>(
     JSON.parse(localStorage.getItem(IS_OPEN_STORAGE_KEY) || 'false'),
   );
+  const [width, setWidth] = React.useState(() => JSON.parse(localStorage.getItem(WIDTH_STORAGE_KEY) || '"400px"'));
 
   React.useEffect(() => manager.subscribe(setStatesData), [manager]);
 
@@ -100,25 +102,20 @@ export const DevtoolsManager = () => {
         fontFamily: 'monospace',
         top: 0,
         height: '100vh',
-        width: isOpen ? '400px' : '3rem',
-        backgroundColor: '#333',
+        width: isOpen ? width : '10px',
+        backgroundColor: colors.background,
         zIndex: 9999999999999,
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: '1rem',
-          fontSize: '24px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          color: colors.text,
+      <Resizer
+        onResize={(width) => {
+          setWidth(width);
+          localStorage.setItem(WIDTH_STORAGE_KEY, JSON.stringify(`${width}px`));
         }}
         onClick={() => toggleOpen((current) => !current)}
-      >
-        {isOpen ? '⇨' : '⇦'}
-      </div>
+        isOpen={isOpen}
+      />
+
       {isOpen ? (
         <ul
           style={{

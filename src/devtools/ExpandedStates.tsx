@@ -20,16 +20,18 @@ export const ExpandedStates = React.memo(
     const [currentTab, setCurrentTab] = React.useState<'history' | 'transitions'>('history');
     return (
       <div>
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', marginBottom: '0.5rem' }}>
           <button
             style={{
               backgroundColor: 'transparent',
               border: 0,
-              color: colors.text,
-              fontWeight: 'bold',
+              padding: 0,
+              fontFamily: 'inherit',
+              color: currentTab === 'history' ? colors.blue : colors.text,
               outline: 'none',
               cursor: 'pointer',
-              textDecoration: currentTab === 'history' ? 'underline' : 'none',
+              fontSize: '14px',
+              marginRight: '0.5rem',
             }}
             onClick={(event) => {
               event.stopPropagation();
@@ -42,11 +44,11 @@ export const ExpandedStates = React.memo(
             style={{
               backgroundColor: 'transparent',
               border: 0,
-              color: colors.text,
-              fontWeight: 'bold',
+              padding: 0,
+              color: currentTab === 'transitions' ? colors.blue : colors.text,
               outline: 'none',
               cursor: 'pointer',
-              textDecoration: currentTab === 'transitions' ? 'underline' : 'none',
+              fontSize: '14px',
             }}
             onClick={(event) => {
               event.stopPropagation();

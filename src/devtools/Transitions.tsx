@@ -5,13 +5,13 @@ import { colors } from './styles';
 export const Transitions = React.memo(
   ({ transitions, currentState }: { transitions: TTransitions; currentState: string | symbol }) => {
     return (
-      <ul style={{ listStyleType: 'none', padding: '0.25rem 1rem' }}>
+      <ul style={{ listStyleType: 'none', padding: '0' }}>
         {Object.keys(transitions).map((state) => {
           return (
             <li key={state}>
               <div
                 style={{
-                  color: state === currentState ? colors.yellow : colors.text,
+                  color: state === currentState ? colors.orange : colors.text,
                 }}
               >
                 {state}
@@ -24,7 +24,7 @@ export const Transitions = React.memo(
               >
                 {Object.keys(transitions[state]).map((event) => {
                   return (
-                    <li key={event} style={{ color: colors.purple }}>
+                    <li key={event} style={{ color: colors.green, fontSize: '14px' }}>
                       {event}
                     </li>
                   );

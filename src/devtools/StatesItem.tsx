@@ -27,18 +27,20 @@ export const StatesItem = React.memo(
     return (
       <li
         style={{
-          padding: '1rem',
+          padding: '0 2rem',
+          fontSize: '18px',
+          borderBottom: `1px solid ${colors.border}`,
         }}
       >
         <div
-          style={{ cursor: 'pointer', marginBottom: '0.5rem' }}
+          style={{ cursor: 'pointer', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}
           onClick={() => {
             toggleExpanded(id);
           }}
         >
-          <span style={{ color: colors.text, marginRight: '0.25rem' }}>{isExpanded ? '▼' : '▶'}</span>
-          <span style={{ color: colors.highlight, fontWeight: 'bold' }}>{id}</span>{' '}
-          <span style={{ color: colors.yellow }}>{currentState.context.state}</span>
+          <span style={{ color: colors.text, marginRight: '0.5rem', fontSize: '14px' }}>{isExpanded ? '▼' : '▶'}</span>
+          <span style={{ color: colors.highlight, fontWeight: 'bold', marginRight: '0.5rem' }}>{id}</span>{' '}
+          <span style={{ color: colors.orange }}>{currentState.context.state}</span>
         </div>
         {isExpanded ? (
           <ExpandedStates

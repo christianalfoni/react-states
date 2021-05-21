@@ -1,4 +1,4 @@
-import { TEvent, TContext, TTransitions, DEBUG_TRANSITIONS } from '../';
+import { TEvent, TContext, TTransitions } from '../';
 
 export type DevtoolMessage =
   | {
