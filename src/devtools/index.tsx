@@ -121,6 +121,9 @@ export const DevtoolsManager = () => {
           style={{
             listStyleType: 'none',
             padding: 0,
+            overflowY: 'scroll',
+            height: '100%',
+            boxSizing: 'border-box',
           }}
         >
           {Object.keys(statesData).map((id) => {
