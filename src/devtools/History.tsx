@@ -12,7 +12,7 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
         padding: 0,
         color: colors.text,
         marginBottom: '0.5rem',
-        fontSize: '16px',
+        fontSize: '14px',
       }}
     >
       {history.map((item, index) => {
@@ -21,7 +21,7 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
           const transientContext = item.context[TRANSIENT_CONTEXT];
           const transientItem = transientContext ? (
             <li
-              key={index + transientContext.state.toString()}
+              key={index + transientContext.state}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -31,10 +31,18 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
               <span
                 style={{
                   marginRight: '0.25rem',
+                  fontSize: '12px',
                   color: colors.yellow,
                 }}
               >
-                {transientContext.state.toString().match(/Symbol\((.*)\)/)[1]}
+                transient
+              </span>
+              <span
+                style={{
+                  marginRight: '0.25rem',
+                }}
+              >
+                {transientContext.state}
               </span>
               <ValueInspector value={transientContext} small />
             </li>
@@ -53,7 +61,15 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
                 <span
                   style={{
                     marginRight: '0.25rem',
+                    fontSize: '12px',
                     color: colors.orange,
+                  }}
+                >
+                  state
+                </span>
+                <span
+                  style={{
+                    marginRight: '0.25rem',
                   }}
                 >
                   {item.context.state}
@@ -72,11 +88,11 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
               display: 'flex',
               alignItems: 'center',
               marginBottom: '0.25rem',
-              paddingLeft: '0.5rem',
               opacity: item.ignored ? 0.5 : 1,
             }}
           >
-            <span style={{ marginRight: '0.25rem', color: colors.green }}>{String(item.event.type)}</span>
+            <span style={{ marginRight: '0.25rem', fontSize: '12px', color: colors.green }}>event</span>
+            <span style={{ marginRight: '0.25rem' }}>{item.event.type}</span>
             <ValueInspector value={item.event} small />
           </li>
         );

@@ -2,9 +2,6 @@ import * as React from 'react';
 import { createReducer, match, useEnterEffect, useMatchEffect } from '../';
 import { colors } from './styles';
 
-const NOTIFYING_RESIZE = Symbol('NOTIFYING_RESIZE');
-const NOTIFYING_CLICK = Symbol('NOTIFYING_CLICK');
-
 type Context =
   | {
       state: 'IDLE';
@@ -16,13 +13,15 @@ type Context =
   | {
       state: 'RESIZING';
       x: number;
-    }
+    };
+
+type TransientContext =
   | {
-      state: typeof NOTIFYING_RESIZE;
+      state: 'NOTIFYING_RESIZE';
       x: number;
     }
   | {
-      state: typeof NOTIFYING_CLICK;
+      state: 'NOTIFYING_CLICK';
     };
 
 type Event =
@@ -42,39 +41,42 @@ type Event =
       x: number;
     };
 
-const reducer = createReducer<Context, Event>({
-  IDLE: {
-    MOUSE_DOWN: ({ x }) => ({
-      state: 'DETECTING_RESIZE',
-      initialX: x,
-    }),
-  },
-  DETECTING_RESIZE: {
-    MOUSE_MOVE: ({ x }, context) => {
-      if (Math.abs(x - context.initialX) > 3) {
-        return { state: 'RESIZING', x };
-      }
-
-      return context;
+const reducer = createReducer<Context, Event, TransientContext>(
+  {
+    IDLE: {
+      MOUSE_DOWN: ({ x }) => ({
+        state: 'DETECTING_RESIZE',
+        initialX: x,
+      }),
     },
-    MOUSE_UP: () => ({ state: 'IDLE' }),
-    MOUSE_UP_RESIZER: () => ({
-      state: NOTIFYING_CLICK,
+    DETECTING_RESIZE: {
+      MOUSE_MOVE: ({ x }, context) => {
+        if (Math.abs(x - context.initialX) > 3) {
+          return { state: 'RESIZING', x };
+        }
+
+        return context;
+      },
+      MOUSE_UP: () => ({ state: 'IDLE' }),
+      MOUSE_UP_RESIZER: () => ({
+        state: 'NOTIFYING_CLICK',
+      }),
+    },
+    RESIZING: {
+      MOUSE_MOVE: ({ x }) => ({ state: 'NOTIFYING_RESIZE', x }),
+      MOUSE_UP: () => ({ state: 'IDLE' }),
+    },
+  },
+  {
+    NOTIFYING_RESIZE: ({ x }) => ({
+      state: 'RESIZING',
+      x,
+    }),
+    NOTIFYING_CLICK: () => ({
+      state: 'IDLE',
     }),
   },
-  RESIZING: {
-    MOUSE_MOVE: ({ x }) => ({ state: NOTIFYING_RESIZE, x }),
-    MOUSE_UP: () => ({ state: 'IDLE' }),
-  },
-
-  [NOTIFYING_RESIZE]: ({ x }) => ({
-    state: 'RESIZING',
-    x,
-  }),
-  [NOTIFYING_CLICK]: () => ({
-    state: 'IDLE',
-  }),
-});
+);
 
 export const Resizer = ({
   onResize,
@@ -89,43 +91,34 @@ export const Resizer = ({
     state: 'IDLE',
   });
 
-  useMatchEffect(
-    resize,
-    {
-      DETECTING_RESIZE: () => true,
-      RESIZING: () => true,
+  useMatchEffect(resize, ['DETECTING_RESIZE', 'RESIZING'], () => {
+    const onMouseMove = (event: MouseEvent) => {
+      send({
+        type: 'MOUSE_MOVE',
+        x: event.clientX,
+      });
+    };
+    const onMouseUp = (event: MouseEvent) => {
+      send({
+        type: 'MOUSE_UP',
+        x: event.clientX,
+      });
+    };
 
-      IDLE: () => false,
-    },
-    () => {
-      const onMouseMove = (event: MouseEvent) => {
-        send({
-          type: 'MOUSE_MOVE',
-          x: event.clientX,
-        });
-      };
-      const onMouseUp = (event: MouseEvent) => {
-        send({
-          type: 'MOUSE_UP',
-          x: event.clientX,
-        });
-      };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  });
 
-      return () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-      };
-    },
-  );
-
-  useEnterEffect(resize, NOTIFYING_RESIZE, ({ x }) => {
+  useEnterEffect(resize, 'NOTIFYING_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useEnterEffect(resize, NOTIFYING_CLICK, () => {
+  useEnterEffect(resize, 'NOTIFYING_CLICK', () => {
     onClick();
   });
 

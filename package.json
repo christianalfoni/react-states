@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "6.24.2-next",
+  "version": "6.25.0-next",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",

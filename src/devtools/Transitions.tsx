@@ -5,7 +5,7 @@ import { colors } from './styles';
 export const Transitions = React.memo(
   ({ transitions, currentState }: { transitions: TTransitions; currentState: string | symbol }) => {
     return (
-      <ul style={{ listStyleType: 'none', padding: '0' }}>
+      <ul style={{ listStyleType: 'none', padding: '0', fontSize: '14px' }}>
         {Object.keys(transitions).map((state) => {
           return (
             <li key={state}>

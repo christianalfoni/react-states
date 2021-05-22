@@ -5,8 +5,7 @@ export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const TRANSIENT_CONTEXT = Symbol('TRANSIENT_CONTEXT');
 
 export interface TContext {
-  // Symbol is considered a transient state
-  state: string | symbol;
+  state: string;
 }
 
 export interface TEvent {
@@ -25,12 +24,8 @@ export type TEffects<C extends TContext> = {
   [State in C['state']]?: TEffect<C extends { state: State } ? C : never>;
 };
 
-type OmitTransientState<C extends TContext> = {
-  [T in C['state']]: T extends symbol ? never : C & { state: T };
-}[C['state']];
-
 export type TMatch<C extends TContext, R = any> = {
-  [State in OmitTransientState<C>['state']]: (state: C extends { state: State } ? C : never) => R;
+  [State in C['state']]: (state: C extends { state: State } ? C : never) => R;
 };
 
 export type States<C extends TContext, E extends TEvent> = [C, React.Dispatch<E>];
@@ -115,20 +110,19 @@ export function useEnterEffect<C extends TContext, S extends C['state']>(
   }
 }
 
-export function useMatchEffect<C extends TContext, T extends TMatch<C, boolean>>(
+export function useMatchEffect<C extends TContext, S extends C['state']>(
   context: C,
-  matches: T,
+  matches: S[],
   effect: TEffect<
     C extends {
-      state: {
-        [U in keyof T]: T[U] extends () => infer R ? (R extends true ? U : never) : never;
-      }[keyof T];
+      state: S;
     }
       ? C
       : never
   >,
 ) {
-  const shouldRun = match(context, matches as any);
+  // @ts-ignore
+  const shouldRun = matches.includes(context.state);
 
   useEffect(() => {
     if (shouldRun) {
@@ -173,29 +167,75 @@ export interface StatesHook<C extends TContext, E extends TEvent> {
 
 export function createReducer<C extends TContext, E extends TEvent>(
   transitions: {
-    [State in C['state']]: State extends symbol
-      ? (context: C extends { state: State } ? C : never) => OmitTransientState<C>
-      : {
-          [Type in E['type']]?: (
-            event: E extends { type: Type } ? E : never,
-            context: C extends { state: State } ? C : never,
-          ) => C;
-        };
+    [State in C['state']]: {
+      [Type in E['type']]?: (
+        event: E extends { type: Type } ? E : never,
+        context: C extends { state: State } ? C : never,
+      ) => C;
+    };
+  },
+): (context: C, event: E) => C;
+export function createReducer<C extends TContext, E extends TEvent, TC extends TContext>(
+  transitions: {
+    [State in C['state']]: {
+      [Type in E['type']]?: (
+        event: E extends { type: Type } ? E : never,
+        context: C extends { state: State } ? C : never,
+      ) => C | TC;
+    };
+  },
+  transientTransitions: {
+    [State in TC['state']]: (context: TC extends { state: State } ? TC : never) => C;
+  },
+): (context: C | TC, event: E) => C | TC;
+export function createReducer<C extends TContext, E extends TEvent, TC extends TContext>(
+  transitions: {
+    [State in C['state']]: {
+      [Type in E['type']]?: (
+        event: E extends { type: Type } ? E : never,
+        context: C extends { state: State } ? C : never,
+      ) => C;
+    };
+  },
+  transientTransitions?: {
+    [State in TC['state']]: (context: TC extends { state: State } ? C : never) => C;
   },
 ) {
   // @ts-ignore
-  return (context: C, event: E) => transition(context, event, transitions);
+  return (context: C, event: E) =>
+    transition(context, event, {
+      ...transitions,
+      ...transientTransitions,
+    });
 }
 
-export function createContext<C extends TContext, E extends TEvent>() {
-  return React.createContext({} as States<C, E>);
+export function createContext<C extends TContext, E extends TEvent>(): {
+  Provider: React.Provider<States<C, E>>;
+  Consumer: React.Consumer<States<C, E>>;
+  displayName?: string;
+};
+export function createContext<C extends TContext, E extends TEvent, TC extends TContext>(): {
+  Provider: React.Provider<States<C | TC, E>>;
+  Consumer: React.Consumer<States<C, E>>;
+  displayName?: string;
+};
+export function createContext<C extends TContext, E extends TEvent>(): {
+  Provider: React.Provider<States<C, E>>;
+  Consumer: React.Consumer<States<C, E>>;
+  displayName?: string;
+} {
+  // @ts-ignore
+  return React.createContext({});
 }
 
-export function createHook<C extends TContext, E extends TEvent>(
-  statesContext: React.Context<States<C, E>>,
-): StatesHook<C, E> {
+export function createHook<PC extends TContext, E extends TEvent, CC extends TContext>(statesContext: {
+  Provider: React.Provider<States<PC, E>>;
+  Consumer: React.Consumer<States<CC, E>>;
+  displayName?: string;
+}): StatesHook<CC, E> {
   return ((...states: string[]) => {
-    const context = useContext<States<C, E>>(statesContext);
+    // @ts-ignore
+    const context = useContext(statesContext);
 
     if (!states.length || states.includes(context[0].state as string)) {
       return context;

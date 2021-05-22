@@ -7,18 +7,16 @@ type Todo = {
   title: string;
 };
 
-const ADDING_TODO = Symbol('ADDING_TODO');
+type Context = {
+  state: 'LOADED';
+  todos: Todo[];
+};
 
-type Context =
-  | {
-      state: 'LOADED';
-      todos: Todo[];
-    }
-  | {
-      state: typeof ADDING_TODO;
-      todo: Todo;
-      todos: Todo[];
-    };
+type TransientContext = {
+  state: 'ADDING_TODO';
+  todo: Todo;
+  todos: Todo[];
+};
 
 type Event =
   | {
@@ -30,22 +28,25 @@ type Event =
       todos: Todo[];
     };
 
-const reducer = createReducer<Context, Event>({
-  LOADED: {
-    TODO_ADDED: ({ todo }, { todos }) => ({
-      state: ADDING_TODO,
-      todo,
-      todos,
+const reducer = createReducer<Context, Event, TransientContext>(
+  {
+    LOADED: {
+      TODO_ADDED: ({ todo }, { todos }) => ({
+        state: 'ADDING_TODO',
+        todo,
+        todos,
+      }),
+    },
+  },
+  {
+    ADDING_TODO: ({ todo, todos }) => ({
+      state: 'LOADED',
+      todos: [todo].concat(todos),
     }),
   },
+);
 
-  [ADDING_TODO]: ({ todo, todos }) => ({
-    state: 'LOADED',
-    todos: [todo].concat(todos),
-  }),
-});
-
-const context = createContext<Context, Event>();
+const context = createContext<Context, Event, TransientContext>();
 
 export const useAuth = createHook(context);
 
@@ -59,7 +60,7 @@ export function AuthFeature({ children }: { children: React.ReactNode }) {
 
   const [auth, send] = authStates;
 
-  useEnterEffect(auth, ADDING_TODO, ({ todo }) => {
+  useEnterEffect(auth, 'ADDING_TODO', ({ todo }) => {
     console.log('ADDING TODO', todo);
   });
 
