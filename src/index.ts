@@ -47,7 +47,7 @@ export function transition<C extends TContext, E extends TEvent>(
             context: C extends { state: State } ? C : never,
           ) => C;
         }
-      | ((context: C extends { state: State } ? C : never) => C);
+      | ((context: C extends { state: State } ? C : never, prevContext: C) => C);
   },
 ) {
   let newContext = context;
@@ -61,7 +61,7 @@ export function transition<C extends TContext, E extends TEvent>(
     if (typeof transitions[newContext.state] === 'function') {
       const transientContext = newContext;
       // @ts-ignore
-      newContext = transitions[newContext.state](newContext);
+      newContext = transitions[newContext.state](newContext, { ...context });
       // @ts-ignore
       newContext[TRANSIENT_CONTEXT] = transientContext;
     } else {
@@ -146,7 +146,7 @@ export function match<C extends TContext, T extends TMatch<C>>(
       [K in keyof T]: K extends C['state'] ? T[K] : never;
     },
 ): {
-  [K in keyof T]: T[K] extends () => infer R ? R : never;
+  [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
 export function match() {
   const context = arguments[0];
@@ -185,7 +185,7 @@ export function createReducer<C extends TContext, E extends TEvent, TC extends T
     };
   },
   transientTransitions: {
-    [State in TC['state']]: (context: TC extends { state: State } ? TC : never) => C;
+    [State in TC['state']]: (context: TC extends { state: State } ? TC : never, prevContext: C) => C;
   },
 ): (context: C | TC, event: E) => C | TC;
 export function createReducer<C extends TContext, E extends TEvent, TC extends TContext>(
@@ -198,7 +198,7 @@ export function createReducer<C extends TContext, E extends TEvent, TC extends T
     };
   },
   transientTransitions?: {
-    [State in TC['state']]: (context: TC extends { state: State } ? C : never) => C;
+    [State in TC['state']]: (context: TC extends { state: State } ? C : never, prevContext: C) => C;
   },
 ) {
   // @ts-ignore
