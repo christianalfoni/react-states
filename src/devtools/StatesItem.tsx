@@ -33,7 +33,13 @@ export const StatesItem = React.memo(
         }}
       >
         <div
-          style={{ cursor: 'pointer', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}
+          style={{
+            cursor: 'pointer',
+            marginBottom: '0.5rem',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+          }}
           onClick={() => {
             toggleExpanded(id);
           }}
