@@ -181,9 +181,7 @@ export function createReducer<C extends TContext, E extends TEvent>(
   transientTransitions?: Required<C>[typeof TRANSIENT_CONTEXT] extends { state: string }
     ? {
         [State in Required<C>[typeof TRANSIENT_CONTEXT]['state']]?: (
-          context: Required<C>[typeof TRANSIENT_CONTEXT] extends { state: State }
-            ? Required<C>[typeof TRANSIENT_CONTEXT]
-            : never,
+          context: C[typeof TRANSIENT_CONTEXT] & { state: State },
           prevContext: C,
         ) => C;
       }
@@ -269,3 +267,36 @@ export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) =>
     [],
   );
 };
+
+type Context =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    };
+
+type TransientContext =
+  | {
+      state: 'SWITCH';
+      foo: string;
+    }
+  | {
+      state: 'MIP';
+    };
+
+type ReducerContext = WithTransientContext<TransientContext, Context>;
+
+type Event = {
+  type: 'MIP';
+};
+
+const test = createReducer<ReducerContext, Event>(
+  {
+    FOO: {},
+    BAR: {},
+  },
+  {
+    SWITCH: ({}, prevContext) => prevContext,
+  },
+);
