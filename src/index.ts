@@ -76,7 +76,7 @@ export function useEnterEffect<
   C extends TContext,
   S extends Required<C>[typeof TRANSIENT_CONTEXT] extends { state: string }
     ? Required<C>[typeof TRANSIENT_CONTEXT]['state'] | C['state']
-    : never
+    : C['state']
 >(
   context: C,
   state: S,
