@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createReducer, match, useEnterEffect, useMatchEffect } from '../';
+import { createReducer, match, useEnterEffect, useMatchEffect, WithTransientContext } from '../';
 import { colors } from './styles';
 
 type Context =
@@ -24,6 +24,8 @@ type TransientContext =
       state: 'NOTIFYING_CLICK';
     };
 
+type FeatureContext = WithTransientContext<TransientContext, Context>;
+
 type Event =
   | {
       type: 'MOUSE_MOVE';
@@ -41,7 +43,7 @@ type Event =
       x: number;
     };
 
-const reducer = createReducer<Context, Event, TransientContext>(
+const reducer = createReducer<FeatureContext, Event>(
   {
     IDLE: {
       MOUSE_DOWN: ({ x }) => ({

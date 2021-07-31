@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createContext, createHook, createReducer, useEnterEffect, useMatchEffect } from '../src';
+import { createContext, createHook, createReducer, useEnterEffect, useMatchEffect, WithTransientContext } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -18,7 +18,9 @@ type TransientContext = {
   todos: Todo[];
 };
 
-type Event =
+type FeatureContext = WithTransientContext<TransientContext, Context>;
+
+type FeatureEvent =
   | {
       type: 'TODO_ADDED';
       todo: Todo;
@@ -28,7 +30,7 @@ type Event =
       todos: Todo[];
     };
 
-const reducer = createReducer<Context, Event, TransientContext>(
+const reducer = createReducer<FeatureContext, FeatureEvent>(
   {
     LOADED: {
       TODO_ADDED: ({ todo }, { todos }) => ({
@@ -46,7 +48,7 @@ const reducer = createReducer<Context, Event, TransientContext>(
   },
 );
 
-const context = createContext<Context, Event, TransientContext>();
+const context = createContext<FeatureContext, FeatureEvent>();
 
 export const useAuth = createHook(context);
 

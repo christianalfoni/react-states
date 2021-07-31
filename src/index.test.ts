@@ -9,6 +9,7 @@ describe('react-states', () => {
       FOO: {
         SWITCH: () => ({ state: 'BAR' }),
       },
+      BAR: {},
     });
     expect(
       transition(context, {
@@ -53,6 +54,16 @@ describe('react-states', () => {
     });
     disposer();
     expect(isDisposed).toBe(true);
+  });
+  test('should transform', () => {
+    const state = {
+      state: 'FOO',
+    };
+    expect(
+      match(state, {
+        FOO: () => 'foo',
+      }),
+    ).toBe('foo');
   });
   test('should transform', () => {
     const state = {
