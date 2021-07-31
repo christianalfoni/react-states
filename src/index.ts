@@ -181,7 +181,9 @@ export function createReducer<C extends TContext, E extends TEvent>(
   transientTransitions?: Required<C>[typeof TRANSIENT_CONTEXT] extends { state: string }
     ? {
         [State in Required<C>[typeof TRANSIENT_CONTEXT]['state']]?: (
-          context: C[typeof TRANSIENT_CONTEXT] extends { state: State } ? C[typeof TRANSIENT_CONTEXT] : never,
+          context: Required<C>[typeof TRANSIENT_CONTEXT] extends { state: State }
+            ? Required<C>[typeof TRANSIENT_CONTEXT]
+            : never,
           prevContext: C,
         ) => C;
       }
@@ -241,3 +243,29 @@ export function createHook<PC extends TContext, E extends TEvent>(statesContext:
     throw new Error(`You can not use "${states.join('", "')}" as the current state is "${String(context[0].state)}"`);
   }) as any;
 }
+
+export class Events<E extends TEvent> {
+  private subscriptions: Array<(event: E) => void> = [];
+  emit(event: E) {
+    this.subscriptions.forEach((listener) => listener(event));
+  }
+  subscribe(listener: (event: E) => void) {
+    this.subscriptions.push(listener);
+
+    return () => {
+      this.subscriptions.splice(this.subscriptions.indexOf(listener), 1);
+    };
+  }
+}
+
+export const events = <E extends TEvent>() => new Events<E>();
+
+export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) => {
+  useEffect(
+    () =>
+      events.subscribe((event) => {
+        send(event);
+      }),
+    [],
+  );
+};
