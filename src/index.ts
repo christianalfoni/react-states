@@ -80,13 +80,7 @@ export function useEnterEffect<
 >(
   context: C,
   state: S,
-  effect: TEffect<
-    C extends { state: S }
-      ? C
-      : Required<C>[typeof TRANSIENT_CONTEXT] extends { state: S }
-      ? Required<C>[typeof TRANSIENT_CONTEXT]
-      : never
-  >,
+  effect: TEffect<C extends { state: S } ? C : Required<C>[typeof TRANSIENT_CONTEXT] & { state: S }>,
 ) {
   // @ts-ignore
   const isTransient = context[TRANSIENT_CONTEXT];
@@ -267,36 +261,3 @@ export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) =>
     [],
   );
 };
-
-type Context =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type TransientContext =
-  | {
-      state: 'SWITCH';
-      foo: string;
-    }
-  | {
-      state: 'MIP';
-    };
-
-type ReducerContext = WithTransientContext<TransientContext, Context>;
-
-type Event = {
-  type: 'MIP';
-};
-
-const test = createReducer<ReducerContext, Event>(
-  {
-    FOO: {},
-    BAR: {},
-  },
-  {
-    SWITCH: ({}, prevContext) => prevContext,
-  },
-);
