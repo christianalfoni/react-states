@@ -83,7 +83,7 @@ export function useEnterEffect<
   effect: TEffect<C extends { state: S } ? C : Required<C>[typeof TRANSIENT_CONTEXT] & { state: S }>,
 ) {
   // @ts-ignore
-  const isTransient = context[TRANSIENT_CONTEXT];
+  const [isTransient] = useState(Boolean(context[TRANSIENT_CONTEXT]));
 
   // @ts-ignore
   const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
