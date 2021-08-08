@@ -72,40 +72,35 @@ export function transition<C extends TContext, E extends TEvent>(
   return newContext;
 }
 
-export function useEnterEffect<
+export function useTransientEffect<
   C extends TContext,
   S extends Required<C>[typeof TRANSIENT_CONTEXT] extends { state: string }
-    ? Required<C>[typeof TRANSIENT_CONTEXT]['state'] | C['state']
-    : C['state']
->(
+    ? Required<C>[typeof TRANSIENT_CONTEXT]['state']
+    : never
+>(context: C, state: S, effect: TEffect<Required<C>[typeof TRANSIENT_CONTEXT] & { state: S }>) {
+  const transientContext = context[TRANSIENT_CONTEXT];
+
+  useEffect(() => {
+    if (transientContext && transientContext.state === state) {
+      // @ts-ignore
+      effect(transientContext);
+    }
+    // We always transition transient states, as they are always entered
+  }, [transientContext]);
+}
+
+export function useEnterEffect<C extends TContext, S extends C['state']>(
   context: C,
   state: S,
-  effect: TEffect<C extends { state: S } ? C : Required<C>[typeof TRANSIENT_CONTEXT] & { state: S }>,
+  effect: TEffect<C extends { state: S } ? C : never>,
 ) {
-  // @ts-ignore
-  const [isTransient] = useState(Boolean(context[TRANSIENT_CONTEXT]));
-
-  // @ts-ignore
-  const evaluatedContext = context[TRANSIENT_CONTEXT] || context;
-
-  // @ts-ignore
-  if (isTransient) {
-    useEffect(() => {
-      if (evaluatedContext.state === state) {
-        // @ts-ignore
-        return effect(evaluatedContext);
-      }
-      // We always transition transient states, as they are always entered
-    }, [evaluatedContext]);
-  } else {
-    useEffect(() => {
-      if (evaluatedContext.state === state) {
-        // @ts-ignore
-        return effect(evaluatedContext);
-      }
-      // We only run the effect when actually moving to a new state
-    }, [evaluatedContext.state === state]);
-  }
+  useEffect(() => {
+    if (context.state === state) {
+      // @ts-ignore
+      return effect(context);
+    }
+    // We only run the effect when actually moving to a new state
+  }, [context.state === state]);
 }
 
 export function useMatchEffect<C extends TContext, S extends C['state']>(
@@ -169,7 +164,7 @@ export function createReducer<C extends TContext, E extends TEvent>(
       [Type in E['type']]?: (
         event: E extends { type: Type } ? E : never,
         context: C extends { state: State } ? C : never,
-      ) => C | C[typeof TRANSIENT_CONTEXT];
+      ) => C extends { [TRANSIENT_CONTEXT]?: { state: string } } ? C | C[typeof TRANSIENT_CONTEXT] : C;
     };
   },
   transientTransitions?: Required<C>[typeof TRANSIENT_CONTEXT] extends { state: string }

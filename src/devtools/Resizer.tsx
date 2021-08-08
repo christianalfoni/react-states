@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createReducer, match, useEnterEffect, useMatchEffect, WithTransientContext } from '../';
+import { createReducer, match, useEnterEffect, useMatchEffect, useTransientEffect, WithTransientContext } from '../';
 import { colors } from './styles';
 
 type Context =
@@ -116,11 +116,11 @@ export const Resizer = ({
     };
   });
 
-  useEnterEffect(resize, 'NOTIFYING_RESIZE', ({ x }) => {
+  useTransientEffect(resize, 'NOTIFYING_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useEnterEffect(resize, 'NOTIFYING_CLICK', () => {
+  useTransientEffect(resize, 'NOTIFYING_CLICK', () => {
     onClick();
   });
 
