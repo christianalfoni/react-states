@@ -34,18 +34,18 @@ export type PickState<S extends TState, SS extends S['context']> = S extends {
   ? S
   : never;
 
-export type TTransitions<S extends TState, A extends TAction, C extends TCommand = never> = {
+export type Transitions<S extends TState, A extends TAction, C extends TCommand = never> = {
   [SS in S['context']]: {
     [AA in A['type']]?: (
       action: A extends { type: AA } ? A : never,
       state: S extends { context: SS } ? S : never,
-    ) => C extends TCommand ? S | [S, C] : S;
+    ) => [C] extends [never] ? S : S | [S, C];
   };
 };
 
 export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
 
-export type StateTransition<S extends TState, C extends TCommand = never> = C extends TCommand ? S | [S, C] : S;
+export type StateTransition<S extends TState, C extends TCommand = never> = [C] extends [never] ? S : S | [S, C];
 
 export function createContext<S extends TState, A extends TAction>() {
   return React.createContext<[S, React.Dispatch<A>]>([] as any);
@@ -53,22 +53,24 @@ export function createContext<S extends TState, A extends TAction>() {
 
 export function useStates<S extends TState, A extends TAction, C extends TCommand = never>(
   initialState: S,
-  transitions: TTransitions<S, A, C>,
-): [
-  S & {
-    [COMMANDS]?: {
-      [CC in C['cmd']]: C & { cmd: CC };
-    };
-  },
-  Dispatch<A>,
-] {
+  transitions: Transitions<S, A, C>,
+): [C] extends [never]
+  ? [S, Dispatch<A>]
+  : [
+      S & {
+        [COMMANDS]?: {
+          [CC in C['cmd']]: C & { cmd: CC };
+        };
+      },
+      Dispatch<A>,
+    ] {
   return useReducer((state: S, action: A) => transition(state, action, transitions), initialState) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
   state: S,
   action: A,
-  transitions: TTransitions<S, A, C>,
+  transitions: Transitions<S, A, C>,
 ) {
   let newState = state;
   let command;
