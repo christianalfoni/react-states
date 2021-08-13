@@ -51,20 +51,17 @@ export function createContext<S extends TState, A extends TAction>() {
   return React.createContext<[S, React.Dispatch<A>]>([] as any);
 }
 
-export function useStates<S extends TState, A extends TAction, C extends TCommand = never>(
-  initialState: S,
-  transitions: Transitions<S, A, C>,
-): [C] extends [never]
-  ? [S, Dispatch<A>]
-  : [
-      S & {
-        [COMMANDS]?: {
-          [CC in C['cmd']]: C & { cmd: CC };
-        };
-      },
-      Dispatch<A>,
-    ] {
-  return useReducer((state: S, action: A) => transition(state, action, transitions), initialState) as any;
+export function useStates<T extends Transitions<any, any, any>>(
+  transitions: T,
+  initialState: T extends Transitions<infer S, any, any> ? S : never,
+) {
+  return useReducer(
+    (
+      state: T extends Transitions<infer S, any, any> ? S : never,
+      action: T extends Transitions<any, infer A, any> ? A : never,
+    ) => transition(state, action, transitions),
+    initialState,
+  ) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
