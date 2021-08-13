@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Resizer } from './Resizer';
-import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, States } from '../';
+import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, DEBUG_COMMAND } from '../';
 
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
@@ -14,39 +14,47 @@ export const useDevtoolsManager = () => React.useContext(managerContext);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
-export const useDevtools = (id: string, reducer: States<any, any>) => {
+export const useDevtools = (id: string, reducer: [any, any]) => {
   const manager = React.useContext(managerContext);
-  const [context, dispatch] = reducer;
+  const [state, dispatch] = reducer;
 
   React.useEffect(() => () => manager.dispose(id), [id, manager]);
 
-  reducer[1] = (event: any) => {
-    event[DEBUG_IS_EVENT_IGNORED] = false;
+  // @ts-ignore
+  reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
+    manager.onMessage(id, {
+      type: 'command',
+      command,
+    });
+  };
 
-    dispatch(event);
+  reducer[1] = (action: any) => {
+    action[DEBUG_IS_EVENT_IGNORED] = false;
 
-    if (event.type === DEBUG_TRIGGER_TRANSITIONS) {
+    dispatch(action);
+
+    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
       manager.onMessage(id, {
         type: 'transitions',
         // @ts-ignore
-        transitions: context[DEBUG_TRANSITIONS],
+        transitions: state[DEBUG_TRANSITIONS],
       });
       return;
     }
 
     manager.onMessage(id, {
       type: 'dispatch',
-      event,
-      ignored: event[DEBUG_IS_EVENT_IGNORED],
+      action,
+      ignored: action[DEBUG_IS_EVENT_IGNORED],
     });
   };
 
   React.useEffect(() => {
     manager.onMessage(id, {
       type: 'state',
-      context,
+      state,
       // @ts-ignore
-      transitions: context[DEBUG_TRANSITIONS],
+      transitions: state[DEBUG_TRANSITIONS],
       triggerTransitions: () => {
         // We dispatch to ensure the transition is run
         reducer[1]({
@@ -54,7 +62,7 @@ export const useDevtools = (id: string, reducer: States<any, any>) => {
         });
       },
     });
-  }, [id, manager, context]);
+  }, [id, manager, state]);
 };
 
 export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {

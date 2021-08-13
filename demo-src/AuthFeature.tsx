@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { createContext, createHook, createReducer, useEnterEffect, useMatchEffect, WithTransientContext } from '../src';
+import { useContext } from 'react';
+import { createContext, StateTransition, useCommandEffect, useStates } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -7,63 +8,60 @@ type Todo = {
   title: string;
 };
 
-type Context = {
-  state: 'LOADED';
+type State = {
+  context: 'LOADED';
   todos: Todo[];
 };
 
-type TransientContext = {
-  state: 'ADDING_TODO';
-  todo: Todo;
-  todos: Todo[];
-};
-
-type FeatureContext = WithTransientContext<TransientContext, Context>;
-
-type FeatureEvent =
+type Action =
   | {
-      type: 'TODO_ADDED';
+      type: 'ADD_TODO';
       todo: Todo;
     }
   | {
-      type: 'TODOS_FETCHED';
+      type: 'FETCH_TODOS';
       todos: Todo[];
     };
 
-const reducer = createReducer<FeatureContext, FeatureEvent>(
-  {
-    LOADED: {
-      TODO_ADDED: ({ todo }, { todos }) => ({
-        state: 'ADDING_TODO',
-        todo,
-        todos,
-      }),
-    },
-  },
-  {
-    ADDING_TODO: ({ todo, todos }) => ({
-      state: 'LOADED',
-      todos: [todo].concat(todos),
-    }),
-  },
-);
+type Command = {
+  cmd: 'SAVE_TODO';
+  todo: Todo;
+};
 
-const context = createContext<FeatureContext, FeatureEvent>();
+type Transition = StateTransition<State, Command>;
 
-export const useAuth = createHook(context);
+const context = createContext<State, Action>();
+
+export const useAuth = () => useContext(context);
 
 export function AuthFeature({ children }: { children: React.ReactNode }) {
-  const authStates = React.useReducer(reducer, {
-    state: 'LOADED',
-    todos: [],
-  });
+  const authStates = useStates<State, Action, Command>(
+    {
+      context: 'LOADED',
+      todos: [],
+    },
+    {
+      LOADED: {
+        ADD_TODO: ({ todo }, state): Transition => [
+          {
+            ...state,
+            todos: [todo].concat(state.todos),
+          },
+          {
+            cmd: 'SAVE_TODO',
+            todo,
+          },
+        ],
+      },
+    },
+  );
 
   useDevtools('Todos', authStates);
 
-  const [auth, send] = authStates;
+  const [auth] = authStates;
 
-  useEnterEffect(auth, 'ADDING_TODO', ({ todo }) => {
-    console.log('ADDING TODO', todo);
+  useCommandEffect(auth, 'SAVE_TODO', ({ todo }) => {
+    console.log('SAVE_TODO', todo);
   });
 
   return <context.Provider value={authStates}>{children}</context.Provider>;

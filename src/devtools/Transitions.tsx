@@ -1,9 +1,18 @@
 import * as React from 'react';
-import { TTransitions } from '..';
 import { colors } from './styles';
 
 export const Transitions = React.memo(
-  ({ transitions, currentState }: { transitions: TTransitions; currentState: string | symbol }) => {
+  ({
+    transitions,
+    currentState,
+  }: {
+    transitions: {
+      [key: string]: {
+        [key: string]: Function;
+      };
+    };
+    currentState: string | symbol;
+  }) => {
     return (
       <ul style={{ listStyleType: 'none', padding: '0', fontSize: '14px' }}>
         {Object.keys(transitions).map((state) => {

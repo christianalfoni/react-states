@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { TRANSIENT_CONTEXT } from '..';
 import { HistoryItem } from './Manager';
 import { colors } from './styles';
 import ValueInspector from './ValueInspector';
@@ -16,12 +15,11 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
       }}
     >
       {history.map((item, index) => {
-        if (item.type === 'state') {
+        if (item.type === 'command') {
           // @ts-ignore
-          const transientContext = item.context[TRANSIENT_CONTEXT];
-          const transientItem = transientContext ? (
+          return (
             <li
-              key={index + transientContext.state}
+              key={index + item.command.cmd}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -35,49 +33,48 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
                   color: colors.yellow,
                 }}
               >
-                transient
+                command
               </span>
               <span
                 style={{
                   marginRight: '0.25rem',
                 }}
               >
-                {transientContext.state}
+                {item.command.cmd}
               </span>
-              <ValueInspector value={transientContext} small />
+              <ValueInspector value={item.command} small />
             </li>
-          ) : null;
+          );
+        }
 
+        if (item.type === 'state') {
           return (
-            <React.Fragment key={index}>
-              <li
-                key={index}
+            <li
+              key={index}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '0.25rem',
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '0.25rem',
+                  marginRight: '0.25rem',
+                  fontSize: '12px',
+                  color: colors.orange,
                 }}
               >
-                <span
-                  style={{
-                    marginRight: '0.25rem',
-                    fontSize: '12px',
-                    color: colors.orange,
-                  }}
-                >
-                  state
-                </span>
-                <span
-                  style={{
-                    marginRight: '0.25rem',
-                  }}
-                >
-                  {item.context.state}
-                </span>
-                <ValueInspector value={item.context} small />
-              </li>
-              {transientItem}
-            </React.Fragment>
+                state
+              </span>
+              <span
+                style={{
+                  marginRight: '0.25rem',
+                }}
+              >
+                {item.state.context}
+              </span>
+              <ValueInspector value={item.state} small />
+            </li>
           );
         }
 
@@ -91,9 +88,9 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
               opacity: item.ignored ? 0.5 : 1,
             }}
           >
-            <span style={{ marginRight: '0.25rem', fontSize: '12px', color: colors.green }}>event</span>
-            <span style={{ marginRight: '0.25rem' }}>{item.event.type}</span>
-            <ValueInspector value={item.event} small />
+            <span style={{ marginRight: '0.25rem', fontSize: '12px', color: colors.green }}>action</span>
+            <span style={{ marginRight: '0.25rem' }}>{item.action.type}</span>
+            <ValueInspector value={item.action} small />
           </li>
         );
       })}

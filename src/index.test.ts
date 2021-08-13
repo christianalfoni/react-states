@@ -1,34 +1,41 @@
-import { match, createReducer } from '.';
+import { match, transition } from '.';
+
+type Context = { state: 'FOO' } | { state: 'BAR' };
+type Event = { type: 'SWITCH' };
 
 describe('react-states', () => {
   test('should transition states', () => {
-    const context = {
+    const context: Context = {
       state: 'FOO',
     };
-    const transition = createReducer({
-      FOO: {
-        SWITCH: () => ({ state: 'BAR' }),
-      },
-      BAR: {},
-    });
+
+    const run = (context: Context, event: Event) =>
+      transition(context, event, {
+        FOO: {
+          SWITCH: (): Context => ({ state: 'BAR' }),
+        },
+        BAR: {},
+      });
     expect(
-      transition(context, {
+      run(context, {
         type: 'SWITCH',
       }).state,
     ).toBe('BAR');
   });
   test('should ignore invalid transitions', () => {
-    const state = {
+    const context: Context = {
       state: 'FOO',
     };
-    const transition = createReducer({
-      FOO: {},
-    });
+    const run = (context: Context, event: Event) =>
+      transition(context, event, {
+        FOO: {},
+        BAR: {},
+      });
     expect(
-      transition(state, {
+      run(context, {
         type: 'SWITCH',
       }),
-    ).toBe(state);
+    ).toBe(context);
   });
   test('should exec effects based on state', () => {
     const state = {

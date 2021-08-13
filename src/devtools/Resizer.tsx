@@ -1,32 +1,21 @@
 import * as React from 'react';
-import { createReducer, match, useEnterEffect, useMatchEffect, useTransientEffect, WithTransientContext } from '../';
+import { StateTransition, useCommandEffect, useStateEffect, useStates } from '../';
 import { colors } from './styles';
 
-type Context =
+type State =
   | {
-      state: 'IDLE';
+      context: 'IDLE';
     }
   | {
-      state: 'DETECTING_RESIZE';
+      context: 'DETECTING_RESIZE';
       initialX: number;
     }
   | {
-      state: 'RESIZING';
+      context: 'RESIZING';
       x: number;
     };
 
-type TransientContext =
-  | {
-      state: 'NOTIFYING_RESIZE';
-      x: number;
-    }
-  | {
-      state: 'NOTIFYING_CLICK';
-    };
-
-type FeatureContext = WithTransientContext<TransientContext, Context>;
-
-type Event =
+type Action =
   | {
       type: 'MOUSE_MOVE';
       x: number;
@@ -43,42 +32,16 @@ type Event =
       x: number;
     };
 
-const reducer = createReducer<FeatureContext, Event>(
-  {
-    IDLE: {
-      MOUSE_DOWN: ({ x }) => ({
-        state: 'DETECTING_RESIZE',
-        initialX: x,
-      }),
-    },
-    DETECTING_RESIZE: {
-      MOUSE_MOVE: ({ x }, context) => {
-        if (Math.abs(x - context.initialX) > 3) {
-          return { state: 'RESIZING', x };
-        }
+type Command =
+  | {
+      cmd: 'NOTIFY_RESIZE';
+      x: number;
+    }
+  | {
+      cmd: 'NOTIFY_CLICK';
+    };
 
-        return context;
-      },
-      MOUSE_UP: () => ({ state: 'IDLE' }),
-      MOUSE_UP_RESIZER: () => ({
-        state: 'NOTIFYING_CLICK',
-      }),
-    },
-    RESIZING: {
-      MOUSE_MOVE: ({ x }) => ({ state: 'NOTIFYING_RESIZE', x }),
-      MOUSE_UP: () => ({ state: 'IDLE' }),
-    },
-  },
-  {
-    NOTIFYING_RESIZE: ({ x }) => ({
-      state: 'RESIZING',
-      x,
-    }),
-    NOTIFYING_CLICK: () => ({
-      state: 'IDLE',
-    }),
-  },
-);
+type Transition = StateTransition<State, Command>;
 
 export const Resizer = ({
   onResize,
@@ -89,19 +52,50 @@ export const Resizer = ({
   onClick: () => void;
   isOpen: boolean;
 }) => {
-  const [resize, send] = React.useReducer(reducer, {
-    state: 'IDLE',
-  });
+  const [state, dispatch] = useStates<State, Action, Command>(
+    { context: 'IDLE' },
+    {
+      IDLE: {
+        MOUSE_DOWN: ({ x }): Transition => ({
+          context: 'DETECTING_RESIZE',
+          initialX: x,
+        }),
+      },
+      DETECTING_RESIZE: {
+        MOUSE_MOVE: ({ x }, state): Transition => {
+          if (Math.abs(x - state.initialX) > 3) {
+            return { context: 'RESIZING', x };
+          }
 
-  useMatchEffect(resize, ['DETECTING_RESIZE', 'RESIZING'], () => {
+          return state;
+        },
+        MOUSE_UP: (): Transition => ({ context: 'IDLE' }),
+        MOUSE_UP_RESIZER: (_): Transition => [
+          { context: 'IDLE' },
+          {
+            cmd: 'NOTIFY_CLICK',
+          },
+        ],
+      },
+      RESIZING: {
+        MOUSE_MOVE: ({ x }, state): Transition => [
+          { ...state, x },
+          { cmd: 'NOTIFY_RESIZE', x },
+        ],
+        MOUSE_UP: (): Transition => ({ context: 'IDLE' }),
+      },
+    },
+  );
+
+  useStateEffect(state, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
-      send({
+      dispatch({
         type: 'MOUSE_MOVE',
         x: event.clientX,
       });
     };
     const onMouseUp = (event: MouseEvent) => {
-      send({
+      dispatch({
         type: 'MOUSE_UP',
         x: event.clientX,
       });
@@ -116,11 +110,11 @@ export const Resizer = ({
     };
   });
 
-  useTransientEffect(resize, 'NOTIFYING_RESIZE', ({ x }) => {
+  useCommandEffect(state, 'NOTIFY_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useTransientEffect(resize, 'NOTIFYING_CLICK', () => {
+  useCommandEffect(state, 'NOTIFY_CLICK', () => {
     onClick();
   });
 
@@ -134,12 +128,12 @@ export const Resizer = ({
         userSelect: 'none',
       }}
       onMouseUp={() => {
-        send({
+        dispatch({
           type: 'MOUSE_UP_RESIZER',
         });
       }}
       onMouseDown={(event) => {
-        send({
+        dispatch({
           type: 'MOUSE_DOWN',
           x: event.clientX,
         });

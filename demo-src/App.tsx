@@ -13,7 +13,7 @@ const Test = () => {
     <h2
       onClick={() => {
         send({
-          type: 'TODO_ADDED',
+          type: 'ADD_TODO',
           todo: {
             completed: true,
             title: 'Awesome',

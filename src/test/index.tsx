@@ -1,8 +1,7 @@
 import { render } from '@testing-library/react';
 import React from 'react';
-import { States } from '..';
 
-export function renderHook<T extends States<any, any>>(
+export function renderHook<T extends [any, React.Dispatch<any>]>(
   hookCallback: () => T,
   renderCallback: (UseStates: React.FC) => Parameters<typeof render>[0],
 ) {
@@ -14,11 +13,11 @@ export function renderHook<T extends States<any, any>>(
   const HookComponent = () => {
     const updatedStatesReducer = hookCallback();
     // We clean up the testing object
-    Object.keys(statesReducer[0]).forEach(key => {
+    Object.keys(statesReducer[0]).forEach((key) => {
       delete statesReducer[0][key];
     });
     // We update from the updated statesReducer
-    Object.keys(updatedStatesReducer[0]).forEach(key => {
+    Object.keys(updatedStatesReducer[0]).forEach((key) => {
       statesReducer[0][key] = updatedStatesReducer[0][key];
     });
     // We update the dispatcher as well, though really

@@ -1,31 +1,45 @@
-import { TEvent, TContext, TTransitions } from '../';
+import { TAction, TCommand, TState } from '../';
 
 export type DevtoolMessage =
   | {
       type: 'dispatch';
-      event: TEvent;
+      action: TAction;
       ignored: boolean;
     }
   | {
       type: 'state';
-      context: {
-        state: string;
+      state: {
+        context: string;
       };
       triggerTransitions: () => void;
     }
   | {
       type: 'transitions';
-      transitions: TTransitions;
+      transitions: {
+        [key: string]: {
+          [key: string]: Function;
+        };
+      };
+    }
+  | {
+      type: 'command';
+      command: {
+        cmd: string;
+      };
     };
 
 export type HistoryItem =
   | {
       type: 'state';
-      context: TContext;
+      state: TState;
     }
   | {
-      type: 'event';
-      event: TEvent;
+      type: 'command';
+      command: TCommand;
+    }
+  | {
+      type: 'action';
+      action: TAction;
       ignored: boolean;
     };
 
@@ -33,7 +47,11 @@ export type StatesData = {
   [id: string]: {
     isMounted: boolean;
     history: HistoryItem[];
-    transitions: TTransitions;
+    transitions: {
+      [key: string]: {
+        [key: string]: Function;
+      };
+    };
     triggerTransitions: () => void;
   };
 };
@@ -74,17 +92,33 @@ export class Manager {
                   ...this.states[id].history,
                   {
                     type: 'state',
-                    context: message.context,
+                    state: message.state,
                   },
                 ]
               : [
                   {
                     type: 'state',
-                    context: message.context,
+                    state: message.state,
                   },
                   ...this.states[id].history,
                 ],
             triggerTransitions: message.triggerTransitions,
+          },
+        };
+        break;
+      }
+      case 'command': {
+        this.states = {
+          ...this.states,
+          [id]: {
+            ...this.states[id],
+            history: [
+              {
+                type: 'command',
+                command: message.command,
+              },
+              ...this.states[id].history,
+            ],
           },
         };
         break;
@@ -106,8 +140,8 @@ export class Manager {
             ...this.states[id],
             history: [
               {
-                type: 'event',
-                event: message.event,
+                type: 'action',
+                action: message.action,
                 ignored: message.ignored,
               },
               ...this.states[id].history,

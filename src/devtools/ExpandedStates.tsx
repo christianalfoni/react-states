@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { HistoryItem } from './Manager';
-import { TTransitions } from '..';
 import { Transitions } from './Transitions';
 import { History } from './History';
 import { colors } from './styles';
@@ -12,7 +11,11 @@ export const ExpandedStates = React.memo(
     history,
     triggerTransitions,
   }: {
-    transitions: TTransitions;
+    transitions: {
+      [key: string]: {
+        [key: string]: Function;
+      };
+    };
     currentState: string | symbol;
     history: HistoryItem[];
     triggerTransitions: () => void;

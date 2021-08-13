@@ -2,7 +2,6 @@ import * as React from 'react';
 import { HistoryItem } from './Manager';
 import { ExpandedStates } from './ExpandedStates';
 import { colors } from './styles';
-import { TTransitions } from '../';
 
 export const StatesItem = React.memo(
   ({
@@ -17,7 +16,11 @@ export const StatesItem = React.memo(
     id: string;
     toggleExpanded: (id: string) => void;
     history: HistoryItem[];
-    transitions: TTransitions;
+    transitions: {
+      [key: string]: {
+        [key: string]: Function;
+      };
+    };
     isMounted: boolean;
     isExpanded: boolean;
     triggerTransitions: () => void;
@@ -46,14 +49,14 @@ export const StatesItem = React.memo(
         >
           <span style={{ color: colors.text, marginRight: '0.5rem', fontSize: '14px' }}>{isExpanded ? '▼' : '▶'}</span>
           <span style={{ color: colors.highlight, fontWeight: 'bold', marginRight: '0.5rem' }}>{id}</span>{' '}
-          <span style={{ color: colors.orange }}>{currentState.context.state}</span>
+          <span style={{ color: colors.orange }}>{currentState.state.context}</span>
         </div>
         {isExpanded ? (
           <ExpandedStates
             triggerTransitions={triggerTransitions}
             history={history}
             transitions={transitions}
-            currentState={currentState.context.state}
+            currentState={currentState.state.context}
           />
         ) : null}
       </li>
