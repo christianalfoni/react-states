@@ -21,7 +21,7 @@ export interface TCommand {
 }
 
 export interface TSubscription {
-  event: string;
+  type: string;
 }
 
 export type TMatch<S extends TState, R = any> = {
@@ -62,7 +62,7 @@ export function useStates<S extends TState, A extends TAction, C extends TComman
   },
   Dispatch<A>,
 ] {
-  return useReducer((context: S, event: A) => transition(context, event, transitions), initialState) as any;
+  return useReducer((state: S, action: A) => transition(state, action, transitions), initialState) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
@@ -181,7 +181,7 @@ export function match() {
 }
 
 export class Subscription<S extends TSubscription> {
-  private listeners: Array<(event: S) => void> = [];
+  private listeners: Array<(subscription: S) => void> = [];
   emit(subscription: S) {
     this.listeners.forEach((listener) => listener(subscription));
   }
