@@ -6,7 +6,7 @@ export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const COMMANDS = Symbol('COMMANDS');
 
 export interface TState {
-  context: string;
+  state: string;
   [COMMANDS]?: {
     [cmd: string]: TCommand;
   };
@@ -25,20 +25,20 @@ export interface TSubscription {
 }
 
 export type TMatch<S extends TState, R = any> = {
-  [SS in S['context']]: (state: S extends { context: SS } ? S : never) => R;
+  [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
 };
 
-export type PickState<S extends TState, SS extends S['context']> = S extends {
-  context: SS;
+export type PickState<S extends TState, SS extends S['state']> = S extends {
+  state: SS;
 }
   ? S
   : never;
 
 export type Transitions<S extends TState, A extends TAction, C extends TCommand = never> = {
-  [SS in S['context']]: {
+  [SS in S['state']]: {
     [AA in A['type']]?: (
+      state: S extends { state: SS } ? S : never,
       action: A extends { type: AA } ? A : never,
-      state: S extends { context: SS } ? S : never,
     ) => [C] extends [never] ? S : S | [S, C];
   };
 };
@@ -54,14 +54,17 @@ export function createContext<S extends TState, A extends TAction>() {
 export function useStates<T extends Transitions<any, any, any>>(
   transitions: T,
   initialState: T extends Transitions<infer S, any, any> ? S : never,
-) {
-  return useReducer(
-    (
-      state: T extends Transitions<infer S, any, any> ? S : never,
-      action: T extends Transitions<any, infer A, any> ? A : never,
-    ) => transition(state, action, transitions),
-    initialState,
-  ) as any;
+): [
+  T extends Transitions<infer S, any, infer C>
+    ? S & {
+        [COMMANDS]?: {
+          [CC in C['cmd']]: C & { cmd: CC };
+        };
+      }
+    : never,
+  Dispatch<T extends Transitions<any, infer A, any> ? A : never>,
+] {
+  return useReducer((state: any, action: any) => transition(state, action, transitions), initialState) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
@@ -73,9 +76,9 @@ export function transition<S extends TState, A extends TAction, C extends TComma
   let command;
 
   // @ts-ignore
-  if (transitions[state.context] && transitions[state.context][action.type]) {
+  if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
-    const result = transitions[state.context][action.type](action, state);
+    const result = transitions[state.state][action.type](state, action);
 
     command = Array.isArray(result) ? result[1] : undefined;
     newState = Array.isArray(result) ? result[0] : result;
@@ -107,12 +110,12 @@ export function transition<S extends TState, A extends TAction, C extends TComma
 }
 
 export function useCommandEffect<S extends TState, CC extends keyof Required<S>[typeof COMMANDS]>(
-  context: S,
+  state: S,
   cmd: CC,
   effect: (command: Required<S>[typeof COMMANDS][CC]) => void,
 ) {
   // @ts-ignore
-  const command = context[COMMANDS] && context[COMMANDS][cmd];
+  const command = state[COMMANDS] && state[COMMANDS][cmd];
 
   React.useEffect(() => {
     if (command) {
@@ -120,23 +123,23 @@ export function useCommandEffect<S extends TState, CC extends keyof Required<S>[
       effect(command);
 
       // @ts-ignore
-      if (context[DEBUG_COMMAND]) {
+      if (state[DEBUG_COMMAND]) {
         // @ts-ignore
-        context[DEBUG_COMMAND](command);
+        state[DEBUG_COMMAND](command);
       }
     }
     // We always transition transient states, as they are always entered
   }, [command]);
 }
 
-export function useStateEffect<S extends TState, SS extends S['context']>(
+export function useStateEffect<S extends TState, SS extends S['state']>(
   state: S,
-  context: SS | SS[],
-  effect: (state: S extends { context: SS } ? S : never) => void | (() => void),
+  current: SS | SS[],
+  effect: (state: S extends { state: SS } ? S : never) => void | (() => void),
 ) {
-  if (Array.isArray(context)) {
+  if (Array.isArray(current)) {
     // @ts-ignore
-    const shouldRun = context.includes(state.context);
+    const shouldRun = current.includes(state.state);
 
     React.useEffect(() => {
       if (shouldRun) {
@@ -147,13 +150,13 @@ export function useStateEffect<S extends TState, SS extends S['context']>(
   } else {
     React.useEffect(() => {
       // @ts-ignore
-      if (state.context === context) {
+      if (state.state === current) {
         // @ts-ignore
-        return effect(context);
+        return effect(state);
       }
       // We only run the effect when actually moving to a new state
       // @ts-ignore
-    }, [state.context === context]);
+    }, [state.state === current]);
   }
 }
 
@@ -161,7 +164,7 @@ export function match<S extends TState, T extends TMatch<S>>(
   state: S,
   matches: T &
     {
-      [K in keyof T]: S extends TState ? (K extends S['context'] ? T[K] : never) : never;
+      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
     },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
@@ -172,11 +175,11 @@ export function match() {
 
   if (matches) {
     // @ts-ignore This is an exhaustive check
-    return matches[state.context](state);
+    return matches[state.state](state);
   }
 
   // @ts-ignore Too complex for TS to do this correctly
-  return (matches) => matches[state.context](state);
+  return (matches) => matches[state.state](state);
 }
 
 export class Subscription<S extends TSubscription> {

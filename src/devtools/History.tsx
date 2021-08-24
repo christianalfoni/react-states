@@ -71,7 +71,7 @@ export const History = React.memo(({ history }: { history: HistoryItem[] }) => {
                   marginRight: '0.25rem',
                 }}
               >
-                {item.state.context}
+                {item.state.state}
               </span>
               <ValueInspector value={item.state} small />
             </li>

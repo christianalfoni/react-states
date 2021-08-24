@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useContext } from 'react';
-import { createContext, StateTransition, useCommandEffect, useStates } from '../src';
+import { createContext, StateTransition, transition, Transitions, useCommandEffect, useStates } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -9,7 +9,7 @@ type Todo = {
 };
 
 type State = {
-  context: 'LOADED';
+  state: 'LOADED';
   todos: Todo[];
 };
 
@@ -34,27 +34,26 @@ const context = createContext<State, Action>();
 
 export const useAuth = () => useContext(context);
 
-export function AuthFeature({ children }: { children: React.ReactNode }) {
-  const authStates = useStates<State, Action, Command>(
-    {
-      context: 'LOADED',
-      todos: [],
-    },
-    {
-      LOADED: {
-        ADD_TODO: ({ todo }, state): Transition => [
-          {
-            ...state,
-            todos: [todo].concat(state.todos),
-          },
-          {
-            cmd: 'SAVE_TODO',
-            todo,
-          },
-        ],
+const transitions: Transitions<State, Action, Command> = {
+  LOADED: {
+    ADD_TODO: (state, { todo }): Transition => [
+      {
+        ...state,
+        todos: [todo].concat(state.todos),
       },
-    },
-  );
+      {
+        cmd: 'SAVE_TODO',
+        todo,
+      },
+    ],
+  },
+};
+
+export function AuthFeature({ children }: { children: React.ReactNode }) {
+  const authStates = useStates(transitions, {
+    state: 'LOADED',
+    todos: [],
+  });
 
   useDevtools('Todos', authStates);
 

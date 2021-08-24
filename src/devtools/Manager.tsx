@@ -9,7 +9,7 @@ export type DevtoolMessage =
   | {
       type: 'state';
       state: {
-        context: string;
+        state: string;
       };
       triggerTransitions: () => void;
     }

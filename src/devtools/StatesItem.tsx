@@ -49,14 +49,14 @@ export const StatesItem = React.memo(
         >
           <span style={{ color: colors.text, marginRight: '0.5rem', fontSize: '14px' }}>{isExpanded ? '▼' : '▶'}</span>
           <span style={{ color: colors.highlight, fontWeight: 'bold', marginRight: '0.5rem' }}>{id}</span>{' '}
-          <span style={{ color: colors.orange }}>{currentState.state.context}</span>
+          <span style={{ color: colors.orange }}>{currentState.state.state}</span>
         </div>
         {isExpanded ? (
           <ExpandedStates
             triggerTransitions={triggerTransitions}
             history={history}
             transitions={transitions}
-            currentState={currentState.state.context}
+            currentState={currentState.state.state}
           />
         ) : null}
       </li>
