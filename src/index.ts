@@ -1,4 +1,4 @@
-import React, { Dispatch, useReducer } from 'react';
+import React, { Dispatch, useCallback, useReducer } from 'react';
 
 export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
@@ -64,7 +64,10 @@ export function useStates<T extends Transitions<any, any, any>>(
     : never,
   Dispatch<T extends Transitions<any, infer A, any> ? A : never>,
 ] {
-  return useReducer((state: any, action: any) => transition(state, action, transitions), initialState) as any;
+  return useReducer(
+    useCallback((state: any, action: any) => transition(state, action, transitions), []),
+    initialState,
+  );
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
