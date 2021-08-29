@@ -10,7 +10,7 @@ To be as precise as possible in this discussion we will use a simple number as s
 const [value, setValue] = useState(0)
 ```
 
-In this example the number has no conceptual meaning, it is just a number. We can change it to whatever we want and there is really no reason to use any more complex primitives to manage this piece of state.
+In this xample the number has no conceptual meaning, it is just a number. We can change it to whatever we want and there is really no reason to use any more complex primitives to manage this piece of state.
 
 But often you want to add constraints to how this value can change. An example of this would be if the number represents a count which can only increment and decrement by one. Trying to represent this with **useState** reveals its limitation.
 
