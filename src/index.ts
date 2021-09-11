@@ -1,4 +1,4 @@
-import React, { Dispatch, useCallback, useReducer } from 'react';
+import React, { Dispatch, useCallback, useEffect, useReducer, useState } from 'react';
 
 export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
@@ -51,23 +51,21 @@ export function createContext<S extends TState, A extends TAction>() {
   return React.createContext<[S, React.Dispatch<A>]>([] as any);
 }
 
-export function useStates<T extends Transitions<any, any, any>>(
-  transitions: T,
-  initialState: T extends Transitions<infer S, any, any> ? S : never,
-): [
-  T extends Transitions<infer S, any, infer C>
-    ? S & {
-        [COMMANDS]?: {
-          [CC in C['cmd']]: C & { cmd: CC };
-        };
-      }
-    : never,
-  Dispatch<T extends Transitions<any, infer A, any> ? A : never>,
-] {
-  return useReducer(
-    useCallback((state: any, action: any) => transition(state, action, transitions), []),
-    initialState,
-  );
+export function createReducer<S extends TState, A extends TAction, C extends TCommand = never>(
+  transitions: Transitions<S, A, C>,
+): (
+  state: S & {
+    [COMMANDS]?: {
+      [CC in C['cmd']]: C & { cmd: CC };
+    };
+  },
+  action: A,
+) => S & {
+  [COMMANDS]?: {
+    [CC in C['cmd']]: C & { cmd: CC };
+  };
+} {
+  return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StateTransition, Transitions, useCommandEffect, useStateEffect, useStates } from '../';
+import { StateTransition, useCommandEffect, useStateEffect, createReducer } from '../';
 import { colors } from './styles';
 
 type State =
@@ -43,7 +43,7 @@ type Command =
 
 type Transition = StateTransition<State, Command>;
 
-const transitions: Transitions<State, Action, Command> = {
+const reducer = createReducer<State, Action, Command>({
   IDLE: {
     MOUSE_DOWN: (_, { x }): Transition => ({
       state: 'DETECTING_RESIZE',
@@ -73,7 +73,7 @@ const transitions: Transitions<State, Action, Command> = {
     ],
     MOUSE_UP: (): Transition => ({ state: 'IDLE' }),
   },
-};
+});
 
 export const Resizer = ({
   onResize,
@@ -84,7 +84,7 @@ export const Resizer = ({
   onClick: () => void;
   isOpen: boolean;
 }) => {
-  const [resizer, dispatch] = useStates(transitions, { state: 'IDLE' });
+  const [resizer, dispatch] = React.useReducer(reducer, { state: 'IDLE' });
 
   useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {

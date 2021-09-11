@@ -1,6 +1,7 @@
 import * as React from 'react';
+import { useReducer } from 'react';
 import { useContext } from 'react';
-import { createContext, StateTransition, transition, Transitions, useCommandEffect, useStates } from '../src';
+import { createContext, StateTransition, Transitions, useCommandEffect, createReducer } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -34,7 +35,7 @@ const context = createContext<State, Action>();
 
 export const useAuth = () => useContext(context);
 
-const transitions: Transitions<State, Action, Command> = {
+const reducer = createReducer<State, Action, Command>({
   LOADED: {
     ADD_TODO: (state, { todo }): Transition => [
       {
@@ -47,10 +48,10 @@ const transitions: Transitions<State, Action, Command> = {
       },
     ],
   },
-};
+});
 
 export function AuthFeature({ children }: { children: React.ReactNode }) {
-  const authStates = useStates(transitions, {
+  const authStates = useReducer(reducer, {
     state: 'LOADED',
     todos: [],
   });
