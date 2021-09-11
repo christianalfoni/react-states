@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useReducer } from 'react';
 import { useContext } from 'react';
-import { createContext, StateTransition, Transitions, useCommandEffect, createReducer } from '../src';
+import { createReducerContext, StateTransition, Transitions, useCommandEffect, createReducer } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -31,9 +31,9 @@ type Command = {
 
 type Transition = StateTransition<State, Command>;
 
-const context = createContext<State, Action>();
+const reducerContext = createReducerContext<State, Action>();
 
-export const useAuth = () => useContext(context);
+export const useAuth = () => useContext(reducerContext);
 
 const reducer = createReducer<State, Action, Command>({
   LOADED: {
@@ -64,5 +64,5 @@ export function AuthFeature({ children }: { children: React.ReactNode }) {
     console.log('SAVE_TODO', todo);
   });
 
-  return <context.Provider value={authStates}>{children}</context.Provider>;
+  return <reducerContext.Provider value={authStates}>{children}</reducerContext.Provider>;
 }

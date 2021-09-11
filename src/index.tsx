@@ -1,4 +1,4 @@
-import React, { Dispatch, useCallback, useEffect, useReducer, useState } from 'react';
+import React, { Dispatch } from 'react';
 
 export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
@@ -47,7 +47,7 @@ export type PickAction<A extends TAction, T extends A['type']> = A extends { typ
 
 export type StateTransition<S extends TState, C extends TCommand = never> = [C] extends [never] ? S : S | [S, C];
 
-export function createContext<S extends TState, A extends TAction>() {
+export function createReducerContext<S extends TState, A extends TAction>() {
   return React.createContext<[S, React.Dispatch<A>]>([] as any);
 }
 
@@ -197,7 +197,7 @@ export class Subscription<S extends TSubscription> {
   }
 }
 
-export const subscription = <S extends TSubscription>() => new Subscription<S>();
+export const createSubscription = <S extends TSubscription>() => new Subscription<S>();
 
 export const useSubsription = <S extends TSubscription>(subscription: Subscription<S>, dispatch: React.Dispatch<S>) => {
   React.useEffect(
@@ -207,4 +207,16 @@ export const useSubsription = <S extends TSubscription>(subscription: Subscripti
       }),
     [],
   );
+};
+
+export const createEnvironmentProvider = <E extends Record<string, any>>() => {
+  const context = React.createContext<E>({} as E);
+  const Provider = ({ children, environment }: { children: React.ReactNode; environment: Partial<E> }) => {
+    return <context.Provider value={environment as E}>{children}</context.Provider>;
+  };
+
+  return {
+    Environment: Provider,
+    useEnvironment: () => React.useContext(context),
+  };
 };
