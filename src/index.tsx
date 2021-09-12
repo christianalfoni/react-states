@@ -221,7 +221,7 @@ export const createEnvironment = <E extends Record<string, any>>() => {
   };
 
   return {
-    Environment: Provider,
+    EnvironmentProvider: Provider,
     useEnvironment: () => React.useContext(context),
   };
 };
