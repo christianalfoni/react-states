@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useReducer } from 'react';
 import { useContext } from 'react';
-import { createReducerContext, StateTransition, Transitions, useCommandEffect, createReducer } from '../src';
+import { StateTransition, Transitions, useCommandEffect, createReducer, States } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -31,7 +31,7 @@ type Command = {
 
 type Transition = StateTransition<State, Command>;
 
-const reducerContext = createReducerContext<State, Action>();
+const reducerContext = React.createContext({} as States<State, Action>);
 
 export const useAuth = () => useContext(reducerContext);
 

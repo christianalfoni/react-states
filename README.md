@@ -247,5 +247,5 @@ type NarrowedActions = PickAction<SomeAction, 'A' | 'B'>;
 Exact return type for reducer handlers.
 
 ```ts
-type Transition = StateTransition<State, Action, Command>;
+type Transition = StateTransition<State, Command>;
 ```

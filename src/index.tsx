@@ -43,13 +43,18 @@ export type Transitions<S extends TState, A extends TAction, C extends TCommand 
   };
 };
 
+export type States<S extends TState, A extends TAction, C extends TCommand = never> = [
+  S & {
+    [COMMANDS]?: {
+      [CC in C['cmd']]: C & { cmd: CC };
+    };
+  },
+  React.Dispatch<A>,
+];
+
 export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
 
 export type StateTransition<S extends TState, C extends TCommand = never> = [C] extends [never] ? S : S | [S, C];
-
-export function createReducerContext<S extends TState, A extends TAction>() {
-  return React.createContext<[S, React.Dispatch<A>]>([] as any);
-}
 
 export function createReducer<S extends TState, A extends TAction, C extends TCommand = never>(
   transitions: Transitions<S, A, C>,
@@ -209,7 +214,7 @@ export const useSubsription = <S extends TSubscription>(subscription: Subscripti
   );
 };
 
-export const createEnvironmentProvider = <E extends Record<string, any>>() => {
+export const createEnvironment = <E extends Record<string, any>>() => {
   const context = React.createContext<E>({} as E);
   const Provider = ({ children, environment }: { children: React.ReactNode; environment: Partial<E> }) => {
     return <context.Provider value={environment as E}>{children}</context.Provider>;
