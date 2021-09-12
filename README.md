@@ -120,14 +120,6 @@ const reducer = createReducer<State, Action, Command>({
 });
 ```
 
-### createReducerContext
-
-Creates a correctly typed React context for the reducer.
-
-```ts
-const reducerContext = createReducerContext<State, Action, Command>();
-```
-
 ### createSubscription
 
 Creates a subscription, typically for an environment API.
