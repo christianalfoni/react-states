@@ -81,7 +81,7 @@ type Environment = {
   someApi: SomeApi;
 };
 
-const { Environment, useEnvironment } = createEnvironment<Environment>();
+const { EnvironmentProvider, useEnvironment } = createEnvironment<Environment>();
 
 const environment: Environment = {
   someApi: {},
@@ -89,9 +89,9 @@ const environment: Environment = {
 
 const SomeComponent = () => {
   return (
-    <Environment environment={environment}>
+    <EnvironmentProvider environment={environment}>
       <App />
-    </Environment>
+    </EnvironmentProvider>
   );
 };
 ```
