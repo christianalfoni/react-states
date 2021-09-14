@@ -31,7 +31,7 @@ type Command = {
 
 type Auth = States<State, Action, Command>;
 
-type PublicAuth = States<State, Action>;
+export type PublicAuth = States<State, Action>;
 
 type Transition = StatesTransition<Auth>;
 

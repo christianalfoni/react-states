@@ -30,11 +30,15 @@ export type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
 };
 
-export type PickState<S extends TState, SS extends S['state']> = S extends {
-  state: SS;
-}
-  ? S
-  : never;
+export type PickState<
+  ST extends States<any, any, any>,
+  T extends ST extends States<infer S, any, any> ? S['state'] : never
+> = ST extends States<infer S, any, any> ? (S extends { state: T } ? S : never) : never;
+
+export type PickAction<
+  ST extends States<any, any, any>,
+  T extends ST extends States<any, infer A, any> ? A['type'] : never
+> = ST extends States<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
 
 export type Transitions<S extends TState, A extends TAction, C extends TCommand = never> = {
   [SS in S['state']]: {
@@ -57,8 +61,6 @@ export type States<S extends TState, A extends TAction, C extends TCommand = nev
 ] & {
   [MAKE_COMMANDS_INFERRABLE]?: C;
 };
-
-export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
 
 export type StatesTransition<ST extends States<any, any, any>> = ST extends States<infer S, any, infer C>
   ? [C] extends [never]

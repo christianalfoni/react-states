@@ -213,7 +213,7 @@ const SomeComponent = () => {
 Narrows to specific states.
 
 ```ts
-type NarrowedStates = PickState<SomeState, 'A' | 'B'>;
+type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
 ```
 
 ### PickAction
@@ -221,5 +221,5 @@ type NarrowedStates = PickState<SomeState, 'A' | 'B'>;
 Narrows to specific actions.
 
 ```ts
-type NarrowedActions = PickAction<SomeAction, 'A' | 'B'>;
+type NarrowedActions = PickAction<SomeStatesType, 'A' | 'B'>;
 ```

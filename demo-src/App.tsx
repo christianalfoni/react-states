@@ -1,6 +1,10 @@
 import * as React from 'react';
-import { match } from '../src';
-import { useAuth } from './AuthFeature';
+import { match, PickAction, PickState } from '../src';
+import { useAuth, PublicAuth } from './AuthFeature';
+
+type Test = PickState<PublicAuth, 'LOADED'>;
+
+type Test2 = PickAction<PublicAuth, 'ADD_TODO'>;
 
 const Test = () => {
   const [auth, send] = useAuth();
