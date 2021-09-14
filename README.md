@@ -10,25 +10,9 @@ Learn more about [CodeSandbox](https://codesandbox.io) and how we use react-stat
 npm install react-states@next
 ```
 
-## Types
+### Subscription
 
-### State
-
-State has an explicit **state** property describing the state.
-
-```ts
-type State =
-  | {
-      state: 'SOME_STATE';
-    }
-  | {
-      state: 'SOME_OTHER_STATE';
-    };
-```
-
-### Action
-
-Action has a **type** property describing the type of action.
+Subscriptions takes actions as a type argument.
 
 ```ts
 type Action =
@@ -38,34 +22,8 @@ type Action =
   | {
       type: 'SOME_OTHER_ACTION';
     };
-```
 
-### Command
-
-Command has a **cmd** property which names the command.
-
-```ts
-type Command =
-  | {
-      cmd: 'SOME_COMMAND';
-    }
-  | {
-      cmd: 'SOME_OTHER_COMMAND';
-    };
-```
-
-### Subscription
-
-Subscriptions has a **type** property which describes the event.
-
-```ts
-type Subscription =
-  | {
-      type: 'SOME_EVENT';
-    }
-  | {
-      type: 'SOME_OTHER_EVENT';
-    };
+type SomeSubscription = Subscription<Action>;
 ```
 
 ## API
@@ -101,7 +59,39 @@ const SomeComponent = () => {
 Creates a reducer handling actions using explicit states. Each handler returns a transition. Either a new/existing state or a tuple of new/existing state and a command.
 
 ```ts
-const reducer = createReducer<State, Action, Command>({
+import { createReducer, States, StatesTransition } from 'react-states';
+// Define state with an explicit state property
+type State =
+  | {
+      state: 'SOME_STATE';
+    }
+  | {
+      state: 'SOME_OTHER_STATE';
+    };
+
+// Define actions with a type property
+type Action =
+  | {
+      type: 'SOME_ACTION';
+    }
+  | {
+      type: 'SOME_OTHER_ACTION';
+    };
+
+// Optionally type commands
+type Command = {
+  cmd: 'SOME_COMMAND';
+};
+
+// Create a type for the feature, where the Command
+// is optional
+type SomeFeature = States<State, Action, Command>;
+
+// Create an exact return type for the action
+// handlers
+type Transition = StatesTransition<SomeFeature>;
+
+const reducer = createReducer<SomeFeature>({
   SOME_STATE: {
     SOME_ACTION: (currentState, action) => ({
       state: 'SOME_OTHER_STATE',
@@ -125,12 +115,12 @@ const reducer = createReducer<State, Action, Command>({
 Creates a subscription, typically for an environment API.
 
 ```ts
-type SomeEnvironmentAPIEvent = {
+type SomeEnvironmentAPIAction = {
   type: 'SOME_ENVIRONMENT_API:EVENT';
 };
 
 type SomeEnvironmentAPI = {
-  subscription: Subscription<SomeEnvironmentEvent>;
+  subscription: Subscription<SomeEnvironmentAction>;
 };
 
 const someEnvironmentAPI: SomeEnvironmentAPI = {
@@ -232,12 +222,4 @@ Narrows to specific actions.
 
 ```ts
 type NarrowedActions = PickAction<SomeAction, 'A' | 'B'>;
-```
-
-### StateTransition
-
-Exact return type for reducer handlers.
-
-```ts
-type Transition = StateTransition<State, Command>;
 ```

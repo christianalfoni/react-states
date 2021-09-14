@@ -4,6 +4,8 @@ export const DEBUG_IS_EVENT_IGNORED = Symbol('DEBUG_IS_EVENT_IGNORED');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const COMMANDS = Symbol('COMMANDS');
+// Hack to make commands inferrable
+export const MAKE_COMMANDS_INFERRABLE = Symbol('MAKE_COMMANDS_INFERRABLE');
 
 export interface TState {
   state: string;
@@ -44,32 +46,42 @@ export type Transitions<S extends TState, A extends TAction, C extends TCommand 
 };
 
 export type States<S extends TState, A extends TAction, C extends TCommand = never> = [
-  S & {
-    [COMMANDS]?: {
-      [CC in C['cmd']]: C & { cmd: CC };
-    };
-  },
+  [C] extends [never]
+    ? S
+    : S & {
+        [COMMANDS]?: {
+          [CC in C['cmd']]: C & { cmd: CC };
+        };
+      },
   React.Dispatch<A>,
-];
+] & {
+  [MAKE_COMMANDS_INFERRABLE]?: C;
+};
 
 export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
 
-export type StateTransition<S extends TState, C extends TCommand = never> = [C] extends [never] ? S : S | [S, C];
+export type StatesTransition<ST extends States<any, any, any>> = ST extends States<infer S, any, infer C>
+  ? [C] extends [never]
+    ? S
+    : S | [S, C]
+  : never;
 
-export function createReducer<S extends TState, A extends TAction, C extends TCommand = never>(
-  transitions: Transitions<S, A, C>,
-): (
-  state: S & {
-    [COMMANDS]?: {
-      [CC in C['cmd']]: C & { cmd: CC };
-    };
-  },
-  action: A,
-) => S & {
-  [COMMANDS]?: {
-    [CC in C['cmd']]: C & { cmd: CC };
-  };
-} {
+export function createReducer<ST extends States<any, any, any>>(
+  transitions: ST extends States<infer S, infer A, infer C> ? Transitions<S, A, C> : never,
+): ST extends States<infer S, infer A, infer C>
+  ? (
+      state: S & {
+        [COMMANDS]?: {
+          [CC in C['cmd']]: C & { cmd: CC };
+        };
+      },
+      action: A,
+    ) => S & {
+      [COMMANDS]?: {
+        [CC in C['cmd']]: C & { cmd: CC };
+      };
+    }
+  : never {
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
 

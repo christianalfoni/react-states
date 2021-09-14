@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StateTransition, useCommandEffect, useStateEffect, createReducer } from '../';
+import { StatesTransition, useCommandEffect, useStateEffect, createReducer, States } from '../';
 import { colors } from './styles';
 
 type State =
@@ -41,9 +41,11 @@ type Command =
       cmd: 'NOTIFY_CLICK';
     };
 
-type Transition = StateTransition<State, Command>;
+type Resizer = States<State, Action, Command>;
 
-const reducer = createReducer<State, Action, Command>({
+type Transition = StatesTransition<Resizer>;
+
+const reducer = createReducer<Resizer>({
   IDLE: {
     MOUSE_DOWN: (_, { x }): Transition => ({
       state: 'DETECTING_RESIZE',

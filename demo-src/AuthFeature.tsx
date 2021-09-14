@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useReducer } from 'react';
 import { useContext } from 'react';
-import { StateTransition, Transitions, useCommandEffect, createReducer, States } from '../src';
+import { StatesTransition, useCommandEffect, createReducer, States } from '../src';
 import { useDevtools } from '../src/devtools';
 
 type Todo = {
@@ -29,13 +29,17 @@ type Command = {
   todo: Todo;
 };
 
-type Transition = StateTransition<State, Command>;
+type Auth = States<State, Action, Command>;
 
-const reducerContext = React.createContext({} as States<State, Action>);
+type PublicAuth = States<State, Action>;
+
+type Transition = StatesTransition<Auth>;
+
+const reducerContext = React.createContext({} as PublicAuth);
 
 export const useAuth = () => useContext(reducerContext);
 
-const reducer = createReducer<State, Action, Command>({
+const reducer = createReducer<Auth>({
   LOADED: {
     ADD_TODO: (state, { todo }): Transition => [
       {
