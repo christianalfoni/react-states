@@ -10,22 +10,6 @@ Learn more about [CodeSandbox](https://codesandbox.io) and how we use react-stat
 npm install react-states@next
 ```
 
-### Subscription
-
-Subscriptions takes actions as a type argument.
-
-```ts
-type Action =
-  | {
-      type: 'SOME_ACTION';
-    }
-  | {
-      type: 'SOME_OTHER_ACTION';
-    };
-
-type SomeSubscription = Subscription<Action>;
-```
-
 ## API
 
 ### createEnvironment
