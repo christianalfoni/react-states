@@ -253,6 +253,6 @@ export const useEvents = <E extends TEvent>(events: Events<E>, send: Send<E>) =>
       events.subscribe((event) => {
         send(event);
       }),
-    [],
+    [events],
   );
 };
