@@ -32,12 +32,12 @@ export type TMatch<S extends TState, R = any> = {
 
 export type PickState<
   ST extends States<any, any, any>,
-  T extends ST extends States<infer S, any, any> ? S['state'] : never,
+  T extends ST extends States<infer S, any, any> ? S['state'] : never
 > = ST extends States<infer S, any, any> ? (S extends { state: T } ? S : never) : never;
 
 export type PickAction<
   ST extends States<any, any, any>,
-  T extends ST extends States<any, infer A, any> ? A['type'] : never,
+  T extends ST extends States<any, infer A, any> ? A['type'] : never
 > = ST extends States<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
 
 export type Transitions<S extends TState, A extends TAction, C extends TCommand = never> = {
@@ -52,11 +52,12 @@ export type Transitions<S extends TState, A extends TAction, C extends TCommand 
 export type States<S extends TState, A extends TAction, C extends TCommand = never> = [
   [C] extends [never]
     ? S
-    : S & {
-        [COMMANDS]?: {
-          [CC in C['cmd']]: C & { cmd: CC };
-        };
-      },
+    : S &
+        WithCommands<
+          {
+            [CC in C['cmd']]: C & { cmd: CC };
+          }
+        >,
   React.Dispatch<A>,
 ] & {
   [MAKE_COMMANDS_INFERRABLE]?: C;
@@ -78,14 +79,18 @@ export function createReducer<ST extends States<any, any, any>>(
 ): ST extends States<infer S, infer A, infer C>
   ? (
       state: S &
-        WithCommands<{
-          [CC in C['cmd']]: C & { cmd: CC };
-        }>,
+        WithCommands<
+          {
+            [CC in C['cmd']]: C & { cmd: CC };
+          }
+        >,
       action: A,
     ) => S &
-      WithCommands<{
-        [CC in C['cmd']]: C & { cmd: CC };
-      }>
+      WithCommands<
+        {
+          [CC in C['cmd']]: C & { cmd: CC };
+        }
+      >
   : never {
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
@@ -185,9 +190,10 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
 
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
-  matches: T & {
-    [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
-  },
+  matches: T &
+    {
+      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+    },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
