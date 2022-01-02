@@ -32,12 +32,12 @@ export type TMatch<S extends TState, R = any> = {
 
 export type PickState<
   ST extends States<any, any, any>,
-  T extends ST extends States<infer S, any, any> ? S['state'] : never
+  T extends ST extends States<infer S, any, any> ? S['state'] : never,
 > = ST extends States<infer S, any, any> ? (S extends { state: T } ? S : never) : never;
 
 export type PickAction<
   ST extends States<any, any, any>,
-  T extends ST extends States<any, infer A, any> ? A['type'] : never
+  T extends ST extends States<any, infer A, any> ? A['type'] : never,
 > = ST extends States<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
 
 export type Transitions<S extends TState, A extends TAction, C extends TCommand = never> = {
@@ -68,21 +68,24 @@ export type StatesTransition<ST extends States<any, any, any>> = ST extends Stat
     : S | [S, C]
   : never;
 
+// A workaround for https://github.com/microsoft/TypeScript/issues/37888
+export type WithCommands<T> = {
+  [COMMANDS]?: T;
+};
+
 export function createReducer<ST extends States<any, any, any>>(
   transitions: ST extends States<infer S, infer A, infer C> ? Transitions<S, A, C> : never,
 ): ST extends States<infer S, infer A, infer C>
   ? (
-      state: S & {
-        [COMMANDS]?: {
+      state: S &
+        WithCommands<{
           [CC in C['cmd']]: C & { cmd: CC };
-        };
-      },
+        }>,
       action: A,
-    ) => S & {
-      [COMMANDS]?: {
+    ) => S &
+      WithCommands<{
         [CC in C['cmd']]: C & { cmd: CC };
-      };
-    }
+      }>
   : never {
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
@@ -182,10 +185,9 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
 
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
-  matches: T &
-    {
-      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
-    },
+  matches: T & {
+    [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+  },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
