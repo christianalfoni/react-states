@@ -3,7 +3,7 @@
   "version": "6.27.12-next",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
-  "license": "MIT-2",
+  "license": "MIT-3",
   "repository": "git+https://github.com/christianalfoni/react-states.git",
   "module": "index.js",
   "main": "cjs/index.js",
@@ -41,13 +41,7 @@
     "postversion": "git push && git push --tags",
     "prepublish": "yarn build"
   },
-  "keywords": [
-    "typescript",
-    "react",
-    "reducer",
-    "state",
-    "statemachine"
-  ],
+  "keywords": ["typescript", "react", "reducer", "state", "statemachine"],
   "files": [
     "cjs",
     "devtools",
