@@ -3,7 +3,7 @@
   "version": "6.27.12-next",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
-  "license": "MIT-5",
+  "license": "MIT-6",
   "repository": "git+https://github.com/christianalfoni/react-states.git",
   "module": "index.js",
   "main": "cjs/index.js",
