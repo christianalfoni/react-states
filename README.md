@@ -14,7 +14,7 @@
 - **transition** is now **transitions** and it returns a reducer
 - **map** is now **match** with improved typing
 - No need to add **DevtoolManager** anymore
-- There is a new **renderReducerHook** test helper
+- There is a ew **renderReducerHook** test helper
 
 ---
 
@@ -39,7 +39,7 @@
   - [PickState and PickAction](#pickstate-and-pickaction)
 - [Inspirations](#inspirations)
 
-Your application logic is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
+Your application is constantly bombarded by events. Some events are related to user interaction, others from the browser. Also any asynchronous code results in resolvement or rejection, which are also events. We typically write our application logic in such a way that our state changes and side effects are run as a direct result of these events. This approach can create unpredictable user experiences. The reason is that users treats our applications like Mr and Ms Potato Head, bad internet connections causes latency and the share complexity of a user flow grows out of hand and out of mind for all of us. Our code does not always run the way we intended it to.
 
 **react-states** is at its core **3** utility functions made up of **20** lines of code that will make your user experience more predictable in React.
 
@@ -53,11 +53,11 @@ Your application logic is constantly bombarded by events. Some events are relate
 const [todos, dispatch] = React.useReducer(
   (state, action) => {
     switch (action.type) {
-      case 'FETCH_TODOS':
+      case "FETCH_TODOS":
         return { ...state, isLoading: true };
-      case 'FETCH_TODOS_SUCCESS':
+      case "FETCH_TODOS_SUCCESS":
         return { ...state, isLoading: false, data: action.data };
-      case 'FETCH_TODOS_ERROR':
+      case "FETCH_TODOS_ERROR":
         return { ...state, isLoading: false, error: action.error };
     }
   },
@@ -65,7 +65,7 @@ const [todos, dispatch] = React.useReducer(
     isLoading: false,
     data: [],
     error: null,
-  },
+  }
 );
 ```
 
@@ -80,14 +80,14 @@ This way of expressing state has issues:
 
 ```ts
 const fetchTodos = React.useCallback(() => {
-  dispatch({ type: 'FETCH_TODOS' });
+  dispatch({ type: "FETCH_TODOS" });
   axios
-    .get('/todos')
+    .get("/todos")
     .then((response) => {
-      dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
+      dispatch({ type: "FETCH_TODOS_SUCCESS", data: response.data });
     })
     .catch((error) => {
-      dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
+      dispatch({ type: "FETCH_TODOS_ERROR", error: error.message });
     });
 }, []);
 ```
@@ -104,9 +104,9 @@ const Todos = ({ todos }) => {
   let content = null;
 
   if (todos.error) {
-    content = 'There was an error';
+    content = "There was an error";
   } else if (todos.isLoading) {
-    content = 'Loading...';
+    content = "Loading...";
   } else {
     content = (
       <ul>
@@ -131,71 +131,71 @@ This way of expressing dynamic render has issues:
 If you want to look at a real project using this approach, please visit: [excalidraw-firebase](https://github.com/codesandbox/excalidraw-firebase).
 
 ```tsx
-import { transitions, exec, match } from 'react-states';
+import { transitions, exec, match } from "react-states";
 
 type Context =
   | {
-      state: 'LOADING';
+      state: "LOADING";
     }
   | {
-      state: 'LOADED';
+      state: "LOADED";
       data: [];
     }
   | {
-      state: 'ERROR';
+      state: "ERROR";
       error: string;
     };
 
 type Action =
   | {
-      type: 'FETCH_TODOS';
+      type: "FETCH_TODOS";
     }
   | {
-      type: 'FETCH_TODOS_SUCCESS';
+      type: "FETCH_TODOS_SUCCESS";
       data: Todo[];
     }
   | {
-      type: 'FETCH_TODOS_ERROR';
+      type: "FETCH_TODOS_ERROR";
       error: string;
     };
 
 const todosReducer = transitions<Context, Action>({
   NOT_LOADED: {
-    FETCH_TODOS: (): Context => ({ state: 'LOADING' }),
+    FETCH_TODOS: (): Context => ({ state: "LOADING" }),
   },
   LOADING: {
-    FETCH_TODOS_SUCCESS: ({ data }): Context => ({ state: 'LOADED', data }),
-    FETCH_TODOS_ERROR: ({ error }): Context => ({ state: 'ERROR', error }),
+    FETCH_TODOS_SUCCESS: ({ data }): Context => ({ state: "LOADED", data }),
+    FETCH_TODOS_ERROR: ({ error }): Context => ({ state: "ERROR", error }),
   },
   LOADED: {},
   ERROR: {},
 });
 
 const Todos = () => {
-  const [todos, dispatch] = useReducer(todosReducer, { state: 'NOT_LOADED' });
+  const [todos, dispatch] = useReducer(todosReducer, { state: "NOT_LOADED" });
 
   useEffect(
     () =>
       exec(todos, {
         LOADING: () => {
           axios
-            .get('/todos')
+            .get("/todos")
             .then((response) => {
-              dispatch({ type: 'FETCH_TODOS_SUCCESS', data: response.data });
+              dispatch({ type: "FETCH_TODOS_SUCCESS", data: response.data });
             })
             .catch((error) => {
-              dispatch({ type: 'FETCH_TODOS_ERROR', error: error.message });
+              dispatch({ type: "FETCH_TODOS_ERROR", error: error.message });
             });
         },
       }),
-    [todos],
+    [todos]
   );
 
   return (
     <div className="wrapper">
       {match(todos, {
-        NOT_LOADED: () => 'Not loaded',
-        LOADING: () => 'Loading...',
+        NOT_LOADED: () => "Not loaded",
+        LOADING: () => "Loading...",
         LOADED: ({ data }) => (
           <ul>
             {data.map((todo) => (
@@ -224,30 +224,30 @@ const Todos = () => {
 By adding the `DevtoolsProvider` to your React application you will get insight into the history of state changes, dispatches, side effects and also look at the definition of your `transitions` right from within your app.
 
 ```tsx
-import * as React from 'react';
-import { render } from 'react-dom';
-import { DevtoolsProvider } from 'react-states/devtools';
-import { App } from './App';
+import * as React from "react";
+import { render } from "react-dom";
+import { DevtoolsProvider } from "react-states/devtools";
+import { App } from "./App";
 
-const rootElement = document.getElementById('root');
+const rootElement = document.getElementById("root");
 
 render(
   <DevtoolsProvider>
     <App />
   </DevtoolsProvider>,
-  rootElement,
+  rootElement
 );
 ```
 
 ```tsx
-import { transitions, useDevtools } from 'react-states/devtools';
+import { transitions, useDevtools } from "react-states/devtools";
 
 const reducer = transitions({});
 
 const SomeComponent = () => {
   const someReducer = useReducer(reducer);
 
-  useDevtools('my-thing', someReducer);
+  useDevtools("my-thing", someReducer);
 };
 ```
 
@@ -260,30 +260,30 @@ const context = createContext(null);
 
 type Context =
   | {
-      state: 'UNAUTHENTICATED';
+      state: "UNAUTHENTICATED";
     }
   | {
-      state: 'AUTHENTICATING';
+      state: "AUTHENTICATING";
     }
   | {
-      state: 'AUTHNETICATED';
+      state: "AUTHNETICATED";
       user: { username: string };
     }
   | {
-      state: 'ERROR';
+      state: "ERROR";
       error: string;
     };
 
 type Action =
   | {
-      type: 'SIGN_IN';
+      type: "SIGN_IN";
     }
   | {
-      type: 'SIGN_IN_SUCCESS';
+      type: "SIGN_IN_SUCCESS";
       user: { username: string };
     }
   | {
-      type: 'SIGN_IN_ERROR';
+      type: "SIGN_IN_ERROR";
       error: string;
     };
 
@@ -291,11 +291,11 @@ export const useAuth = () => useContext(context);
 
 const authReducer = transitions<Context, Action>({
   UNAUTHENTICATED: {
-    SIGN_IN: (): Context => ({ state: 'AUTHENTICATING' }),
+    SIGN_IN: (): Context => ({ state: "AUTHENTICATING" }),
   },
   AUTHENTICATING: {
-    SIGN_IN_SUCCESS: ({ user }): Context => ({ state: 'AUTHENTICATED', user }),
-    SIGN_IN_ERROR: ({ error }): Context => ({ state: 'ERROR', error }),
+    SIGN_IN_SUCCESS: ({ user }): Context => ({ state: "AUTHENTICATED", user }),
+    SIGN_IN_ERROR: ({ error }): Context => ({ state: "ERROR", error }),
   },
   AUTHENTICATED: {},
   ERROR: {},
@@ -303,7 +303,7 @@ const authReducer = transitions<Context, Action>({
 
 export const AuthProvider = ({ children }) => {
   const value = useReducer(authReducer, {
-    state: 'UNAUTHENTICATED',
+    state: "UNAUTHENTICATED",
   });
 
   const [auth, dispatch] = value;
@@ -313,16 +313,16 @@ export const AuthProvider = ({ children }) => {
       exec(auth, {
         AUTHENTICATING: () => {
           axios
-            .get('/signin')
+            .get("/signin")
             .then((response) => {
-              dispatch({ type: 'SIGN_IN_SUCCESS', user: response.data });
+              dispatch({ type: "SIGN_IN_SUCCESS", user: response.data });
             })
             .catch((error) => {
-              dispatch({ type: 'SIGN_IN_ERROR', error: error.message });
+              dispatch({ type: "SIGN_IN_ERROR", error: error.message });
             });
         },
       }),
-    [auth],
+    [auth]
   );
 
   return <context.Provider value={value}>{children}</context.Provider>;
@@ -345,13 +345,13 @@ There are three parts to this patterns:
 You can define a single action handler:
 
 ```ts
-import { transitions } from 'react-states';
+import { transitions } from "react-states";
 
 const handleChangeDescription = (
   // Expressing what we want from the action
   { description }: { description: string },
   // Expressing that we allow any context, as long as it has an existing "description" on it
-  currentContext: Context & { description: string },
+  currentContext: Context & { description: string }
   // Allowing us to move into any context
 ): Context => ({
   ...currentContext,
@@ -371,10 +371,13 @@ const reducer = transitions<Action, Context>({
 Or multiple action handlers:
 
 ```ts
-import { transitions } from 'react-states';
+import { transitions } from "react-states";
 
 const globalActionHandlers = {
-  CHANGE_DESCRIPTION: ({ description }: { description: string }, currentContext: Context): Context => ({
+  CHANGE_DESCRIPTION: (
+    { description }: { description: string },
+    currentContext: Context
+  ): Context => ({
     ...currentContext,
     description,
   }),
@@ -407,8 +410,16 @@ You can even create your own UI metadata related to a state which can be consume
 
 ```ts
 const ui = match(someContext, {
-  STATE_A: () => ({ icon: <IconA />, text: 'foo', buttonStyle: { color: 'red' } }),
-  STATE_B: () => ({ icon: <IconB />, text: 'bar', buttonStyle: { color: 'blue' } }),
+  STATE_A: () => ({
+    icon: <IconA />,
+    text: "foo",
+    buttonStyle: { color: "red" },
+  }),
+  STATE_B: () => ({
+    icon: <IconB />,
+    text: "bar",
+    buttonStyle: { color: "blue" },
+  }),
 });
 
 ui.icon;
@@ -421,9 +432,9 @@ ui.buttonStyle;
 You might have functions that only deals with certain states.
 
 ```ts
-import { match, PickState } from 'react-states';
+import { match, PickState } from "react-states";
 
-function mapSomeState(context: PickState<Context, 'A' | 'B'>) {
+function mapSomeState(context: PickState<Context, "A" | "B">) {
   return match(context, {
     A: () => {},
     B: () => {},
@@ -444,21 +455,21 @@ type BaseContext = {
 
 type Context =
   | {
-      state: 'NOT_LOADED';
+      state: "NOT_LOADED";
     }
   | {
-      state: 'LOADING';
+      state: "LOADING";
     }
   | (BaseContext &
       (
         | {
-            state: 'LOADED';
+            state: "LOADED";
           }
         | {
-            state: 'LOADED_DIRTY';
+            state: "LOADED_DIRTY";
           }
         | {
-            state: 'LOADED_ACTIVE';
+            state: "LOADED_ACTIVE";
           }
       ));
 ```
@@ -472,23 +483,23 @@ You do not have to express the whole context at the root, you can split it up in
 ```ts
 type ValidationContext =
   | {
-      state: 'VALID';
+      state: "VALID";
     }
   | {
-      state: 'INVALID';
+      state: "INVALID";
     }
   | {
-      state: 'PENDING';
+      state: "PENDING";
     };
 
 type Context =
   | {
-      state: 'ACTIVE';
+      state: "ACTIVE";
       value: string;
       validation: ValidationContext;
     }
   | {
-      state: 'DISABLED';
+      state: "DISABLED";
     };
 ```
 
@@ -527,7 +538,7 @@ useEffect(
     exec(context, {
       FOO: () => {},
     }),
-  [context],
+  [context]
 );
 
 // 2. The FOO effect runs every time
@@ -540,7 +551,7 @@ useEffect(
       FOO: () => {},
       BAR: () => {},
     }),
-  [context.state],
+  [context.state]
 );
 
 // 3. The FOO effect runs every time
@@ -558,7 +569,7 @@ useEffect(
     exec(context, {
       FOO: () => {},
     }),
-  [shouldSubscribe],
+  [shouldSubscribe]
 );
 ```
 
@@ -571,14 +582,14 @@ Creates an explicit and guarded reducer.
 ```ts
 type Context =
   | {
-      state: 'FOO';
+      state: "FOO";
     }
   | {
-      state: 'BAR';
+      state: "BAR";
     };
 
 type Action = {
-  type: 'SWITCH';
+  type: "SWITCH";
 };
 
 const reducer = transitions<Context, Action>({
@@ -586,10 +597,10 @@ const reducer = transitions<Context, Action>({
     // Currently you should explicitly set the return type of the
     // handlers to the context, this will be resolved when
     // TypeScript gets Exact types: https://github.com/Microsoft/TypeScript/issues/12936
-    SWITCH: (action, currentContext): Context => ({ state: 'BAR' }),
+    SWITCH: (action, currentContext): Context => ({ state: "BAR" }),
   },
   BAR: {
-    SWITCH: (action, currentContext): Context => ({ state: 'FOO' }),
+    SWITCH: (action, currentContext): Context => ({ state: "FOO" }),
   },
 });
 
@@ -622,7 +633,7 @@ useEffect(
     exec(someContext, {
       SOME_STATE: (currentContext) => {},
     }),
-  [someContext],
+  [someContext]
 );
 ```
 
@@ -633,12 +644,12 @@ useEffect(
   () =>
     exec(someContext, {
       TIMER_RUNNING: () => {
-        const id = setInterval(() => dispatch({ type: 'TICK' }), 1000);
+        const id = setInterval(() => dispatch({ type: "TICK" }), 1000);
 
         return () => clearInterval(id);
       },
     }),
-  [someContext],
+  [someContext]
 );
 ```
 
@@ -648,7 +659,7 @@ The **exec** is not exhaustive, meaning that you only add the states necessary.
 
 ```tsx
 const result = match(context, {
-  SOME_STATE: (currentContext) => 'foo',
+  SOME_STATE: (currentContext) => "foo",
 });
 ```
 
@@ -658,8 +669,8 @@ Is especially useful with rendering:
 return (
   <div className="wrapper">
     {match(todos, {
-      NOT_LOADED: () => 'Not loaded',
-      LOADING: () => 'Loading...',
+      NOT_LOADED: () => "Not loaded",
+      LOADING: () => "Loading...",
       LOADED: ({ data }) => (
         <ul>
           {data.map((todo) => (
@@ -680,9 +691,9 @@ The **match** is exhaustive, meaning you have to add all states. This ensures pr
 Safe async resolvement. The API looks much like the Promise API, though it has cancellation and strong typing built in. This is inspired by the [Rust](https://www.rust-lang.org/) language.
 
 ```ts
-import { result } from 'react-states';
+import { result } from "react-states";
 
-const res = result<{}, { type: 'ERROR'; data: string }>((ok, err) =>
+const res = result<{}, { type: "ERROR"; data: string }>((ok, err) =>
   // You return a promise from a result, this promise
   // should never throw, but rather return an "ok" or "err"
   doSomethingAsync()
@@ -690,8 +701,8 @@ const res = result<{}, { type: 'ERROR'; data: string }>((ok, err) =>
       return ok(data);
     })
     .catch((error) => {
-      return err('ERROR', error.message);
-    }),
+      return err("ERROR", error.message);
+    })
 );
 
 const cancel = res.resolve((data) => {}, {
@@ -709,28 +720,28 @@ You can return a result resolver from the resolve callback. Any cancellation fro
 This is a test helper, which allows you to effectively test any reducers exposed through a context provider. It does this by keeping the same object reference for the **context** and rather updates that (mutates) whenever the reducer updates. This way you can reference the context multiple times, even though it changes.
 
 ```tsx
-import { renderReducerHook } from 'react-states/test';
+import { renderReducerHook } from "react-states/test";
 
-test('should go to FOO when switching', () => {
+test("should go to FOO when switching", () => {
   const [context, dispatch] = renderReducerHook(
     () => useSomeContextProviderExposingAReducer(),
     (HookComponent) => (
       <ContextProviderExposingReducer>
         <HookComponent />
       </ContextProviderExposingReducer>
-    ),
+    )
   );
 
   expect(context).toEqual<Context>({
-    state: 'FOO',
+    state: "FOO",
   });
 
   act(() => {
-    dispatch({ type: 'SWITCH' });
+    dispatch({ type: "SWITCH" });
   });
 
   expect(context).toEqual<Context>({
-    state: 'BAR',
+    state: "BAR",
   });
 });
 ```
@@ -742,23 +753,29 @@ test('should go to FOO when switching', () => {
 ```ts
 type Context =
   | {
-      state: 'FOO';
+      state: "FOO";
     }
   | {
-      state: 'BAR';
+      state: "BAR";
     };
 
 type Action =
   | {
-      type: 'A';
+      type: "A";
     }
   | {
-      type: 'B';
+      type: "B";
     };
 
 const actions = {
-  A: (action: PickAction<Action, 'A'>, context: PickState<Context, 'FOO'>) => {},
-  B: (action: PickAction<Action, 'B'>, context: PickState<Context, 'FOO'>) => {},
+  A: (
+    action: PickAction<Action, "A">,
+    context: PickState<Context, "FOO">
+  ) => {},
+  B: (
+    action: PickAction<Action, "B">,
+    context: PickState<Context, "FOO">
+  ) => {},
 };
 
 const reducer = transitions<Context, Action>({

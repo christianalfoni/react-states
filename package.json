@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": "git+https://github.com/christianalfoni/react-states.git",
   "module": "index.js",
-  "main": "cjs/index.js",
+  "main": "cj/index.js",
   "exports": {
     ".": {
       "import": "./index.js",
@@ -41,13 +41,7 @@
     "postversion": "git push && git push --tags",
     "prepublish": "yarn build"
   },
-  "keywords": [
-    "typescript",
-    "react",
-    "reducer",
-    "state",
-    "statemachine"
-  ],
+  "keywords": ["typescript", "react", "reducer", "state", "statemachine"],
   "files": [
     "cjs",
     "devtools",
