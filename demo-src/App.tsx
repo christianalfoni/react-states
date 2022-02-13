@@ -1,13 +1,13 @@
-import * as React from 'react';
-import { match, PickAction, PickState } from '../src';
-import { useAuth, PublicAuth } from './AuthFeature';
+import * as React from "react";
+import { match, PickAction, PickState } from "../src";
+import { AuthFeature, useAuth, PublicAuth } from "./AuthFeature";
 
-type Test = PickState<PublicAuth, 'LOADED'>;
+type Test = PickState<PublicAuth, "LOADED">;
 
-type Test2 = PickAction<PublicAuth, 'ADD_TODO'>;
+type Test2 = PickAction<PublicAuth, "ADD_TODO">;
 
 const Test = () => {
-  const [auth, send] = useAuth();
+  const [auth, dispatch] = useAuth();
 
   match(auth, {
     LOADED: () => null,
@@ -16,12 +16,17 @@ const Test = () => {
   return (
     <h2
       onClick={() => {
-        send({
-          type: 'ADD_TODO',
+        dispatch({
+          type: "ADD_TODO",
           todo: {
             completed: true,
-            title: 'Awesome',
+            title: "Awesome",
           },
+        });
+
+        dispatch({
+          type: "FETCH_TODOS",
+          todos: [],
         });
       }}
     >
@@ -31,11 +36,22 @@ const Test = () => {
 };
 
 export function App() {
-  const [auth, dispatch] = useAuth();
+  const [state, setState] = React.useState(true);
 
   return (
     <div className="App">
-      <Test />
+      <button
+        onClick={() => {
+          setState(!state);
+        }}
+      >
+        toggle
+      </button>
+      {state ? (
+        <AuthFeature>
+          <Test />
+        </AuthFeature>
+      ) : null}
     </div>
   );
 }

@@ -1,8 +1,13 @@
-import * as React from 'react';
-import { useReducer } from 'react';
-import { useContext } from 'react';
-import { StatesTransition, useCommandEffect, createReducer, States } from '../src';
-import { useDevtools } from '../src/devtools';
+import * as React from "react";
+import { useReducer } from "react";
+import { useContext } from "react";
+import {
+  StatesTransition,
+  useCommandEffect,
+  createReducer,
+  States,
+} from "../src";
+import { useDevtools } from "../src/devtools";
 
 type Todo = {
   completed: boolean;
@@ -10,24 +15,28 @@ type Todo = {
 };
 
 type State = {
-  state: 'LOADED';
+  state: "LOADED";
   todos: Todo[];
 };
 
 type Action =
   | {
-      type: 'ADD_TODO';
+      type: "ADD_TODO";
       todo: Todo;
     }
   | {
-      type: 'FETCH_TODOS';
+      type: "FETCH_TODOS";
       todos: Todo[];
     };
 
-type Command = {
-  cmd: 'SAVE_TODO';
-  todo: Todo;
-};
+type Command =
+  | {
+      cmd: "SAVE_TODO";
+      todo: Todo;
+    }
+  | {
+      cmd: "LOG";
+    };
 
 type Auth = States<State, Action, Command>;
 
@@ -47,8 +56,11 @@ const reducer = createReducer<Auth>({
         todos: [todo].concat(state.todos),
       },
       {
-        cmd: 'SAVE_TODO',
+        cmd: "SAVE_TODO",
         todo,
+      },
+      {
+        cmd: "LOG",
       },
     ],
   },
@@ -56,17 +68,23 @@ const reducer = createReducer<Auth>({
 
 export function AuthFeature({ children }: { children: React.ReactNode }) {
   const authStates = useReducer(reducer, {
-    state: 'LOADED',
+    state: "LOADED",
     todos: [],
   });
 
-  useDevtools('Todos', authStates);
+  useDevtools("Todos", authStates);
 
   const [auth] = authStates;
 
-  useCommandEffect(auth, 'SAVE_TODO', ({ todo }) => {
-    console.log('SAVE_TODO', todo);
+  useCommandEffect(auth, "SAVE_TODO", ({ todo }) => {
+    console.log("SAVE_TODO", todo);
   });
 
-  return <reducerContext.Provider value={authStates}>{children}</reducerContext.Provider>;
+  useCommandEffect(auth, "LOG", () => {});
+
+  return (
+    <reducerContext.Provider value={authStates}>
+      {children}
+    </reducerContext.Provider>
+  );
 }

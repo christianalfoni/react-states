@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { Resizer } from './Resizer';
-import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, DEBUG_COMMAND } from '../';
+import * as React from "react";
+import { Resizer } from "./Resizer";
+import { DEBUG_TRANSITIONS, DEBUG_ACTION, DEBUG_COMMAND } from "../";
 
-import { Manager } from './Manager';
-import { StatesItem } from './StatesItem';
-import { colors } from './styles';
+import { Manager } from "./Manager";
+import { StatesItem } from "./StatesItem";
+import { colors } from "./styles";
 
-const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
+const DEBUG_TRIGGER_TRANSITIONS = Symbol("DEBUG_TRIGGER_TRANSITIONS");
 
 const managerContext = React.createContext({} as Manager);
 
@@ -16,6 +16,12 @@ export const useDevtoolsManager = () => React.useContext(managerContext);
 // the explicit context
 export const useDevtools = (id: string, reducer: [any, any]) => {
   const manager = React.useContext(managerContext);
+
+  // We allow using the hook without having the wrapping devtool
+  if (!manager) {
+    return;
+  }
+
   const [state, dispatch] = reducer;
 
   React.useEffect(() => () => manager.dispose(id), [id, manager]);
@@ -23,35 +29,35 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   // @ts-ignore
   reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
     manager.onMessage(id, {
-      type: 'command',
+      type: "command",
       command,
     });
   };
 
   reducer[1] = (action: any) => {
-    action[DEBUG_IS_EVENT_IGNORED] = false;
+    action[DEBUG_ACTION] = (isIgnored: boolean) => {
+      manager.onMessage(id, {
+        type: "dispatch",
+        action,
+        ignored: isIgnored,
+      });
+    };
 
     dispatch(action);
 
     if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
       manager.onMessage(id, {
-        type: 'transitions',
+        type: "transitions",
         // @ts-ignore
         transitions: state[DEBUG_TRANSITIONS],
       });
       return;
     }
-
-    manager.onMessage(id, {
-      type: 'dispatch',
-      action,
-      ignored: action[DEBUG_IS_EVENT_IGNORED],
-    });
   };
 
   React.useEffect(() => {
     manager.onMessage(id, {
-      type: 'state',
+      type: "state",
       state,
       // @ts-ignore
       transitions: state[DEBUG_TRANSITIONS],
@@ -65,36 +71,46 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   }, [id, manager, state]);
 };
 
-export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
+export const DevtoolsProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   return (
     <managerContext.Provider value={new Manager()}>
-      <div suppressHydrationWarning>{typeof document === 'undefined' ? null : <DevtoolsManager />}</div>
+      <div suppressHydrationWarning>
+        {typeof document === "undefined" ? null : <DevtoolsManager />}
+      </div>
       {children}
     </managerContext.Provider>
   );
 };
 
-const IS_OPEN_STORAGE_KEY = 'react_states_isOpen';
-const WIDTH_STORAGE_KEY = 'react_states_width';
+const IS_OPEN_STORAGE_KEY = "react_states_isOpen";
+const WIDTH_STORAGE_KEY = "react_states_width";
 
 export const DevtoolsManager = () => {
   const manager = React.useContext(managerContext);
   const [statesData, setStatesData] = React.useState(manager.states);
   const [expandedStates, setExpandedStates] = React.useState([] as string[]);
   const [isOpen, toggleOpen] = React.useState<boolean>(
-    JSON.parse(localStorage.getItem(IS_OPEN_STORAGE_KEY) || 'false'),
+    JSON.parse(localStorage.getItem(IS_OPEN_STORAGE_KEY) || "false")
   );
-  const [width, setWidth] = React.useState(() => JSON.parse(localStorage.getItem(WIDTH_STORAGE_KEY) || '"400px"'));
+  const [width, setWidth] = React.useState(() =>
+    JSON.parse(localStorage.getItem(WIDTH_STORAGE_KEY) || '"400px"')
+  );
 
   React.useEffect(() => manager.subscribe(setStatesData), [manager]);
 
   const toggleExpanded = React.useCallback(
     (id) => {
       setExpandedStates((current) =>
-        current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
+        current.includes(id)
+          ? current.filter((existingId) => existingId !== id)
+          : current.concat(id)
       );
     },
-    [setExpandedStates],
+    [setExpandedStates]
   );
 
   React.useEffect(() => {
@@ -105,12 +121,12 @@ export const DevtoolsManager = () => {
     <div
       suppressHydrationWarning
       style={{
-        position: 'fixed',
+        position: "fixed",
         right: 0,
-        fontFamily: 'monospace',
+        fontFamily: "monospace",
         top: 0,
-        height: '100vh',
-        width: isOpen ? width : '10px',
+        height: "100vh",
+        width: isOpen ? width : "10px",
         backgroundColor: colors.background,
         zIndex: 9999999999999,
       }}
@@ -127,11 +143,11 @@ export const DevtoolsManager = () => {
       {isOpen ? (
         <ul
           style={{
-            listStyleType: 'none',
+            listStyleType: "none",
             padding: 0,
-            overflowY: 'scroll',
-            height: '100%',
-            boxSizing: 'border-box',
+            overflowY: "scroll",
+            height: "100%",
+            boxSizing: "border-box",
           }}
         >
           {Object.keys(statesData).map((id) => {

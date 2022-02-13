@@ -1,20 +1,20 @@
-import { TAction, TCommand, TState } from '../';
+import { TAction, TCommand, TState } from "../";
 
 export type DevtoolMessage =
   | {
-      type: 'dispatch';
+      type: "dispatch";
       action: TAction;
       ignored: boolean;
     }
   | {
-      type: 'state';
+      type: "state";
       state: {
         state: string;
       };
       triggerTransitions: () => void;
     }
   | {
-      type: 'transitions';
+      type: "transitions";
       transitions: {
         [key: string]: {
           [key: string]: Function;
@@ -22,7 +22,7 @@ export type DevtoolMessage =
       };
     }
   | {
-      type: 'command';
+      type: "command";
       command: {
         cmd: string;
       };
@@ -30,15 +30,15 @@ export type DevtoolMessage =
 
 export type HistoryItem =
   | {
-      type: 'state';
+      type: "state";
       state: TState;
     }
   | {
-      type: 'command';
+      type: "command";
       command: TCommand;
     }
   | {
-      type: 'action';
+      type: "action";
       action: TAction;
       ignored: boolean;
     };
@@ -58,12 +58,22 @@ export type StatesData = {
 
 export type Subscription = (statesData: StatesData) => () => void;
 
+function debounce(func: (...args: any[]) => void, timeout: number) {
+  let timer: NodeJS.Timer;
+  return (...args: any[]) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      func(...args);
+    }, timeout);
+  };
+}
+
 export class Manager {
   private subscriptions: Function[] = [];
   states: StatesData = {};
-  private notify() {
+  private notify = debounce(() => {
     this.subscriptions.forEach((cb) => cb(this.states));
-  }
+  }, 100);
   private ensureStates(id: string) {
     if (!this.states[id]) {
       this.states[id] = {
@@ -79,25 +89,28 @@ export class Manager {
     this.ensureStates(id);
 
     switch (message.type) {
-      case 'state': {
+      case "state": {
         // You might trigger dispatches before the devtools has sent its initial state
-        const isFirstState = this.states[id].history.filter((item) => item.type === 'state').length === 0;
+        const isFirstState =
+          this.states[id].history.filter((item) => item.type === "state")
+            .length === 0;
 
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
+            isMounted: true,
             history: isFirstState
               ? [
                   ...this.states[id].history,
                   {
-                    type: 'state',
+                    type: "state",
                     state: message.state,
                   },
                 ]
               : [
                   {
-                    type: 'state',
+                    type: "state",
                     state: message.state,
                   },
                   ...this.states[id].history,
@@ -107,14 +120,14 @@ export class Manager {
         };
         break;
       }
-      case 'command': {
+      case "command": {
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
             history: [
               {
-                type: 'command',
+                type: "command",
                 command: message.command,
               },
               ...this.states[id].history,
@@ -123,7 +136,7 @@ export class Manager {
         };
         break;
       }
-      case 'transitions': {
+      case "transitions": {
         this.states = {
           ...this.states,
           [id]: {
@@ -133,14 +146,14 @@ export class Manager {
         };
         break;
       }
-      case 'dispatch': {
+      case "dispatch": {
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
             history: [
               {
-                type: 'action',
+                type: "action",
                 action: message.action,
                 ignored: message.ignored,
               },

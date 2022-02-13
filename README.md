@@ -23,7 +23,8 @@ type Environment = {
   someApi: SomeApi;
 };
 
-const { EnvironmentProvider, useEnvironment } = createEnvironment<Environment>();
+const { EnvironmentProvider, useEnvironment } =
+  createEnvironment<Environment>();
 
 const environment: Environment = {
   someApi: {},
@@ -40,31 +41,31 @@ const SomeComponent = () => {
 
 ### createReducer
 
-Creates a reducer handling actions using explicit states. Each handler returns a transition. Either a new/existing state or a tuple of new/existing state and a command.
+Creates a reducer handling actions using explicit states. Each handler returns a transition. Either a new/existing state or of new/existing state and command(s).
 
 ```ts
-import { createReducer, States, StatesTransition } from 'react-states';
+import { createReducer, States, StatesTransition } from "react-states";
 // Define state with an explicit state property
 type State =
   | {
-      state: 'SOME_STATE';
+      state: "SOME_STATE";
     }
   | {
-      state: 'SOME_OTHER_STATE';
+      state: "SOME_OTHER_STATE";
     };
 
 // Define actions with a type property
 type Action =
   | {
-      type: 'SOME_ACTION';
+      type: "SOME_ACTION";
     }
   | {
-      type: 'SOME_OTHER_ACTION';
+      type: "SOME_OTHER_ACTION";
     };
 
 // Optionally type commands
 type Command = {
-  cmd: 'SOME_COMMAND';
+  cmd: "SOME_COMMAND";
 };
 
 // Create a type for the feature, where the Command
@@ -78,16 +79,16 @@ type Transition = StatesTransition<SomeFeature>;
 const reducer = createReducer<SomeFeature>({
   SOME_STATE: {
     SOME_ACTION: (currentState, action) => ({
-      state: 'SOME_OTHER_STATE',
+      state: "SOME_OTHER_STATE",
     }),
   },
   SOME_OTHER_STATE: {
     SOME_OTHER_ACTION: (currentState, action) => [
       {
-        state: 'SOME_STATE',
+        state: "SOME_STATE",
       },
       {
-        cmd: 'SOME_COMMAND',
+        cmd: "SOME_COMMAND",
       },
     ],
   },
@@ -100,7 +101,7 @@ Creates a subscription, typically for an environment API.
 
 ```ts
 type SomeEnvironmentAPIAction = {
-  type: 'SOME_ENVIRONMENT_API:EVENT';
+  type: "SOME_ENVIRONMENT_API:EVENT";
 };
 
 type SomeEnvironmentAPI = {
@@ -112,7 +113,7 @@ const someEnvironmentAPI: SomeEnvironmentAPI = {
 };
 
 someEnvironmentAPI.subscription.emit({
-  type: 'SOME_ENVIRONMENT_API:EVENT',
+  type: "SOME_ENVIRONMENT_API:EVENT",
 });
 ```
 
@@ -124,7 +125,7 @@ Consume a subscription, typically from an environment API.
 const SomeComponent = () => {
   const { someApi } = useEnvironment();
   const [state, dispatch] = useReducer(reducer, {
-    state: 'SOME_STATE',
+    state: "SOME_STATE",
   });
 
   useSubscription(someApi.subscription, dispatch);
@@ -138,12 +139,12 @@ const SomeComponent = () => {
 ```ts
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, {
-    state: 'SOME_STATE',
+    state: "SOME_STATE",
   });
 
   return match(state, {
-    SOME_STATE: () => 'Hello',
-    OTHER_STATE: () => 'Ops',
+    SOME_STATE: () => "Hello",
+    OTHER_STATE: () => "Ops",
   });
 };
 ```
@@ -156,14 +157,14 @@ Run an effect when entering a specific state.
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useStateEffect(state, 'SOME_STATE', () => {
+  useStateEffect(state, "SOME_STATE", () => {
     // Run when entering state
     return () => {
       // Dispose when exiting the state
     };
   });
 
-  useStateEffect(state, ['SOME_STATE', 'SOME_OTHER_STATE'], () => {
+  useStateEffect(state, ["SOME_STATE", "SOME_OTHER_STATE"], () => {
     // Run when entering either state
     return () => {
       // Dispose when exiting to other state
@@ -182,7 +183,7 @@ Run an effect when the command is part of a transition.
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useCommandEffect(state, 'SOME_COMMAND', () => {
+  useCommandEffect(state, "SOME_COMMAND", () => {
     // Run when command is part of transition
   });
 
@@ -197,7 +198,7 @@ const SomeComponent = () => {
 Narrows to specific states.
 
 ```ts
-type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
+type NarrowedStates = PickState<SomeStatesType, "A" | "B">;
 ```
 
 ### PickAction
@@ -205,5 +206,5 @@ type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
 Narrows to specific actions.
 
 ```ts
-type NarrowedActions = PickAction<SomeStatesType, 'A' | 'B'>;
+type NarrowedActions = PickAction<SomeStatesType, "A" | "B">;
 ```
