@@ -208,3 +208,20 @@ Narrows to specific actions.
 ```ts
 type NarrowedActions = PickAction<SomeStatesType, "A" | "B">;
 ```
+
+### PickCommand
+
+Narrows to specific commands. **Note** it will return a `TState` shape of the commands,
+not `TCommand`.
+
+```ts
+type NarrowedCommands = PickCommand<SomeStatesType, "C-A" | "C-B">;
+```
+
+### PickHandlers
+
+Narrows to specific handlers.
+
+```ts
+type NarrowedHandlers = PickHandlers<SomeStatesType, "A">;
+```

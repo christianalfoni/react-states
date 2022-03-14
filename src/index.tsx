@@ -47,6 +47,32 @@ export type PickAction<
     ? A
     : never
   : never;
+  
+export type PickCommand<
+  ST extends States<any, any, any>,
+  T extends ST extends States<any, any, infer A> ? A["cmd"] : never
+> = ST extends States<any, any, infer C>
+  ? C extends { cmd: T }
+    ? {
+      state: string
+      [COMMANDS]?: {
+        [U in T]: C
+      }
+    }
+    : never
+  : never;
+  
+export type PickHandlers<
+  ST extends States<any, any, any>,
+  SS extends ST extends States<infer S, any, any> ? S["state"] : never
+> = ST extends States<infer S, infer A, infer C>
+  ? {
+    [AA in A["type"]]?: (
+      state: S extends { state: SS } ? S : never,
+      action: A extends { type: AA } ? A : never
+    ) => [C] extends [never] ? S : S | [S, ...C[]];
+  }
+  : never;
 
 export type Transitions<
   S extends TState,
