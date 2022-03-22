@@ -1,30 +1,30 @@
-import { COMMANDS, match, transition } from ".";
+import { COMMANDS, match, transition } from '.';
 
-type State = { state: "FOO" } | { state: "BAR" };
-type Action = { type: "SWITCH" };
+type State = { state: 'FOO' } | { state: 'BAR' };
+type Action = { type: 'SWITCH' };
 
-describe("react-states", () => {
-  test("should transition states", () => {
+describe('react-states', () => {
+  test('should transition states', () => {
     const state: State = {
-      state: "FOO",
+      state: 'FOO',
     };
 
     const run = (state: State, action: Action) =>
       transition(state, action, {
         FOO: {
-          SWITCH: (): State => ({ state: "BAR" }),
+          SWITCH: (): State => ({ state: 'BAR' }),
         },
         BAR: {},
       });
     expect(
       run(state, {
-        type: "SWITCH",
-      }).state
-    ).toBe("BAR");
+        type: 'SWITCH',
+      }).state,
+    ).toBe('BAR');
   });
-  test("should ignore invalid transitions", () => {
+  test('should ignore invalid transitions', () => {
     const state: State = {
-      state: "FOO",
+      state: 'FOO',
     };
     const run = (state: State, action: Action) =>
       transition(state, action, {
@@ -33,13 +33,13 @@ describe("react-states", () => {
       });
     expect(
       run(state, {
-        type: "SWITCH",
-      })
+        type: 'SWITCH',
+      }),
     ).toBe(state);
   });
-  test("should exec effects based on state", () => {
+  test('should exec effects based on state', () => {
     const state = {
-      state: "FOO",
+      state: 'FOO',
     };
     let hasRun = false;
     match(state, {
@@ -49,9 +49,9 @@ describe("react-states", () => {
     });
     expect(hasRun).toBe(true);
   });
-  test("should return disposer", () => {
+  test('should return disposer', () => {
     const state = {
-      state: "FOO",
+      state: 'FOO',
     };
     let isDisposed = false;
     const disposer = match(state, {
@@ -62,32 +62,32 @@ describe("react-states", () => {
     disposer();
     expect(isDisposed).toBe(true);
   });
-  test("should transform", () => {
+  test('should transform', () => {
     const state = {
-      state: "FOO",
+      state: 'FOO',
     };
     expect(
       match(state, {
-        FOO: () => "foo",
-      })
-    ).toBe("foo");
+        FOO: () => 'foo',
+      }),
+    ).toBe('foo');
   });
-  test("should transform", () => {
+  test('should transform', () => {
     const state = {
-      state: "FOO",
+      state: 'FOO',
     };
     expect(
       match(state, {
-        FOO: () => "foo",
-      })
-    ).toBe("foo");
+        FOO: () => 'foo',
+      }),
+    ).toBe('foo');
   });
-  test("should handle commands", () => {
+  test('should handle commands', () => {
     const state: State = {
-      state: "FOO",
+      state: 'FOO',
     };
     type Command = {
-      cmd: "TEST";
+      cmd: 'TEST';
     };
     const run = (state: State, action: Action) =>
       transition<State, Action, Command>(state, action, {
@@ -95,7 +95,7 @@ describe("react-states", () => {
           SWITCH: (state) => [
             state,
             {
-              cmd: "TEST",
+              cmd: 'TEST',
             },
           ],
         },
@@ -103,12 +103,12 @@ describe("react-states", () => {
       });
 
     const newState = run(state, {
-      type: "SWITCH",
+      type: 'SWITCH',
     });
 
     expect(newState.state).toBe(state.state);
     expect((newState as any)[COMMANDS].TEST).toEqual({
-      cmd: "TEST",
+      cmd: 'TEST',
     });
   });
 });
