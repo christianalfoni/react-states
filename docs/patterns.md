@@ -22,11 +22,8 @@ type Action = {
     type: 'SWITCH'
 }
 
-type Command = {
-    cmd: 'LOG'
-}
 
-export type Switcher = States<State, Action, Command>
+export type Switcher = States<State, Action>
 
 type Transition = StateTransition<Switcher>
 
@@ -40,10 +37,10 @@ export const useSwitcher = () => useContext(context)
 
 const reducer = createReducer<Switcher>({
     FOO: {
-        SWITCH: () => ({ state: 'BAR' })
+        SWITCH: (): Transition => ({ state: 'BAR' })
     },
     BAR: {
-        SWITCH: () => [{ state: 'FOO' }, { cmd: 'LOG' }]
+        SWITCH: (): Transition => ({ state: 'FOO' })
     }
 })
 
@@ -83,39 +80,11 @@ type PrivateAction = {
 
 type Switcher = States<State, Action | PrivateAction>
 
-export type PublicSwitcher = States<State, Action>
-
 type Transition = StateTransition<Switcher>
 
-type SwitcherProviderProps = {
-    initialState?: State
-}
+export type PublicSwitcher = States<State, Action>
 
 const context = createContext({} as PublicSwitcher)
 
-export const useSwitcher = () => useContext(context)
-
-const reducer = createReducer<Switcher>({
-    FOO: {
-        SWITCH: () => ({ state: 'BAR' }),
-        PRIVATE_SWITCH: () => ({ state: 'BAR' })
-    },
-    BAR: {
-        SWITCH: () => [{ state: 'FOO' }, { cmd: 'LOG' }],
-        PRIVATE_SWITCH: () => ({ state: 'FOO' })
-    }
-})
-
-export const SwitcherProvider: React.FC<SwitcherProviderProps> = ({
-    children,
-    initialState = { state: 'FOO' }
-}) => {
-    const value = useReducer(reducer, initialState)
-
-    return (
-        <context.Provider value={value}>
-            {children}
-        </context.Provider>
-    )
-}
+const reducer = createReducer<Switcher>({})
 ```
