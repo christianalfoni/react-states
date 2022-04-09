@@ -1,15 +1,14 @@
-import * as React from "react";
-import { render, createPortal } from "react-dom";
-import { DevtoolsManager, DevtoolsProvider } from "../src/devtools";
-import { App } from "./App";
+import * as React from 'react';
+import { render, createPortal } from 'react-dom';
+import { DevtoolsManager, DevtoolsProvider } from '../src/devtools';
+import { App } from './App';
 
-const rootElement = document.getElementById("root");
+const rootElement = document.getElementById('root');
 
 render(
   <DevtoolsProvider>
     <DevtoolsManager />
-
     <App />
   </DevtoolsProvider>,
-  rootElement
+  rootElement,
 );

@@ -1,38 +1,55 @@
-import * as React from "react";
-import { match, PickAction, PickState } from "../src";
-import { AuthFeature, useAuth, PublicAuth } from "./AuthFeature";
-
-type Test = PickState<PublicAuth, "LOADED">;
-
-type Test2 = PickAction<PublicAuth, "ADD_TODO">;
+import * as React from 'react';
+import { useDevtools } from '../src/devtools';
+import { useStates, useStateEffect, match, useCommandEffect } from '../src';
+import { states } from './states/todos';
+import { EnvironmentProvider, useEnvironment } from './environment';
+import { browserEnvironment } from './environment/browser';
 
 const Test = () => {
-  const [auth, dispatch] = useAuth();
-
-  match(auth, {
-    LOADED: () => null,
+  const { todosApi } = useEnvironment();
+  const todos = useStates(states, {
+    state: 'NOT_LOADED',
   });
 
-  return (
-    <h2
-      onClick={() => {
-        dispatch({
-          type: "ADD_TODO",
-          todo: {
-            completed: true,
-            title: "Awesome",
-          },
-        });
+  useDevtools('todos', todos);
 
-        dispatch({
-          type: "FETCH_TODOS",
-          todos: [],
-        });
-      }}
-    >
-      Start editing to see some magic!
-    </h2>
-  );
+  const [state, dispatch] = todos;
+
+  useStateEffect(state, 'LOADING', () => {
+    todosApi.fetchTodos();
+  });
+
+  useCommandEffect(state, 'SAVE_TODO', ({ todo }) => {
+    todosApi.saveTodo(todo);
+  });
+
+  return match(state, {
+    NOT_LOADED: () => <button onClick={() => dispatch({ type: 'FETCH_TODOS' })}>Fetch Todos</button>,
+    LOADING: () => <h2>Loading...</h2>,
+    LOADED: ({ todos }) => (
+      <div>
+        <button
+          onClick={() => {
+            dispatch({
+              type: 'ADD_TODO',
+              todo: {
+                completed: false,
+                title: 'New_' + Date.now(),
+              },
+            });
+          }}
+        >
+          Add Todo
+        </button>
+        <ul>
+          {todos.map((todo, index) => (
+            <li key={index}>{todo.title}</li>
+          ))}
+        </ul>
+      </div>
+    ),
+    ERROR: ({ error }) => error,
+  });
 };
 
 export function App() {
@@ -48,9 +65,9 @@ export function App() {
         toggle
       </button>
       {state ? (
-        <AuthFeature>
+        <EnvironmentProvider environment={browserEnvironment}>
           <Test />
-        </AuthFeature>
+        </EnvironmentProvider>
       ) : null}
     </div>
   );
