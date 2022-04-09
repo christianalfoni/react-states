@@ -2,10 +2,15 @@
 
 Factories
 
+- [createReducer](#createReducer)
 - [defineEnvironment](#defineEnvironment)
-- [createEnvironment](#createSubscription)
+  - [createEnvironment](#createEnvironment)
+  - [EnvironmentProvider](#EnvironmentProvider)
+  - [useEnvironment](#useEnvironment)
+  - [createReducer](#createEnvironment)
+  - [useReducer](#createReducer)
 
-Effects
+Hooks
 
 - [useStateEffect](#useStateEffect)
 - [useCommandEffect](#useCommandEffect)
@@ -16,10 +21,13 @@ Utils
 
 Type Utils
 
+- [States](#States)
+- [StateTransitions](#StateTransitions)
+- [StateHandlers](#StateHandlers)
+- [Emit](#Emit)
 - [PickState](#PickState)
 - [PickAction](#PickAction)
 - [PickCommand](#PickCommand)
-- [PickHandlers](#PickHandlers)
 
 Devtools
 
@@ -28,23 +36,10 @@ Devtools
 
 ## Factories
 
-### createEnvironment
-
-```tsx
-import { createEnvironment } from '@codesandbox/react-states';
-
-export type Environment = {
-  someApi: {};
-  someOtherApi: {};
-};
-
-export const { EnvironmentProvider, useEnvironment } = createEnvironment<Environment>();
-```
-
-### createReducer
+#### createReducer
 
 ```ts
-import { createReducer, States, StatesTransition } from '@codesandbox/react-states';
+import { createReducer, States, StatesTransition } from 'react-states';
 
 type State =
   | {
@@ -77,6 +72,41 @@ const reducer = createReducer<Switcher>({
   BAR: {
     SWITCH: (currentState, action): Transition => [{ state: 'FOO' }, { cmd: 'LOG', message: 'Switched from BAR' }],
   },
+});
+```
+
+### defineEnvironment
+
+```tsx
+import { createEnvironment } from 'react-states';
+
+export type EnvironmentEvent = {
+  type: 'DID_SOMETHING';
+};
+
+export type Environment = {
+  someApi: {
+    doSomething(): void;
+  };
+};
+
+export const { createEnvironment, EnvironmentProvider, useEnvironment, createReducer, useReducer } = defineEnvironment<
+  Environment,
+  EnvironmentEvent
+>();
+```
+
+#### createEnvironment
+
+```ts
+import { createEnvironment } from './environment';
+
+export const browserEnvironment = createEnvironment({
+  someApi: (emit) => ({
+    doSomething() {
+      emit({ type: 'DID_SOMETHING' });
+    },
+  }),
 });
 ```
 

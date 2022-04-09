@@ -132,9 +132,6 @@ export type StatesReducer<ST extends States<any, any, any>> = ST extends States<
       >
   : never;
 
-/**
- * @deprecated
- */
 export function createReducer<ST extends States<any, any, any>>(transitions: StatesTransitions<ST>): StatesReducer<ST> {
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
@@ -282,7 +279,7 @@ export const createSubscription = <S extends TAction>() => new Emitter<S>();
 /**
  * @deprecated
  */
-export const useSubcsription = <S extends TAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
+export const useSubscription = <S extends TAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
   React.useEffect(
     () =>
       subscription.subscribe((subscription) => {
@@ -348,25 +345,21 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
         } as E & { emitter: Emitter<S> },
       );
     },
-    createStates<ST extends States<any, any, any>>(transitions: StatesTransitions<ST, S>): StatesReducer<ST> {
+    createReducer<ST extends States<any, any, any>>(transitions: StatesTransitions<ST, S>): StatesReducer<ST> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
+    useReducer<T extends Reducer<any, any>>(reducer: T, initialState: T extends Reducer<infer ST, any> ? ST : never) {
+      const states = useReducer(reducer, initialState);
+      const environment = React.useContext(environmentContext);
+
+      useEffect(() => {
+        if (environment) {
+          // @ts-ignore
+          return environment.subscription.subscribe(states[1]);
+        }
+      }, []);
+
+      return states;
+    },
   };
-};
-
-export const useStates = <T extends Reducer<any, any>>(
-  reducer: T,
-  initialState: T extends Reducer<infer ST, any> ? ST : never,
-) => {
-  const states = useReducer(reducer, initialState);
-  const environment = React.useContext(environmentContext);
-
-  useEffect(() => {
-    if (environment) {
-      // @ts-ignore
-      return environment.subscription.subscribe(states[1]);
-    }
-  }, []);
-
-  return states;
 };
