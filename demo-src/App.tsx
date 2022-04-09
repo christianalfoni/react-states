@@ -1,19 +1,15 @@
 import * as React from 'react';
-import { useDevtools } from '../src/devtools';
-import { useStates, useStateEffect, match, useCommandEffect } from '../src';
-import { states } from './states/todos';
-import { EnvironmentProvider, useEnvironment } from './environment';
+
+import { useStateEffect, match, useCommandEffect } from '../src';
+import { reducer } from './reducers/todos';
+import { EnvironmentProvider, useEnvironment, useReducer } from './environment';
 import { browserEnvironment } from './environment/browser';
 
 const Test = () => {
   const { todosApi } = useEnvironment();
-  const todos = useStates(states, {
+  const [state, dispatch] = useReducer('todos', reducer, {
     state: 'NOT_LOADED',
   });
-
-  useDevtools('todos', todos);
-
-  const [state, dispatch] = todos;
 
   useStateEffect(state, 'LOADING', () => {
     todosApi.fetchTodos();
@@ -48,7 +44,7 @@ const Test = () => {
         </ul>
       </div>
     ),
-    ERROR: ({ error }) => error,
+    ERROR: ({ error }) => <h4>{error}</h4>,
   });
 };
 

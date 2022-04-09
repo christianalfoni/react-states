@@ -1,5 +1,5 @@
 import { States, StatesTransition } from '../../src';
-import { createStates, Todo } from '../environment';
+import { createReducer, Todo } from '../environment';
 
 type State =
   | {
@@ -35,11 +35,11 @@ type Command =
       cmd: 'LOG';
     };
 
-type TodosStates = States<State, Action, Command>;
+type TodosReducer = States<State, Action, Command>;
 
-type Transition = StatesTransition<TodosStates>;
+type Transition = StatesTransition<TodosReducer>;
 
-export const states = createStates<TodosStates>({
+export const reducer = createReducer<TodosReducer>({
   NOT_LOADED: {
     FETCH_TODOS: (): Transition => ({
       state: 'LOADING',

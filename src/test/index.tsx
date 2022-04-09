@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import React from 'react';
 
-export function renderHook<T extends [any, React.Dispatch<any>]>(
-  hookCallback: () => T,
+export function renderReducer<T extends [any, React.Dispatch<any>]>(
+  reducerCallback: () => T,
   renderCallback: (UseStates: React.FC) => Parameters<typeof render>[0],
 ) {
   // We create an emmpty context object only used for the testing, this
@@ -11,7 +11,7 @@ export function renderHook<T extends [any, React.Dispatch<any>]>(
   // itself in the test, but can not see any reason why you would want to
   const statesReducer: T = [{}, () => {}] as any;
   const HookComponent = () => {
-    const updatedStatesReducer = hookCallback();
+    const updatedStatesReducer = reducerCallback();
     // We clean up the testing object
     Object.keys(statesReducer[0]).forEach((key) => {
       delete statesReducer[0][key];
@@ -28,3 +28,8 @@ export function renderHook<T extends [any, React.Dispatch<any>]>(
   render(renderCallback(HookComponent));
   return statesReducer;
 }
+
+/**
+ * @deprecated
+ */
+export const renderHook = renderReducer;

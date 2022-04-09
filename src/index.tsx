@@ -1,4 +1,5 @@
 import React, { Dispatch, Reducer, useEffect, useReducer } from 'react';
+import type { Manager } from './devtools/Manager';
 
 export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
@@ -328,38 +329,97 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
     EnvironmentProvider: Provider,
     // @ts-ignore
     useEnvironment: (): E & { emitter: Emitter<S> } => React.useContext(environmentContext),
-    createEnvironment: (
-      environment: {
-        [A in keyof E]: (emit: Emit<S>) => E[A];
-      },
-    ) => {
-      return Object.keys(environment).reduce(
-        (aggr, api) => {
-          // @ts-ignore
-          aggr[api] = environment[api](boundEmit);
-
-          return aggr;
-        },
-        {
-          emitter,
-        } as E & { emitter: Emitter<S> },
-      );
+    createEnvironment: (environment: (emit: Emit<S>) => E) => {
+      return Object.assign(environment(boundEmit), {
+        emitter,
+      });
     },
     createReducer<ST extends States<any, any, any>>(transitions: StatesTransitions<ST, S>): StatesReducer<ST> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
-    useReducer<T extends Reducer<any, any>>(reducer: T, initialState: T extends Reducer<infer ST, any> ? ST : never) {
+    useReducer<T extends Reducer<any, any>>(
+      name: string,
+      reducer: T,
+      initialState: T extends Reducer<infer ST, any> ? ST : never,
+    ) {
       const states = useReducer(reducer, initialState);
       const environment = React.useContext(environmentContext);
+
+      useDevtools(name, states);
 
       useEffect(() => {
         if (environment) {
           // @ts-ignore
-          return environment.subscription.subscribe(states[1]);
+          return environment.emitter.subscribe(states[1]);
         }
       }, []);
 
       return states;
     },
   };
+};
+
+const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
+
+export const managerContext = React.createContext({} as Manager);
+
+// We have to type as any as States<any, any> throws error not matching
+// the explicit context
+export const useDevtools = (id: string, reducer: [any, any]) => {
+  const manager = React.useContext(managerContext);
+
+  // We allow using the hook without having the wrapping devtool
+  if (!manager) {
+    return reducer;
+  }
+
+  const [state, dispatch] = reducer;
+
+  React.useEffect(() => () => manager.dispose(id), [id, manager]);
+
+  // @ts-ignore
+  reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
+    manager.onMessage(id, {
+      type: 'command',
+      command,
+    });
+  };
+
+  reducer[1] = (action: any) => {
+    action[DEBUG_ACTION] = (isIgnored: boolean) => {
+      manager.onMessage(id, {
+        type: 'dispatch',
+        action,
+        ignored: isIgnored,
+      });
+    };
+
+    dispatch(action);
+
+    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
+      manager.onMessage(id, {
+        type: 'transitions',
+        // @ts-ignore
+        transitions: state[DEBUG_TRANSITIONS],
+      });
+      return;
+    }
+  };
+
+  React.useEffect(() => {
+    manager.onMessage(id, {
+      type: 'state',
+      state,
+      // @ts-ignore
+      transitions: state[DEBUG_TRANSITIONS],
+      triggerTransitions: () => {
+        // We dispatch to ensure the transition is run
+        reducer[1]({
+          type: DEBUG_TRIGGER_TRANSITIONS,
+        });
+      },
+    });
+  }, [id, manager, state]);
+
+  return reducer;
 };

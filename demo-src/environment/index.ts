@@ -1,4 +1,4 @@
-import { createEnvironment } from '../../src/';
+import { defineEnvironment } from '../../src/';
 
 export type Todo = {
   completed: boolean;
@@ -26,9 +26,9 @@ export type Environment = {
 
 export type EnvironmentAction = TodosApiAction;
 
-const { EnvironmentProvider, createStates, implementEnvironment, useEnvironment } = createEnvironment<
+const { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer } = defineEnvironment<
   Environment,
   EnvironmentAction
 >();
 
-export { EnvironmentProvider, createStates, implementEnvironment, useEnvironment };
+export { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer };
