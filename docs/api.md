@@ -1,25 +1,28 @@
 # API
 
 Factories
-- [createEnvironment](#createEnvironment)
-- [createReducer](#createReducer)
-- [createSubscription](#createSubscription)
+
+- [defineEnvironment](#defineEnvironment)
+- [createEnvironment](#createSubscription)
 
 Effects
+
 - [useStateEffect](#useStateEffect)
-- [useSubscription](#useSubscription)
 - [useCommandEffect](#useCommandEffect)
 
 Utils
+
 - [match](#match)
 
 Type Utils
+
 - [PickState](#PickState)
 - [PickAction](#PickAction)
 - [PickCommand](#PickCommand)
 - [PickHandlers](#PickHandlers)
 
 Devtools
+
 - [DevtoolsProvider](#DevtoolProvider)
 - [useDevtool](#useDevtool)
 
@@ -28,43 +31,36 @@ Devtools
 ### createEnvironment
 
 ```tsx
-import { createEnvironment } from '@codesandbox/react-states'
+import { createEnvironment } from '@codesandbox/react-states';
 
 export type Environment = {
-  someApi: {},
-  someOtherApi: {}
-}
+  someApi: {};
+  someOtherApi: {};
+};
 
-export const {
-  EnvironmentProvider,
-  useEnvironment
-} = createEnvironment<Environment>();
+export const { EnvironmentProvider, useEnvironment } = createEnvironment<Environment>();
 ```
 
 ### createReducer
 
 ```ts
-import {
-  createReducer,
-  States,
-  StatesTransition
-} from "@codesandbox/react-states";
+import { createReducer, States, StatesTransition } from '@codesandbox/react-states';
 
 type State =
   | {
-      state: "FOO";
+      state: 'FOO';
     }
   | {
-      state: "BAR";
+      state: 'BAR';
     };
 
 type Action = {
-  type: "SWITCH";
-}
+  type: 'SWITCH';
+};
 
 type Command = {
-  cmd: "LOG";
-  message: string
+  cmd: 'LOG';
+  message: string;
 };
 
 // Command is optional
@@ -75,14 +71,11 @@ type Transition = StatesTransition<Switcher>;
 const reducer = createReducer<Switcher>({
   FOO: {
     SWITCH: (currentState, action): Transition => ({
-      state: "BAR",
+      state: 'BAR',
     }),
   },
   BAR: {
-    SWITCH: (currentState, action): Transition => [
-      { state: "FOO", },
-      { cmd: "LOG", message: 'Switched from BAR' },
-    ],
+    SWITCH: (currentState, action): Transition => [{ state: 'FOO' }, { cmd: 'LOG', message: 'Switched from BAR' }],
   },
 });
 ```
@@ -90,18 +83,20 @@ const reducer = createReducer<Switcher>({
 ### createSubscription
 
 ```ts
-import { createSubscription } from '@codesandbox/react-states'
+import { createSubscription } from '@codesandbox/react-states';
 
-type SubscriptionEvent = {
-  type: "EVENT_A";
-} | {
-  type: 'EVENT_B'
-}
+type SubscriptionEvent =
+  | {
+      type: 'EVENT_A';
+    }
+  | {
+      type: 'EVENT_B';
+    };
 
-const subscription = createSubscription<SubscriptionEvent>()
+const subscription = createSubscription<SubscriptionEvent>();
 
 subscription.emit({
-  type: "EVENT_A",
+  type: 'EVENT_A',
 });
 ```
 
@@ -115,14 +110,14 @@ Run an effect when entering a specific state.
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useStateEffect(state, "SOME_STATE", () => {
+  useStateEffect(state, 'SOME_STATE', () => {
     // Run when entering state
     return () => {
       // Dispose when exiting the state
     };
   });
 
-  useStateEffect(state, ["SOME_STATE", "SOME_OTHER_STATE"], () => {
+  useStateEffect(state, ['SOME_STATE', 'SOME_OTHER_STATE'], () => {
     // Run when entering either state
     return () => {
       // Dispose when exiting to other state
@@ -141,7 +136,7 @@ Run an effect when the command is part of a transition.
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useCommandEffect(state, "SOME_COMMAND", () => {
+  useCommandEffect(state, 'SOME_COMMAND', () => {
     // Run when command is part of transition
   });
 
@@ -152,12 +147,10 @@ const SomeComponent = () => {
 ### useSubscription
 
 ```tsx
-import { useSubscription } from '@codesandbox/react-states'
+import { useSubscription } from '@codesandbox/react-states';
 
 const SomeComponent: React.FC = ({ subscription }) => {
-  useSubscription(subscription, (event) => {
-    
-  });
+  useSubscription(subscription, (event) => {});
 
   return null;
 };
@@ -170,17 +163,15 @@ const SomeComponent: React.FC = ({ subscription }) => {
 ```ts
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, {
-    state: "SOME_STATE",
+    state: 'SOME_STATE',
   });
 
   return match(state, {
-    SOME_STATE: () => "Hello",
-    OTHER_STATE: () => "Ops",
+    SOME_STATE: () => 'Hello',
+    OTHER_STATE: () => 'Ops',
   });
 };
 ```
-
-
 
 ## Type Utils
 
@@ -189,7 +180,7 @@ const SomeComponent = () => {
 Narrows to specific states.
 
 ```ts
-type NarrowedStates = PickState<SomeStatesType, "A" | "B">;
+type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
 ```
 
 ### PickAction
@@ -197,7 +188,7 @@ type NarrowedStates = PickState<SomeStatesType, "A" | "B">;
 Narrows to specific actions.
 
 ```ts
-type NarrowedActions = PickAction<SomeStatesType, "A" | "B">;
+type NarrowedActions = PickAction<SomeStatesType, 'A' | 'B'>;
 ```
 
 ### PickCommand
@@ -206,7 +197,7 @@ Narrows to specific commands. **Note** it will return a `TState` shape of the co
 not `TCommand`.
 
 ```ts
-type NarrowedCommands = PickCommand<SomeStatesType, "C-A" | "C-B">;
+type NarrowedCommands = PickCommand<SomeStatesType, 'C-A' | 'C-B'>;
 ```
 
 ### PickHandlers
@@ -214,5 +205,5 @@ type NarrowedCommands = PickCommand<SomeStatesType, "C-A" | "C-B">;
 Narrows to specific handlers.
 
 ```ts
-type NarrowedHandlers = PickHandlers<SomeStatesType, "A">;
+type NarrowedHandlers = PickHandlers<SomeStatesType, 'A'>;
 ```

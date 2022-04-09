@@ -26,11 +26,11 @@ npm install react-states@next
 - The interface your application consumes is perfectly tailored for the application
 - Your application is environment agnostic, just add more implementations of the interface (test, ssr, native) and it works the same
 
-### Environment Action Emitter
+### Environment Emitter
 
 - You avoid situations where promises resolve after component unmount
-- Promise catch is not typed, but error actions are
-- No more async tests, actions can be simulated and fired synchronously
+- Promise catch is not typed, but events are
+- No more async tests, events can be simulated and fired synchronously
 
 ## Documentation
 
