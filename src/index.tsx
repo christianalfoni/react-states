@@ -361,7 +361,7 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
 
 const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 
-export const managerContext = React.createContext({} as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
