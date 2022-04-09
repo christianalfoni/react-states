@@ -22,10 +22,6 @@ export interface TCommand {
   cmd: string;
 }
 
-export interface TSubscription {
-  type: string;
-}
-
 export type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
 };
@@ -66,7 +62,7 @@ export type StatesHandlers<
     }
   : never;
 
-export type StatesTransitions<ST extends States<any, any, any>, PA extends TSubscription = never> = ST extends States<
+export type StatesTransitions<ST extends States<any, any, any>, PA extends TAction = never> = ST extends States<
   infer S,
   infer A,
   infer C
@@ -262,7 +258,7 @@ export function match() {
   return (matches) => matches[state.state](state);
 }
 
-export class Subscription<S extends TSubscription> {
+export class Emitter<S extends TAction> {
   private listeners: Array<(subscription: S) => void> = [];
   emit(subscription: S) {
     this.listeners.forEach((listener) => listener(subscription));
@@ -276,17 +272,17 @@ export class Subscription<S extends TSubscription> {
   }
 }
 
-export type Emitter<S extends TSubscription> = (subscription: S) => void;
+export type Emit<S extends TAction> = (subscription: S) => void;
 
 /**
  * @deprecated
  */
-export const createSubscription = <S extends TSubscription>() => new Subscription<S>();
+export const createSubscription = <S extends TAction>() => new Emitter<S>();
 
 /**
  * @deprecated
  */
-export const useSubsription = <S extends TSubscription>(subscription: Subscription<S>, dispatch: React.Dispatch<S>) => {
+export const useSubcsription = <S extends TAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
   React.useEffect(
     () =>
       subscription.subscribe((subscription) => {
@@ -300,11 +296,7 @@ export type TEnvironment = {
   [api: string]: any;
 };
 
-const environmentContext = React.createContext(
-  {} as TEnvironment & {
-    subscription: Subscription<TSubscription>;
-  },
-);
+const environmentContext = React.createContext({});
 
 /**
  * @deprecated
@@ -321,9 +313,9 @@ export const createEnvironment = <E extends Record<string, any>>() => {
   };
 };
 
-export const defineEnvironment = <E extends TEnvironment, S extends TSubscription = never>() => {
-  const subscription = new Subscription<S>();
-  const boundEmit = subscription.emit.bind(subscription);
+export const defineEnvironment = <E extends TEnvironment, S extends TAction = never>() => {
+  const emitter = new Emitter<S>();
+  const boundEmit = emitter.emit.bind(emitter);
   const Provider = ({ children, environment }: { children: React.ReactNode; environment: E }) => {
     return (
       <environmentContext.Provider
@@ -338,10 +330,10 @@ export const defineEnvironment = <E extends TEnvironment, S extends TSubscriptio
   return {
     EnvironmentProvider: Provider,
     // @ts-ignore
-    useEnvironment: (): E & { subscription: Subscription<S> } => React.useContext(environmentContext),
+    useEnvironment: (): E & { emitter: Emitter<S> } => React.useContext(environmentContext),
     createEnvironment: (
       environment: {
-        [A in keyof E]: (emit: Emitter<S>) => E[A];
+        [A in keyof E]: (emit: Emit<S>) => E[A];
       },
     ) => {
       return Object.keys(environment).reduce(
@@ -352,8 +344,8 @@ export const defineEnvironment = <E extends TEnvironment, S extends TSubscriptio
           return aggr;
         },
         {
-          subscription,
-        } as E & { subscription: Subscription<S> },
+          emitter,
+        } as E & { emitter: Emitter<S> },
       );
     },
     createStates<ST extends States<any, any, any>>(transitions: StatesTransitions<ST, S>): StatesReducer<ST> {
