@@ -6,23 +6,16 @@
   "license": "MIT",
   "repository": "git+https://github.com/christianalfoni/react-states.git",
   "module": "index.js",
-  "main": "cjs/index.js",
+  "main": "index.js",
   "exports": {
     ".": {
-      "import": "./index.js",
-      "require": "./cjs/index.js"
-    },
-    "./cjs": {
-      "import": "./index.js",
-      "require": "./cjs/index.js"
+      "import": "./index.js"
     },
     "./devtools": {
-      "import": "./devtools/index.js",
-      "require": "./cjs/devtools/index.js"
+      "import": "./devtools/index.js"
     },
     "./test": {
-      "import": "./test/index.js",
-      "require": "./cjs/test/index.js"
+      "import": "./test/index.js"
     }
   },
   "types": "index.d.ts",
