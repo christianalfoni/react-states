@@ -32,17 +32,17 @@ export type TMatch<S extends TState, R = any> = {
 
 export type PickState<
   ST extends States<any, any, any>,
-  T extends ST extends States<infer S, any, any> ? S['state'] : never = never,
+  T extends ST extends States<infer S, any, any> ? S['state'] : never = never
 > = ST extends States<infer S, any, any> ? ([T] extends [never] ? S : S extends { state: T } ? S : never) : never;
 
 export type PickAction<
   ST extends States<any, any, any>,
-  T extends ST extends States<any, infer A, any> ? A['type'] : never,
+  T extends ST extends States<any, infer A, any> ? A['type'] : never
 > = ST extends States<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
 
 export type PickCommand<
   ST extends States<any, any, any>,
-  T extends ST extends States<any, any, infer A> ? A['cmd'] : never,
+  T extends ST extends States<any, any, infer A> ? A['cmd'] : never
 > = ST extends States<any, any, infer C>
   ? C extends { cmd: T }
     ? {
@@ -56,7 +56,7 @@ export type PickCommand<
 
 export type StatesHandlers<
   ST extends States<any, any, any>,
-  SS extends ST extends States<infer S, any, any> ? S['state'] : never = never,
+  SS extends ST extends States<infer S, any, any> ? S['state'] : never = never
 > = ST extends States<infer S, infer A, infer C>
   ? {
       [AA in A['type']]?: (
@@ -84,12 +84,13 @@ export type StatesTransitions<ST extends States<any, any, any>, PA extends TSubs
               state: S extends { state: SS } ? S : never,
               action: A extends { type: AA } ? A : never,
             ) => [C] extends [never] ? S : S | [S, ...C[]];
-          } & {
-            [PAA in PA['type']]?: (
-              state: S extends { state: SS } ? S : never,
-              action: PA extends { type: PAA } ? PA : never,
-            ) => [C] extends [never] ? S : S | [S, ...C[]];
-          };
+          } &
+            {
+              [PAA in PA['type']]?: (
+                state: S extends { state: SS } ? S : never,
+                action: PA extends { type: PAA } ? PA : never,
+              ) => [C] extends [never] ? S : S | [S, ...C[]];
+            };
     }
   : never;
 
@@ -97,9 +98,11 @@ export type States<S extends TState, A extends TAction, C extends TCommand = nev
   [C] extends [never]
     ? S
     : S &
-        WithCommands<{
-          [CC in C['cmd']]: C & { cmd: CC };
-        }>,
+        WithCommands<
+          {
+            [CC in C['cmd']]: C & { cmd: CC };
+          }
+        >,
   React.Dispatch<A>,
 ] & {
   [MAKE_COMMANDS_INFERRABLE]?: C;
@@ -119,14 +122,18 @@ export type WithCommands<T> = {
 export type StatesReducer<ST extends States<any, any, any>> = ST extends States<infer S, infer A, infer C>
   ? (
       state: S &
-        WithCommands<{
-          [CC in C['cmd']]: C & { cmd: CC };
-        }>,
+        WithCommands<
+          {
+            [CC in C['cmd']]: C & { cmd: CC };
+          }
+        >,
       action: A,
     ) => S &
-      WithCommands<{
-        [CC in C['cmd']]: C & { cmd: CC };
-      }>
+      WithCommands<
+        {
+          [CC in C['cmd']]: C & { cmd: CC };
+        }
+      >
   : never;
 
 /**
@@ -235,9 +242,10 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
 
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
-  matches: T & {
-    [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
-  },
+  matches: T &
+    {
+      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+    },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
@@ -298,7 +306,22 @@ const environmentContext = React.createContext(
   },
 );
 
-export const createEnvironment = <E extends TEnvironment, S extends TSubscription = never>() => {
+/**
+ * @deprecated
+ */
+export const createEnvironment = <E extends Record<string, any>>() => {
+  const context = React.createContext<E>({} as E);
+  const Provider = ({ children, environment }: { children: React.ReactNode; environment: Partial<E> }) => {
+    return <context.Provider value={environment as E}>{children}</context.Provider>;
+  };
+
+  return {
+    EnvironmentProvider: Provider,
+    useEnvironment: () => React.useContext(context),
+  };
+};
+
+export const defineEnvironment = <E extends TEnvironment, S extends TSubscription = never>() => {
   const subscription = new Subscription<S>();
   const boundEmit = subscription.emit.bind(subscription);
   const Provider = ({ children, environment }: { children: React.ReactNode; environment: E }) => {
@@ -316,9 +339,11 @@ export const createEnvironment = <E extends TEnvironment, S extends TSubscriptio
     EnvironmentProvider: Provider,
     // @ts-ignore
     useEnvironment: (): E & { subscription: Subscription<S> } => React.useContext(environmentContext),
-    implementEnvironment: (environment: {
-      [A in keyof E]: (emit: Emitter<S>) => E[A];
-    }) => {
+    createEnvironment: (
+      environment: {
+        [A in keyof E]: (emit: Emitter<S>) => E[A];
+      },
+    ) => {
       return Object.keys(environment).reduce(
         (aggr, api) => {
           // @ts-ignore
