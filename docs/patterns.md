@@ -2,11 +2,10 @@
 
 - [Provider](#Provider)
 - [Public Provider](#Public-Provider)
-- [Dynamic reducer](#Dynamic-reducer)
-- [Lift handlers](#Lift-handlers)
-- [Shared commands](#Shared-commands)
     
 ## Provider
+
+Expose the reducer on a React context.
 
 ```tsx
 import { createContext, useReducer } from 'react'
@@ -60,6 +59,8 @@ export const SwitcherProvider: React.FC<SwitcherProviderProps> = ({
 
 ## Public Provider
 
+Keep certain actions private to the provider component. Any consuming component only has public actions typed.
+
 ```tsx
 import { createContext, useReducer } from 'react'
 import { States, StateTransition, createReducer } from 'react-states'
@@ -78,12 +79,15 @@ type PrivateAction = {
     type: 'PRIVATE_SWITCH'
 }
 
+// The switcher takes both action types
 type Switcher = States<State, Action | PrivateAction>
+
+// Though the public one takes only public actions
+export type PublicSwitcher = States<State, Action>
 
 type Transition = StateTransition<Switcher>
 
-export type PublicSwitcher = States<State, Action>
-
+// Type the provided reducer as public
 const context = createContext({} as PublicSwitcher)
 
 const reducer = createReducer<Switcher>({})
