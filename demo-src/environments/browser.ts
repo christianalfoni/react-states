@@ -1,4 +1,4 @@
-import { createEnvironment } from '.';
+import { createEnvironment } from '../environment-interface';
 
 export const browserEnvironment = createEnvironment((emit) => ({
   todosApi: {

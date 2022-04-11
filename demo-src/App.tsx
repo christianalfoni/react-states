@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import { useStateEffect, match, useCommandEffect } from '../src';
 import { reducer } from './reducers/todos';
-import { EnvironmentProvider, useEnvironment, useReducer } from './environment';
-import { browserEnvironment } from './environment/browser';
+import { EnvironmentProvider, useEnvironment, useReducer } from './environment-interface';
+import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
   const { todosApi } = useEnvironment();

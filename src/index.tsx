@@ -28,19 +28,25 @@ export type TMatch<S extends TState, R = any> = {
 };
 
 export type PickState<
-  ST extends States<any, any, any>,
-  T extends ST extends States<infer S, any, any> ? S['state'] : never = never
-> = ST extends States<infer S, any, any> ? ([T] extends [never] ? S : S extends { state: T } ? S : never) : never;
+  ST extends StatesReducer<any, any, any>,
+  T extends ST extends StatesReducer<infer S, any, any> ? S['state'] : never = never
+> = ST extends StatesReducer<infer S, any, any>
+  ? [T] extends [never]
+    ? S
+    : S extends { state: T }
+    ? S
+    : never
+  : never;
 
 export type PickAction<
-  ST extends States<any, any, any>,
-  T extends ST extends States<any, infer A, any> ? A['type'] : never
-> = ST extends States<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
+  ST extends StatesReducer<any, any, any>,
+  T extends ST extends StatesReducer<any, infer A, any> ? A['type'] : never
+> = ST extends StatesReducer<any, infer A, any> ? (A extends { type: T } ? A : never) : never;
 
 export type PickCommand<
-  ST extends States<any, any, any>,
-  T extends ST extends States<any, any, infer A> ? A['cmd'] : never
-> = ST extends States<any, any, infer C>
+  ST extends StatesReducer<any, any, any>,
+  T extends ST extends StatesReducer<any, any, infer A> ? A['cmd'] : never
+> = ST extends StatesReducer<any, any, infer C>
   ? C extends { cmd: T }
     ? {
         state: string;
@@ -52,9 +58,9 @@ export type PickCommand<
   : never;
 
 export type StatesHandlers<
-  ST extends States<any, any, any>,
-  SS extends ST extends States<infer S, any, any> ? S['state'] : never = never
-> = ST extends States<infer S, infer A, infer C>
+  ST extends StatesReducer<any, any, any>,
+  SS extends ST extends StatesReducer<infer S, any, any> ? S['state'] : never = never
+> = ST extends StatesReducer<infer S, infer A, infer C>
   ? {
       [AA in A['type']]?: (
         state: [SS] extends [never] ? S : S extends { state: SS } ? S : never,
@@ -63,17 +69,25 @@ export type StatesHandlers<
     }
   : never;
 
-export type StatesTransitions<ST extends States<any, any, any>, PA extends TAction = never> = ST extends States<
-  infer S,
-  infer A,
-  infer C
->
+export type StatesTransitions<
+  ST extends StatesReducer<any, any, any>,
+  PA extends TAction = never
+> = ST extends StatesReducer<infer S, infer A, infer C>
   ? {
       [SS in S['state']]: [PA] extends [never]
+        ? [A] extends [never]
+          ? never
+          : {
+              [AA in A['type']]?: (
+                state: S extends { state: SS } ? S : never,
+                action: A extends { type: AA } ? A : never,
+              ) => [C] extends [never] ? S : S | [S, ...C[]];
+            }
+        : [A] extends [never]
         ? {
-            [AA in A['type']]?: (
+            [PAA in PA['type']]?: (
               state: S extends { state: SS } ? S : never,
-              action: A extends { type: AA } ? A : never,
+              action: PA extends { type: PAA } ? PA : never,
             ) => [C] extends [never] ? S : S | [S, ...C[]];
           }
         : {
@@ -91,7 +105,7 @@ export type StatesTransitions<ST extends States<any, any, any>, PA extends TActi
     }
   : never;
 
-export type States<S extends TState, A extends TAction, C extends TCommand = never> = [
+export type StatesReducer<S extends TState, A extends TAction = never, C extends TCommand = never> = [
   [C] extends [never]
     ? S
     : S &
@@ -105,7 +119,7 @@ export type States<S extends TState, A extends TAction, C extends TCommand = nev
   [MAKE_COMMANDS_INFERRABLE]?: C;
 };
 
-export type StatesTransition<ST extends States<any, any, any>> = ST extends States<infer S, any, infer C>
+export type StatesTransition<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<infer S, any, infer C>
   ? [C] extends [never]
     ? S
     : S | [S, ...C[]]
@@ -116,7 +130,11 @@ export type WithCommands<T> = {
   [COMMANDS]?: T;
 };
 
-export type StatesReducer<ST extends States<any, any, any>> = ST extends States<infer S, infer A, infer C>
+export type StatesReducerFunction<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<
+  infer S,
+  infer A,
+  infer C
+>
   ? (
       state: S &
         WithCommands<
@@ -133,14 +151,16 @@ export type StatesReducer<ST extends States<any, any, any>> = ST extends States<
       >
   : never;
 
-export function createReducer<ST extends States<any, any, any>>(transitions: StatesTransitions<ST>): StatesReducer<ST> {
+export function createReducer<ST extends StatesReducer<any, any, any>>(
+  transitions: StatesTransitions<ST>,
+): StatesReducerFunction<ST> {
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
 
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
   state: S,
   action: A,
-  transitions: StatesTransitions<States<S, A, C>>,
+  transitions: StatesTransitions<StatesReducer<S, A, C>>,
 ) {
   let newState = state;
   let commands;
@@ -334,7 +354,9 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
         emitter,
       });
     },
-    createReducer<ST extends States<any, any, any>>(transitions: StatesTransitions<ST, S>): StatesReducer<ST> {
+    createReducer<ST extends StatesReducer<any, any, any>>(
+      transitions: StatesTransitions<ST, S>,
+    ): StatesReducerFunction<ST> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
     useReducer<T extends Reducer<any, any>>(

@@ -1,30 +1,31 @@
 # API
 
-- [Factories](#factories)
-    - [createReducer](#createreducer)
-  - [defineEnvironment](#defineenvironment)
-    - [createEnvironment](#createenvironment)
-    - [EnvironmentProvider](#environmentprovider)
-    - [useEnvironment](#useenvironment)
-    - [createReducer](#createreducer-1)
-    - [useReducer](#usereducer)
-- [Effects](#effects)
-  - [useStateEffect](#usestateeffect)
-  - [useCommandEffect](#usecommandeffect)
-- [Utils](#utils)
-  - [match](#match)
-  - [renderReducer](#renderreducer)
-- [Type Utils](#type-utils)
-  - [States](#states)
-  - [StatesHandlers](#stateshandlers)
-  - [StatesTransition](#statestransition)
-  - [Emit](#emit)
-  - [PickState](#pickstate)
-  - [PickAction](#pickaction)
-  - [PickCommand](#pickcommand)
-- [Devtools](#devtools)
-  - [DevtoolsProvider](#devtoolsprovider)
-  - [useDevtools](#usedevtools)
+- [API](#api)
+  - [Factories](#factories)
+      - [createReducer](#createreducer)
+    - [defineEnvironment](#defineenvironment)
+      - [createEnvironment](#createenvironment)
+      - [EnvironmentProvider](#environmentprovider)
+      - [useEnvironment](#useenvironment)
+      - [createReducer](#createreducer-1)
+      - [useReducer](#usereducer)
+  - [Effects](#effects)
+    - [useStateEffect](#usestateeffect)
+    - [useCommandEffect](#usecommandeffect)
+  - [Utils](#utils)
+    - [match](#match)
+    - [renderReducer](#renderreducer)
+  - [Type Utils](#type-utils)
+    - [StatesReducer](#statesreducer)
+    - [StatesHandlers](#stateshandlers)
+    - [StatesTransition](#statestransition)
+    - [Emit](#emit)
+    - [PickState](#pickstate)
+    - [PickAction](#pickaction)
+    - [PickCommand](#pickcommand)
+  - [Devtools](#devtools)
+    - [DevtoolsProvider](#devtoolsprovider)
+    - [useDevtools](#usedevtools)
 
 ## Factories
 
@@ -33,7 +34,7 @@
 Create a plain reducer, not typed to any environment events
 
 ```ts
-import { createReducer, States, StatesTransition } from 'react-states';
+import { createReducer, StatesReducer, StatesTransition } from 'react-states';
 
 type State =
   | {
@@ -53,7 +54,7 @@ type Command = {
 };
 
 // Command is optional
-type Switcher = States<State, Action, Command>;
+type Switcher = StatesReducer<State, Action, Command>;
 
 type Transition = StatesTransition<Switcher>;
 
@@ -145,7 +146,7 @@ export const SomeComponent: React.FC = () => {
 Creates a reducer typed to the environment. The handlers can be any environment event in addition to actions.
 
 ```ts
-import { States, StatesTransition } from 'react-states';
+import { StatesReducer, StatesTransition } from 'react-states';
 import { createReducer } from './environment';
 
 type State =
@@ -160,7 +161,7 @@ type Action = {
   type: 'SWITCH';
 };
 
-type Switcher = States<State, Action>;
+type Switcher = StatesReducer<State, Action>;
 
 type Transition = StatesTransition<Switcher>;
 
@@ -288,12 +289,12 @@ it('should do something', () => {
 
 ## Type Utils
 
-### States
+### StatesReducer
 
 A type representing the states reducer.
 
 ```ts
-import { States } from 'react-states';
+import { StatesReducer } from 'react-states';
 
 type State =
   | {
@@ -312,7 +313,7 @@ type Command = {
   message: string;
 };
 
-type SomeStatesType = States<State, Action, Command>;
+type SomeStatesType = StatesReducer<State, Action, Command>;
 ```
 
 ### StatesHandlers

@@ -8,7 +8,7 @@ import { colors } from './styles';
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
 
-export const DevtoolsProvider = ({ children, show = true }: { children: React.ReactNode; show: boolean }) => {
+export const DevtoolsProvider = ({ children, show = true }: { children: React.ReactNode; show?: boolean }) => {
   return (
     <managerContext.Provider value={new Manager()}>
       <div suppressHydrationWarning>{typeof document === 'undefined' || !show ? null : <DevtoolsManager />}</div>

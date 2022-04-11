@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StatesTransition, useCommandEffect, useStateEffect, createReducer, States } from '../';
+import { StatesTransition, useCommandEffect, useStateEffect, createReducer, StatesReducer } from '../';
 import { colors } from './styles';
 
 type State =
@@ -41,7 +41,7 @@ type Command =
       cmd: 'NOTIFY_CLICK';
     };
 
-type Resizer = States<State, Action, Command>;
+type Resizer = StatesReducer<State, Action, Command>;
 
 type Transition = StatesTransition<Resizer>;
 

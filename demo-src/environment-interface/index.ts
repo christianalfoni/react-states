@@ -1,4 +1,4 @@
-import { defineEnvironment } from '../../src/';
+import { defineEnvironment } from '../../src';
 
 export type Todo = {
   completed: boolean;

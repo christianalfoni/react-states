@@ -1,5 +1,5 @@
-import { States, StatesTransition } from '../../src';
-import { createReducer, Todo } from '../environment';
+import { StatesReducer, StatesTransition } from '../../src';
+import { createReducer, Todo } from '../environment-interface';
 
 type State =
   | {
@@ -35,7 +35,7 @@ type Command =
       cmd: 'LOG';
     };
 
-type TodosReducer = States<State, Action, Command>;
+type TodosReducer = StatesReducer<State, Action, Command>;
 
 type Transition = StatesTransition<TodosReducer>;
 
