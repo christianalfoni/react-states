@@ -8,9 +8,13 @@
 npm install react-states@next
 ```
 
+## Explaining explicit states
+
+[![react-states](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://www.youtube.com/watch?v=ul_3ABrpj64)
+
 ## What react-states offers
 
-### Explicit States
+### Explicit States Reducer
 
 - You are explicit about what states the reducer can be in
 - You avoid `undefined` and `null` checking
