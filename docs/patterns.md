@@ -1,94 +1,52 @@
 # Patterns
 
-- [Provider](#Provider)
-- [Public Provider](#Public-Provider)
-    
-## Provider
+- [Hook](#Hook)
 
-Expose the reducer on a React context.
+## Hook
+
+Expose the reducer and related effects as a hook.
 
 ```tsx
-import { createContext, useReducer } from 'react'
-import { States, StateTransition, createReducer } from 'react-states'
+import { useReducer } from 'react';
+import { States, StateTransition, createReducer, useStateEffect } from 'react-states';
 
-type State = {
-    state: 'FOO'
-} | {
-    state: 'BAR'
-}
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    };
 
 type Action = {
-    type: 'SWITCH'
-}
+  type: 'SWITCH';
+};
 
+export type Switcher = States<State, Action>;
 
-export type Switcher = States<State, Action>
-
-type Transition = StateTransition<Switcher>
+type Transition = StateTransition<Switcher>;
 
 type SwitcherProviderProps = {
-    initialState?: State
-}
-
-const context = createContext({} as Switcher)
-
-export const useSwitcher = () => useContext(context)
+  initialState?: State;
+};
 
 const reducer = createReducer<Switcher>({
-    FOO: {
-        SWITCH: (): Transition => ({ state: 'BAR' })
-    },
-    BAR: {
-        SWITCH: (): Transition => ({ state: 'FOO' })
-    }
-})
+  FOO: {
+    SWITCH: (): Transition => ({ state: 'BAR' }),
+  },
+  BAR: {
+    SWITCH: (): Transition => ({ state: 'FOO' }),
+  },
+});
 
-export const SwitcherProvider: React.FC<SwitcherProviderProps> = ({
-    children,
-    initialState = { state: 'FOO' }
-}) => {
-    const value = useReducer(reducer, initialState)
+export const useSwitcher = ({ initialState = { state: 'FOO' } }) => {
+  const switcherReducer = useReducer(reducer, initialState);
+  const [state] = switcherReducer;
 
-    return (
-        <context.Provider value={value}>
-            {children}
-        </context.Provider>
-    )
-}
-```
+  useStateEffect(state, 'BAR', () => {
+    console.log('Switched to BAR');
+  });
 
-## Public Provider
-
-Keep certain actions private to the provider component. Any consuming component only has public actions typed.
-
-```tsx
-import { createContext, useReducer } from 'react'
-import { States, StateTransition, createReducer } from 'react-states'
-
-type State = {
-    state: 'FOO'
-} | {
-    state: 'BAR'
-}
-
-type Action = {
-    type: 'SWITCH'
-}
-
-type PrivateAction = {
-    type: 'PRIVATE_SWITCH'
-}
-
-// The switcher takes both action types
-type Switcher = States<State, Action | PrivateAction>
-
-// Though the public one takes only public actions
-export type PublicSwitcher = States<State, Action>
-
-type Transition = StateTransition<Switcher>
-
-// Type the provided reducer as public
-const context = createContext({} as PublicSwitcher)
-
-const reducer = createReducer<Switcher>({})
+  return switcherReducer;
+};
 ```

@@ -1,12 +1,14 @@
 # API
 
 Core
+
 - [createReducer](#createreducer)
 - [useStateEffect](#usestateeffect)
 - [useCommandEffect](#usecommandeffect)
 - [match](#match)
 
 Environment
+
 - [defineEnvironment](#defineenvironment)
 - [createEnvironment](#createenvironment)
 - [EnvironmentProvider](#environmentprovider)
@@ -15,9 +17,11 @@ Environment
 - [useReducer](#usereducer)
 
 Testing
+
 - [renderReducer](#renderreducer)
 
 Type Utils
+
 - [StatesReducer](#statesreducer)
 - [StatesHandlers](#stateshandlers)
 - [StatesTransition](#statestransition)
@@ -27,6 +31,7 @@ Type Utils
 - [PickCommand](#pickcommand)
 
 Devtools
+
 - [DevtoolsProvider](#devtoolsprovider)
 - [useDevtools](#usedevtools)
 
@@ -250,6 +255,42 @@ export const SomeComponent: React.FC = () => {
 
   return <div />;
 };
+```
+
+## Testing
+
+### renderReducer
+
+```tsx
+import { act } from '@testing-library/react';
+import { renderReducer } from 'react-states/test';
+import { createEnvironment } from './environment/test';
+
+it('should do something', () => {
+  const environment = createEnvironment();
+  const [state, dispatch] = renderReducer(
+    () => useSwitcher(),
+    (Switcher) => (
+      <EnvironmentProvider environment={environment}>
+        <Switcher />
+      </EnvironmentProvider>
+    ),
+  );
+
+  act(() => {
+    dispatch({ type: 'SWITCH' });
+  });
+
+  expect(state.state).toBe('BAR');
+
+  act(() => {
+    environment.emitter.emit({
+      type: 'SOME_EVENT',
+    });
+  });
+
+  expect(state.state).toBe('BAZ');
+});
 ```
 
 ## Type Utils
