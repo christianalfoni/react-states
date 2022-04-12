@@ -185,7 +185,7 @@ export function transition<S extends TState, A extends TAction, C extends TComma
 
   if (debugId) {
     // @ts-ignore
-    newState[DEBUG_ID] = id;
+    newState[DEBUG_ID] = debugId;
 
     // @ts-ignore
     newState[DEBUG_TRANSITIONS] = transitions;
