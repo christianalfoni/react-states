@@ -14,7 +14,7 @@ npm install react-states@next
 
 ## What react-states offers
 
-### Explicit States Reducer
+### Explicit States Reducer (Core)
 
 - You are explicit about what states the reducer can be in
 - You avoid `undefined` and `null` checking

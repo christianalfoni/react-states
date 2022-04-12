@@ -1,35 +1,38 @@
 # API
 
-- [API](#api)
-  - [Factories](#factories)
-      - [createReducer](#createreducer)
-    - [defineEnvironment](#defineenvironment)
-      - [createEnvironment](#createenvironment)
-      - [EnvironmentProvider](#environmentprovider)
-      - [useEnvironment](#useenvironment)
-      - [createReducer](#createreducer-1)
-      - [useReducer](#usereducer)
-  - [Effects](#effects)
-    - [useStateEffect](#usestateeffect)
-    - [useCommandEffect](#usecommandeffect)
-  - [Utils](#utils)
-    - [match](#match)
-    - [renderReducer](#renderreducer)
-  - [Type Utils](#type-utils)
-    - [StatesReducer](#statesreducer)
-    - [StatesHandlers](#stateshandlers)
-    - [StatesTransition](#statestransition)
-    - [Emit](#emit)
-    - [PickState](#pickstate)
-    - [PickAction](#pickaction)
-    - [PickCommand](#pickcommand)
-  - [Devtools](#devtools)
-    - [DevtoolsProvider](#devtoolsprovider)
-    - [useDevtools](#usedevtools)
+Core
+- [createReducer](#createreducer)
+- [useStateEffect](#usestateeffect)
+- [useCommandEffect](#usecommandeffect)
+- [match](#match)
 
-## Factories
+Environment (Optional)
+- [defineEnvironment](#defineenvironment)
+- [createEnvironment](#createenvironment)
+- [EnvironmentProvider](#environmentprovider)
+- [useEnvironment](#useenvironment)
+- [createReducer](#createreducer-1)
+- [useReducer](#usereducer)
 
-#### createReducer
+Testing
+- [renderReducer](#renderreducer)
+
+Type Utils
+- [StatesReducer](#statesreducer)
+- [StatesHandlers](#stateshandlers)
+- [StatesTransition](#statestransition)
+- [Emit](#emit)
+- [PickState](#pickstate)
+- [PickAction](#pickaction)
+- [PickCommand](#pickcommand)
+
+Devtools
+- [DevtoolsProvider](#devtoolsprovider)
+- [useDevtools](#usedevtools)
+
+## Core
+
+### createReducer
 
 Create a plain reducer, not typed to any environment events
 
