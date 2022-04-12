@@ -41,8 +41,8 @@ const reducer = createReducer<Switcher>({
 
 // Allow setting initialState for more reusability and also
 // improved testability
-export const useSwitcher = ({ initialState = { state: 'FOO' } }) => {
-  const switcherReducer = useReducer(reducer, initialState);
+export const useSwitcher = ({ initialState }: { initialState?: State }) => {
+  const switcherReducer = useReducer(reducer, initialState || { state: 'FOO' });
   const [state] = switcherReducer;
 
   useStateEffect(state, 'BAR', () => {
