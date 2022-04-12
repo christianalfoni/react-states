@@ -5,6 +5,7 @@ export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const COMMANDS = Symbol('COMMANDS');
+export const DEBUG_ID = Symbol('DEBUG_ID');
 // Hack to make commands inferrable
 export const MAKE_COMMANDS_INFERRABLE = Symbol('MAKE_COMMANDS_INFERRABLE');
 
@@ -166,6 +167,9 @@ export function transition<S extends TState, A extends TAction, C extends TComma
   let commands;
 
   // @ts-ignore
+  const debugId = state[DEBUG_ID];
+
+  // @ts-ignore
   if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
     const result = transitions[state.state][action.type](state, action);
@@ -173,14 +177,19 @@ export function transition<S extends TState, A extends TAction, C extends TComma
     commands = Array.isArray(result) ? result.slice(1) : undefined;
     newState = Array.isArray(result) ? result[0] : result;
     // @ts-ignore
-    action[DEBUG_ACTION] && action[DEBUG_ACTION](false);
+    action[DEBUG_ACTION] && (newState !== state || commands) && action[DEBUG_ACTION](debugId, false);
   } else {
     // @ts-ignore
-    action[DEBUG_ACTION] && action[DEBUG_ACTION](true);
+    action[DEBUG_ACTION] && action[DEBUG_ACTION](debugId, true);
   }
 
-  // @ts-ignore
-  newState[DEBUG_TRANSITIONS] = transitions;
+  if (debugId) {
+    // @ts-ignore
+    newState[DEBUG_ID] = id;
+
+    // @ts-ignore
+    newState[DEBUG_TRANSITIONS] = transitions;
+  }
 
   // @ts-ignore
   newState[COMMANDS] = state[COMMANDS] || {};
@@ -400,6 +409,8 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   React.useEffect(() => () => manager.dispose(id), [id, manager]);
 
   // @ts-ignore
+  reducer[0][DEBUG_ID] = id;
+  // @ts-ignore
   reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
     manager.onMessage(id, {
       type: 'command',
@@ -408,7 +419,7 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   };
 
   reducer[1] = (action: any) => {
-    action[DEBUG_ACTION] = (isIgnored: boolean) => {
+    action[DEBUG_ACTION] = (id: string, isIgnored: boolean) => {
       manager.onMessage(id, {
         type: 'dispatch',
         action,
