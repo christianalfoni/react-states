@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Resizer } from './Resizer';
-import { DEBUG_TRANSITIONS, DEBUG_ACTION, DEBUG_COMMAND, managerContext } from '../';
+import { managerContext } from '../';
 
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
