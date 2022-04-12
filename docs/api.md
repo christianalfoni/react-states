@@ -6,7 +6,7 @@ Core
 - [useCommandEffect](#usecommandeffect)
 - [match](#match)
 
-Environment (Optional)
+Environment
 - [defineEnvironment](#defineenvironment)
 - [createEnvironment](#createenvironment)
 - [EnvironmentProvider](#environmentprovider)
@@ -34,7 +34,7 @@ Devtools
 
 ### createReducer
 
-Create a plain reducer, not typed to any environment events
+Create a reducer with explicit states
 
 ```ts
 import { createReducer, StatesReducer, StatesTransition } from 'react-states';
@@ -72,130 +72,6 @@ const reducer = createReducer<Switcher>({
   },
 });
 ```
-
-### defineEnvironment
-
-Define an environment with its interface and any events to emit
-
-```tsx
-import { createEnvironment } from 'react-states';
-
-export type EnvironmentEvent = {
-  type: 'DID_SOMETHING';
-};
-
-export type Environment = {
-  someApi: {
-    doSomething(): void;
-  };
-};
-
-export const { createEnvironment, EnvironmentProvider, useEnvironment, createReducer, useReducer } = defineEnvironment<
-  Environment,
-  EnvironmentEvent
->();
-```
-
-#### createEnvironment
-
-Create a specific implementation of the environment interface,
-where you can emit events.
-
-```ts
-import { createEnvironment } from './environment';
-
-export const browserEnvironment = createEnvironment((emit) => ({
-  someApi: {
-    doSomething() {
-      emit({ type: 'DID_SOMETHING' });
-    },
-  },
-}));
-```
-
-#### EnvironmentProvider
-
-Expose a specific environment to the application.
-
-```tsx
-import { EnvironmentProvider } from './environment';
-import { environment } from './environment/browser';
-
-export const AppWrapper: React.FC = () => {
-  return (
-    <EnvironmentProvider environment={environment}>
-      <App />
-    </EnvironmentProvider>
-  );
-};
-```
-
-#### useEnvironment
-
-Use the environment interface.
-
-```tsx
-import { useEnvironment } from './environment';
-
-export const SomeComponent: React.FC = () => {
-  const { someApi } = useEnvironment();
-
-  return <div />;
-};
-```
-
-#### createReducer
-
-Creates a reducer typed to the environment. The handlers can be any environment event in addition to actions.
-
-```ts
-import { StatesReducer, StatesTransition } from 'react-states';
-import { createReducer } from './environment';
-
-type State =
-  | {
-      state: 'STATE_A';
-    }
-  | {
-      state: 'STATE_B';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-type Switcher = StatesReducer<State, Action>;
-
-type Transition = StatesTransition<Switcher>;
-
-const reducer = createReducer<Switcher>({
-  STATE_A: {
-    // Event from the environment
-    SOME_EVENT: (): Transition => ({ state: 'STATE_B' }),
-  },
-  STATE_B: {
-    SWITCH: (currentState, action): Transition => ({ state: 'FOO' }),
-  },
-});
-```
-
-#### useReducer
-
-Use a reducer tied to the environment, meaning it will receive any events from the environment in addition to its dispatched actions.
-
-```tsx
-import { useReducer } from './environment';
-import { reducer } from './reducer';
-
-export const SomeComponent: React.FC = () => {
-  // Subscribes to environment events
-  const [state, dispatch] = useReducer('some-name', reducer, { state: 'STATE_A' });
-
-  return <div />;
-};
-```
-
-## Effects
 
 ### useStateEffect
 
@@ -239,8 +115,6 @@ const SomeComponent = () => {
 };
 ```
 
-## Utils
-
 ### match
 
 ```ts
@@ -256,38 +130,126 @@ const SomeComponent = () => {
 };
 ```
 
-### renderReducer
+### defineEnvironment
+
+Define an environment with its interface and any events to emit
 
 ```tsx
-import { act } from '@testing-library/react';
-import { renderReducer } from 'react-states/test';
-import { createEnvironment } from './environment/test';
+import { createEnvironment } from 'react-states';
 
-it('should do something', () => {
-  const environment = createEnvironment();
-  const [state, dispatch] = renderReducer(
-    () => useReducer(reducer, { state: 'FOO' }),
-    (Reducer) => (
-      <EnvironmentProvider environment={environment}>
-        <Reducer />
-      </EnvironmentProvider>
-    ),
+export type EnvironmentEvent = {
+  type: 'DID_SOMETHING';
+};
+
+export type Environment = {
+  someApi: {
+    doSomething(): void;
+  };
+};
+
+export const { createEnvironment, EnvironmentProvider, useEnvironment, createReducer, useReducer } = defineEnvironment<
+  Environment,
+  EnvironmentEvent
+>();
+```
+
+### createEnvironment
+
+Create a specific implementation of the environment interface,
+where you can emit events.
+
+```ts
+import { createEnvironment } from './environment';
+
+export const browserEnvironment = createEnvironment((emit) => ({
+  someApi: {
+    doSomething() {
+      emit({ type: 'DID_SOMETHING' });
+    },
+  },
+}));
+```
+
+### EnvironmentProvider
+
+Expose a specific environment to the application.
+
+```tsx
+import { EnvironmentProvider } from './environment';
+import { environment } from './environment/browser';
+
+export const AppWrapper: React.FC = () => {
+  return (
+    <EnvironmentProvider environment={environment}>
+      <App />
+    </EnvironmentProvider>
   );
+};
+```
 
-  act(() => {
-    dispatch({ type: 'SWITCH' });
-  });
+### useEnvironment
 
-  expect(state.state).toBe('BAR');
+Use the environment interface.
 
-  act(() => {
-    environment.emitter.emit({
-      type: 'SOME_EVENT',
-    });
-  });
+```tsx
+import { useEnvironment } from './environment';
 
-  expect(state.state).toBe('BAZ');
+export const SomeComponent: React.FC = () => {
+  const { someApi } = useEnvironment();
+
+  return <div />;
+};
+```
+
+### createReducer
+
+Creates a reducer with explicit states typed to the environment. The handlers can be any environment event in addition to actions.
+
+```ts
+import { StatesReducer, StatesTransition } from 'react-states';
+import { createReducer } from './environment';
+
+type State =
+  | {
+      state: 'STATE_A';
+    }
+  | {
+      state: 'STATE_B';
+    };
+
+type Action = {
+  type: 'SWITCH';
+};
+
+type Switcher = StatesReducer<State, Action>;
+
+type Transition = StatesTransition<Switcher>;
+
+const reducer = createReducer<Switcher>({
+  STATE_A: {
+    // Event from the environment
+    SOME_EVENT: (): Transition => ({ state: 'STATE_B' }),
+  },
+  STATE_B: {
+    SWITCH: (currentState, action): Transition => ({ state: 'FOO' }),
+  },
 });
+```
+
+### useReducer
+
+Use a reducer tied to the environment, meaning it will receive any events from the environment in addition to its dispatched actions.
+
+```tsx
+import { useReducer } from './environment';
+import { reducer } from './reducer';
+
+export const SomeComponent: React.FC = () => {
+  // Subscribes to environment events
+  const [state, dispatch] = useReducer('some-name', reducer, { state: 'STATE_A' });
+
+  return <div />;
+};
 ```
 
 ## Type Utils
