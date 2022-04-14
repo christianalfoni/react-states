@@ -6,6 +6,7 @@ export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const COMMANDS = Symbol('COMMANDS');
 export const DEBUG_ID = Symbol('DEBUG_ID');
+export const ENVIRONMENT_CMD = '$ENVIRONMENT';
 // Hack to make commands inferrable
 export const MAKE_COMMANDS_INFERRABLE = Symbol('MAKE_COMMANDS_INFERRABLE');
 
@@ -23,6 +24,21 @@ export interface TAction {
 export interface TCommand {
   cmd: string;
 }
+
+type CommandifyEnvironment<T extends TEnvironment> = {
+  [A in keyof T]: A extends string
+    ? {
+        [B in keyof T[A]]: T[A][B] extends Function
+          ? B extends string
+            ? {
+                call: `${A}.${B}`;
+                params: Parameters<T[A][B]>;
+              }
+            : never
+          : never;
+      }[keyof T[A]]
+    : never;
+}[keyof T];
 
 export type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
@@ -70,38 +86,59 @@ export type StatesHandlers<
     }
   : never;
 
-export type StatesTransitions<
+type StatesTransitions<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<infer S, infer A, infer C>
+  ? {
+      [SS in S['state']]: {
+        [AA in A['type']]?: (params: {
+          state: S extends { state: SS } ? S : never;
+          action: A extends { type: AA } ? A : never;
+          transition: (...ret: [C] extends [never] ? [S] : [S, ...C[]]) => [C] extends [never] ? S : S | [S, ...C[]];
+          noop: () => S & { state: SS };
+        }) => [C] extends [never] ? S : S | [S, ...C[]];
+      };
+    }
+  : never;
+
+export function exact<T extends (state: TState, action: TAction) => TState | [TState, ...TCommand[]]>(payload: T): T {
+  return payload;
+}
+
+type StatesTransitionsWithEnvironment<
   ST extends StatesReducer<any, any, any>,
-  PA extends TAction = never
+  PA extends TAction,
+  EC extends TCommand
 > = ST extends StatesReducer<infer S, infer A, infer C>
   ? {
-      [SS in S['state']]: [PA] extends [never]
-        ? [A] extends [never]
-          ? never
-          : {
-              [AA in A['type']]?: (
-                state: S extends { state: SS } ? S : never,
-                action: A extends { type: AA } ? A : never,
-              ) => [C] extends [never] ? S : S | [S, ...C[]];
-            }
-        : [A] extends [never]
+      [SS in S['state']]: [A] extends [never]
         ? {
-            [PAA in PA['type']]?: (
-              state: S extends { state: SS } ? S : never,
-              action: PA extends { type: PAA } ? PA : never,
-            ) => [C] extends [never] ? S : S | [S, ...C[]];
+            [PAA in PA['type']]?: (params: {
+              state: S extends { state: SS } ? S : never;
+              action: PA extends { type: PAA } ? PA : never;
+              transition: (
+                ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
+              ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
+              noop: () => S & { state: SS };
+            }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
           }
         : {
-            [AA in A['type']]?: (
-              state: S extends { state: SS } ? S : never,
-              action: A extends { type: AA } ? A : never,
-            ) => [C] extends [never] ? S : S | [S, ...C[]];
+            [AA in A['type']]?: (params: {
+              state: S extends { state: SS } ? S : never;
+              action: A extends { type: AA } ? A : never;
+              transition: (
+                ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
+              ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
+              noop: () => S & { state: SS };
+            }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
           } &
             {
-              [PAA in PA['type']]?: (
-                state: S extends { state: SS } ? S : never,
-                action: PA extends { type: PAA } ? PA : never,
-              ) => [C] extends [never] ? S : S | [S, ...C[]];
+              [PAA in PA['type']]?: (params: {
+                state: S extends { state: SS } ? S : never;
+                action: PA extends { type: PAA } ? PA : never;
+                transition: (
+                  ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
+                ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
+                noop: () => S & { state: SS };
+              }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
             };
     }
   : never;
@@ -158,6 +195,11 @@ export function createReducer<ST extends StatesReducer<any, any, any>>(
   return ((state: any, action: any) => transition(state, action, transitions)) as any;
 }
 
+// Type safe transition
+function exactTransition(...params: any[]) {
+  return params;
+}
+
 export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
   state: S,
   action: A,
@@ -172,7 +214,12 @@ export function transition<S extends TState, A extends TAction, C extends TComma
   // @ts-ignore
   if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
-    const result = transitions[state.state][action.type](state, action);
+    const result = transitions[state.state][action.type]({
+      state,
+      action,
+      transition: exactTransition,
+      noop: () => state,
+    });
 
     commands = Array.isArray(result) ? result.slice(1) : undefined;
     newState = Array.isArray(result) ? result[0] : result;
@@ -320,7 +367,9 @@ export const useSubscription = <S extends TAction>(subscription: Emitter<S>, dis
 };
 
 export type TEnvironment = {
-  [api: string]: any;
+  [api: string]: {
+    [key: string]: any;
+  };
 };
 
 const environmentContext = React.createContext({});
@@ -364,7 +413,7 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
       });
     },
     createReducer<ST extends StatesReducer<any, any, any>>(
-      transitions: StatesTransitions<ST, S>,
+      transitions: StatesTransitionsWithEnvironment<ST, S, { cmd: typeof ENVIRONMENT_CMD } & CommandifyEnvironment<E>>,
     ): StatesReducerFunction<ST> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
@@ -384,6 +433,12 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
           return environment.emitter.subscribe(states[1]);
         }
       }, []);
+
+      useCommandEffect(states[0], '$ENVIRONMENT', ({ call, params }) => {
+        const [partA, partB] = call.split('.');
+        // @ts-ignore
+        environment[partA][partB](params);
+      });
 
       return states;
     },

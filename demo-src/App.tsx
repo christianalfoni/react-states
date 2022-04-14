@@ -6,17 +6,8 @@ import { EnvironmentProvider, useEnvironment, useReducer } from './environment-i
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
-  const { todosApi } = useEnvironment();
   const [state, dispatch] = useReducer('todos', reducer, {
     state: 'NOT_LOADED',
-  });
-
-  useStateEffect(state, 'LOADING', () => {
-    todosApi.fetchTodos();
-  });
-
-  useCommandEffect(state, 'SAVE_TODO', ({ todo }) => {
-    todosApi.saveTodo(todo);
   });
 
   return match(state, {

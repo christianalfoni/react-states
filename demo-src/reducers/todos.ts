@@ -1,4 +1,4 @@
-import { StatesReducer, StatesTransition } from '../../src';
+import { StatesReducer, StatesTransition, exact } from '../../src';
 import { createReducer, Todo } from '../environment-interface';
 
 type State =
@@ -26,46 +26,51 @@ type Action =
       type: 'FETCH_TODOS';
     };
 
-type Command =
-  | {
-      cmd: 'SAVE_TODO';
-      todo: Todo;
-    }
-  | {
-      cmd: 'LOG';
-    };
+type Command = {
+  cmd: 'LOG';
+};
 
 type TodosReducer = StatesReducer<State, Action, Command>;
 
-type Transition = StatesTransition<TodosReducer>;
-
 export const reducer = createReducer<TodosReducer>({
   NOT_LOADED: {
-    FETCH_TODOS: (): Transition => ({
-      state: 'LOADING',
-    }),
+    FETCH_TODOS: ({ transition }) =>
+      transition(
+        {
+          state: 'LOADING',
+        },
+        {
+          cmd: '$ENVIRONMENT',
+          call: 'todosApi.fetchTodos',
+          params: [],
+        },
+      ),
   },
   LOADING: {
-    'TODOS:FETCH_TODOS_SUCCESS': (_, { todos }): Transition => ({
-      state: 'LOADED',
-      todos,
-    }),
-    'TODOS:FETCH_TODOS_ERROR': (_, { error }): Transition => ({
-      state: 'ERROR',
-      error,
-    }),
+    'TODOS:FETCH_TODOS_SUCCESS': ({ action: { todos }, transition }) =>
+      transition({
+        state: 'LOADED',
+        todos,
+      }),
+    'TODOS:FETCH_TODOS_ERROR': ({ action: { error }, transition }) =>
+      transition({
+        state: 'ERROR',
+        error,
+      }),
   },
   LOADED: {
-    ADD_TODO: (state, { todo }): Transition => [
-      {
-        ...state,
-        todos: [todo].concat(state.todos),
-      },
-      {
-        cmd: 'SAVE_TODO',
-        todo,
-      },
-    ],
+    ADD_TODO: ({ state, action: { todo }, transition }) =>
+      transition(
+        {
+          ...state,
+          todos: [todo].concat(state.todos),
+        },
+        {
+          cmd: '$ENVIRONMENT',
+          call: 'todosApi.saveTodo',
+          params: [todo],
+        },
+      ),
   },
   ERROR: {},
 });

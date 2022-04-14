@@ -43,37 +43,34 @@ type Command =
 
 type Resizer = StatesReducer<State, Action, Command>;
 
-type Transition = StatesTransition<Resizer>;
-
 const reducer = createReducer<Resizer>({
   IDLE: {
-    MOUSE_DOWN: (_, { x }): Transition => ({
-      state: 'DETECTING_RESIZE',
-      initialX: x,
-    }),
+    MOUSE_DOWN: ({ action: { x }, transition }) =>
+      transition({
+        state: 'DETECTING_RESIZE',
+        initialX: x,
+      }),
   },
   DETECTING_RESIZE: {
-    MOUSE_MOVE: (state, { x }): Transition => {
+    MOUSE_MOVE: ({ state, action: { x }, transition, noop }) => {
       if (Math.abs(x - state.initialX) > 3) {
-        return { state: 'RESIZING', x };
+        return transition({ state: 'RESIZING', x });
       }
 
-      return state;
+      return noop();
     },
-    MOUSE_UP: (): Transition => ({ state: 'IDLE' }),
-    MOUSE_UP_RESIZER: (_): Transition => [
-      { state: 'IDLE' },
-      {
-        cmd: 'NOTIFY_CLICK',
-      },
-    ],
+    MOUSE_UP: ({ transition }) => transition({ state: 'IDLE' }),
+    MOUSE_UP_RESIZER: ({ transition }) =>
+      transition(
+        { state: 'IDLE' },
+        {
+          cmd: 'NOTIFY_CLICK',
+        },
+      ),
   },
   RESIZING: {
-    MOUSE_MOVE: (state, { x }): Transition => [
-      { ...state, x },
-      { cmd: 'NOTIFY_RESIZE', x },
-    ],
-    MOUSE_UP: (): Transition => ({ state: 'IDLE' }),
+    MOUSE_MOVE: ({ state, action: { x }, transition }) => transition({ ...state, x }, { cmd: 'NOTIFY_RESIZE', x }),
+    MOUSE_UP: ({ transition }) => transition({ state: 'IDLE' }),
   },
 });
 
