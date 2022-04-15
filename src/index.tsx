@@ -452,7 +452,7 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
             ST,
             EA,
             { cmd: typeof ENVIRONMENT_CMD } & CommandifyEnvironment<E>,
-            S & { state: T }
+            [T] extends [never] ? S : S & { state: T }
           >
         : never,
     ): typeof handlers {
