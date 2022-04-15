@@ -26,9 +26,13 @@ export type Environment = {
 
 export type EnvironmentAction = TodosApiAction;
 
-const { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer } = defineEnvironment<
-  Environment,
-  EnvironmentAction
->();
+const {
+  EnvironmentProvider,
+  createReducer,
+  createEnvironment,
+  useEnvironment,
+  useReducer,
+  createReducerHandlers,
+} = defineEnvironment<Environment, EnvironmentAction>();
 
-export { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer };
+export { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer, createReducerHandlers };

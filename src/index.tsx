@@ -74,76 +74,75 @@ export type PickCommand<
     : never
   : never;
 
-export type StatesHandlers<
+type StatesHandlers<ST extends StatesReducer<any, any, any>, SS extends TState> = ST extends StatesReducer<
+  infer S,
+  infer A,
+  infer C
+>
+  ? {
+      [AA in A['type']]?: (params: {
+        state: SS;
+        action: A extends { type: AA } ? A : never;
+        transition: (...ret: [S, ...C[]]) => S | [S, ...C[]];
+        noop: () => S & { state: SS };
+      }) => StatesTransition<ST>;
+    }
+  : never;
+
+type StatesHandlersWithEnvironment<
   ST extends StatesReducer<any, any, any>,
-  SS extends ST extends StatesReducer<infer S, any, any> ? S['state'] : never = never
+  PA extends TAction,
+  EC extends TCommand,
+  SS extends TState
 > = ST extends StatesReducer<infer S, infer A, infer C>
   ? {
-      [AA in A['type']]?: (
-        state: [SS] extends [never] ? S : S extends { state: SS } ? S : never,
-        action: A extends { type: AA } ? A : never,
-      ) => StatesTransition<ST>;
-    }
-  : never;
-
-type StatesTransitions<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<infer S, infer A, infer C>
-  ? {
-      [SS in S['state']]: {
-        [AA in A['type']]?: (params: {
-          state: S extends { state: SS } ? S : never;
-          action: A extends { type: AA } ? A : never;
-          transition: (...ret: [C] extends [never] ? [S] : [S, ...C[]]) => [C] extends [never] ? S : S | [S, ...C[]];
+      [AA in A['type']]?: (params: {
+        state: SS;
+        action: A extends { type: AA } ? A : never;
+        transition: (...params: [S, ...(C | EC)[]]) => S | [S, ...(C | EC)[]];
+        noop: () => S & { state: SS };
+      }) => S | [S, ...(C | EC)[]];
+    } &
+      {
+        [PAA in PA['type']]?: (params: {
+          state: SS;
+          action: PA extends { type: PAA } ? PA : never;
+          transition: (...params: [S, ...(C | EC)[]]) => S | [S, ...(C | EC)[]];
           noop: () => S & { state: SS };
-        }) => [C] extends [never] ? S : S | [S, ...C[]];
-      };
+        }) => S | [S, ...(C | EC)[]];
+      }
+  : never;
+
+type StatesTransitions<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<infer S, any, any>
+  ? {
+      [SS in S['state']]: StatesHandlers<ST, S & { state: SS }>;
     }
   : never;
 
-export function exact<T extends (state: TState, action: TAction) => TState | [TState, ...TCommand[]]>(payload: T): T {
-  return payload;
+export function createReducerHandlers<
+  ST extends StatesReducer<any, any, any>,
+  SS extends ST extends StatesReducer<infer S, any, any> ? S['state'] : never = never
+>(
+  handlers: ST extends StatesReducer<infer S, any, any> ? StatesHandlers<ST, S & { state: SS }> : never,
+): typeof handlers {
+  return handlers;
 }
 
 type StatesTransitionsWithEnvironment<
   ST extends StatesReducer<any, any, any>,
   PA extends TAction,
   EC extends TCommand
-> = ST extends StatesReducer<infer S, infer A, infer C>
+> = ST extends StatesReducer<infer S, any, any>
   ? {
-      [SS in S['state']]: [A] extends [never]
-        ? {
-            [PAA in PA['type']]?: (params: {
-              state: S extends { state: SS } ? S : never;
-              action: PA extends { type: PAA } ? PA : never;
-              transition: (
-                ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
-              ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-              noop: () => S & { state: SS };
-            }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-          }
-        : {
-            [AA in A['type']]?: (params: {
-              state: S extends { state: SS } ? S : never;
-              action: A extends { type: AA } ? A : never;
-              transition: (
-                ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
-              ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-              noop: () => S & { state: SS };
-            }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-          } &
-            {
-              [PAA in PA['type']]?: (params: {
-                state: S extends { state: SS } ? S : never;
-                action: PA extends { type: PAA } ? PA : never;
-                transition: (
-                  ...params: [C] extends [never] ? [S, ...EC[]] : [S, ...(C | EC)[]]
-                ) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-                noop: () => S & { state: SS };
-              }) => [C] extends [never] ? S | [S, ...EC[]] : S | [S, ...(C | EC)[]];
-            };
+      [SS in S['state']]: StatesHandlersWithEnvironment<ST, PA, EC, S & { state: SS }>;
     }
   : never;
 
-export type StatesReducer<S extends TState, A extends TAction = never, C extends TCommand = never> = [
+export type StatesReducer<
+  S extends TState,
+  A extends TAction = { type: never },
+  C extends TCommand = { cmd: never }
+> = [
   [C] extends [never]
     ? S
     : S &
@@ -158,9 +157,7 @@ export type StatesReducer<S extends TState, A extends TAction = never, C extends
 };
 
 export type StatesTransition<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<infer S, any, infer C>
-  ? [C] extends [never]
-    ? S
-    : S | [S, ...C[]]
+  ? S | [S, ...C[]]
   : never;
 
 // A workaround for https://github.com/microsoft/TypeScript/issues/37888
@@ -200,7 +197,7 @@ function exactTransition(...params: any[]) {
   return params;
 }
 
-export function transition<S extends TState, A extends TAction, C extends TCommand = never>(
+export function transition<S extends TState, A extends TAction, C extends TCommand = { cmd: never }>(
   state: S,
   action: A,
   transitions: StatesTransitions<StatesReducer<S, A, C>>,
@@ -389,8 +386,8 @@ export const createEnvironment = <E extends Record<string, any>>() => {
   };
 };
 
-export const defineEnvironment = <E extends TEnvironment, S extends TAction = never>() => {
-  const emitter = new Emitter<S>();
+export const defineEnvironment = <E extends TEnvironment, EA extends TAction = never>() => {
+  const emitter = new Emitter<EA>();
   const boundEmit = emitter.emit.bind(emitter);
   const Provider = ({ children, environment }: { children: React.ReactNode; environment: E }) => {
     return (
@@ -407,13 +404,13 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
     EnvironmentProvider: Provider,
     // @ts-ignore
     useEnvironment: (): E & { emitter: Emitter<S> } => React.useContext(environmentContext),
-    createEnvironment: (environment: (emit: Emit<S>) => E) => {
+    createEnvironment: (environment: (emit: Emit<EA>) => E) => {
       return Object.assign(environment(boundEmit), {
         emitter,
       });
     },
     createReducer<ST extends StatesReducer<any, any, any>>(
-      transitions: StatesTransitionsWithEnvironment<ST, S, { cmd: typeof ENVIRONMENT_CMD } & CommandifyEnvironment<E>>,
+      transitions: StatesTransitionsWithEnvironment<ST, EA, { cmd: typeof ENVIRONMENT_CMD } & CommandifyEnvironment<E>>,
     ): StatesReducerFunction<ST> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
@@ -441,6 +438,21 @@ export const defineEnvironment = <E extends TEnvironment, S extends TAction = ne
       });
 
       return states;
+    },
+    createReducerHandlers<
+      ST extends StatesReducer<any, any, any>,
+      T extends ST extends StatesReducer<infer S, any, any> ? S['state'] : never = never
+    >(
+      handlers: ST extends StatesReducer<infer S, any, any>
+        ? StatesHandlersWithEnvironment<
+            ST,
+            EA,
+            { cmd: typeof ENVIRONMENT_CMD } & CommandifyEnvironment<E>,
+            S & { state: T }
+          >
+        : never,
+    ): typeof handlers {
+      return handlers;
     },
   };
 };

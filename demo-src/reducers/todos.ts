@@ -1,4 +1,4 @@
-import { StatesReducer, StatesTransition, exact } from '../../src';
+import { StatesReducer } from '../../src';
 import { createReducer, Todo } from '../environment-interface';
 
 type State =
@@ -35,16 +35,10 @@ type TodosReducer = StatesReducer<State, Action, Command>;
 export const reducer = createReducer<TodosReducer>({
   NOT_LOADED: {
     FETCH_TODOS: ({ transition }) =>
-      transition(
-        {
-          state: 'LOADING',
-        },
-        {
-          cmd: '$ENVIRONMENT',
-          call: 'todosApi.fetchTodos',
-          params: [],
-        },
-      ),
+      transition({
+        state: 'ERROR',
+        error: 'test',
+      }),
   },
   LOADING: {
     'TODOS:FETCH_TODOS_SUCCESS': ({ action: { todos }, transition }) =>

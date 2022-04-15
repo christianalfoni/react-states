@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { StatesTransition, useCommandEffect, useStateEffect, createReducer, StatesReducer } from '../';
+import { useCommandEffect, useStateEffect, createReducer, StatesReducer } from '../';
 import { colors } from './styles';
 
 type State =

@@ -92,7 +92,7 @@ describe('react-states', () => {
     const run = (state: State, action: Action) =>
       transition<State, Action, Command>(state, action, {
         FOO: {
-          SWITCH: (state) => [
+          SWITCH: ({ state }) => [
             state,
             {
               cmd: 'TEST',
