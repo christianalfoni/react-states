@@ -12,6 +12,10 @@ npm install react-states@next
 
 [![react-states](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://www.youtube.com/watch?v=ul_3ABrpj64)
 
+## Examples
+
+- [Resizer in the Devtools](./src/devtools//Resizer.tsx), using the core reducer
+
 ## What react-states offers
 
 ### Explicit States Reducer (Core)

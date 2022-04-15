@@ -6,7 +6,7 @@ export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const COMMANDS = Symbol('COMMANDS');
 export const DEBUG_ID = Symbol('DEBUG_ID');
-export const ENVIRONMENT_CMD = '$ENVIRONMENT';
+export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 // Hack to make commands inferrable
 export const MAKE_COMMANDS_INFERRABLE = Symbol('MAKE_COMMANDS_INFERRABLE');
 
@@ -31,7 +31,7 @@ type CommandifyEnvironment<T extends TEnvironment> = {
         [B in keyof T[A]]: T[A][B] extends Function
           ? B extends string
             ? {
-                call: `${A}.${B}`;
+                target: `${A}.${B}`;
                 params: Parameters<T[A][B]>;
               }
             : never
@@ -435,7 +435,7 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
         }
       }, []);
 
-      useCommandEffect(states[0], '$ENVIRONMENT', ({ call, params }) => {
+      useCommandEffect(states[0], ENVIRONMENT_CMD, ({ call, params }) => {
         const [partA, partB] = call.split('.');
         // @ts-ignore
         environment[partA][partB](params);

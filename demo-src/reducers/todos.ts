@@ -60,8 +60,8 @@ export const reducer = createReducer<TodosReducer>({
           todos: [todo].concat(state.todos),
         },
         {
-          cmd: '$ENVIRONMENT',
-          call: 'todosApi.saveTodo',
+          cmd: '$CALL_ENVIRONMENT',
+          target: 'todosApi.saveTodo',
           params: [todo],
         },
       ),

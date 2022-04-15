@@ -124,6 +124,7 @@ export const Resizer = ({
         width: '10px',
         backgroundColor: colors.blue,
         userSelect: 'none',
+        zIndex: 99999999,
       }}
       onMouseUp={() => {
         dispatch({
