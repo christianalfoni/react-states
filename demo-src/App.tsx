@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { useStateEffect, match, useCommandEffect } from '../src';
+import { match } from '../src';
 import { reducer } from './reducers/todos';
-import { EnvironmentProvider, useEnvironment, useReducer } from './environment-interface';
+import { EnvironmentProvider, useReducer } from './environment-interface';
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {

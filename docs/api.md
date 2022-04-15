@@ -30,6 +30,7 @@ Utils
 - [PickState](#pickstate)
 - [PickAction](#pickaction)
 - [PickCommand](#pickcommand)
+- [StatesDispatcher](#StatesDispatcher)
 
 Devtools
 
@@ -471,6 +472,14 @@ not `TCommand`.
 
 ```ts
 type NarrowedCommands = PickCommand<SomeStatesType, 'C-A' | 'C-B'>;
+```
+
+### StatesDispatcher
+
+Get the typing for the dispatcher.
+
+```ts
+type Dispatcher = StatesDispatcher<SomeStatesType>;
 ```
 
 ## Devtools

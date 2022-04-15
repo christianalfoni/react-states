@@ -74,6 +74,10 @@ export type PickCommand<
     : never
   : never;
 
+export type StatesDispatcher<ST extends StatesReducer<any, any, any>> = ST extends StatesReducer<any, infer A, any>
+  ? React.Dispatch<A>
+  : never;
+
 type StatesHandlers<ST extends StatesReducer<any, any, any>, SS extends TState> = ST extends StatesReducer<
   infer S,
   infer A,

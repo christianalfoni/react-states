@@ -30,7 +30,7 @@ type Command = {
   cmd: 'LOG';
 };
 
-type TodosReducer = StatesReducer<State, Action, Command>;
+export type TodosReducer = StatesReducer<State, Action, Command>;
 
 export const reducer = createReducer<TodosReducer>({
   NOT_LOADED: {
