@@ -435,8 +435,8 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
         }
       }, []);
 
-      useCommandEffect(states[0], ENVIRONMENT_CMD, ({ call, params }) => {
-        const [partA, partB] = call.split('.');
+      useCommandEffect(states[0], ENVIRONMENT_CMD, ({ target, params }) => {
+        const [partA, partB] = target.split('.');
         // @ts-ignore
         environment[partA][partB](params);
       });
