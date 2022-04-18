@@ -14,7 +14,8 @@ npm install react-states@next
 
 ## Examples
 
-- [Resizer in the Devtools](./src/devtools//Resizer.tsx), using the core reducer
+- [Resizer in the Devtools](./src/devtools//Resizer.tsx)
+- [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
 
 ## What react-states offers
 
@@ -29,10 +30,9 @@ npm install react-states@next
 
 ### Environment Interface (Optional)
 
-- You avoid environment specific APIs in your application code
-- You avoid magical strings
+- You avoid environment specific APIs and "magical strings" in your application code
 - The interface your application consumes is perfectly tailored for the application
-- Your application is environment agnostic, just add more implementations of the interface (test, ssr, native) and it works the same
+- Your application is environment agnostic, just add more implementations of the interface (test, ssr, native, sandbox) and it works the same
 
 ### Environment Events (Optional)
 
