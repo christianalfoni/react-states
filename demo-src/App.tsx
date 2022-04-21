@@ -1,13 +1,19 @@
 import * as React from 'react';
 
-import { match } from '../src';
-import { reducer } from './reducers/todos';
+import { match, PickCommandState, useCommandEffect } from '../src';
+import { reducer, State } from './reducers/todos';
 import { EnvironmentProvider, useReducer } from './environment-interface';
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
   const [state, dispatch] = useReducer('todos', reducer, {
     state: 'NOT_LOADED',
+  });
+
+  const test = {} as PickCommandState<State, '$LOG'>;
+
+  useCommandEffect(state, '$LOG', ({}) => {
+    console.log('HEY');
   });
 
   return match(state, {

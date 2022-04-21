@@ -33,6 +33,15 @@ const {
   useEnvironment,
   useReducer,
   createReducerHandlers,
+  commands,
 } = defineEnvironment<Environment, EnvironmentAction>();
 
-export { EnvironmentProvider, createReducer, createEnvironment, useEnvironment, useReducer, createReducerHandlers };
+export {
+  EnvironmentProvider,
+  createReducer,
+  createEnvironment,
+  useEnvironment,
+  useReducer,
+  createReducerHandlers,
+  commands,
+};
