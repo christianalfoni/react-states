@@ -1,51 +1,58 @@
-import { createReducer, Todo, commands } from '../environment-interface';
+import { $COMMAND, PickReturnTypes } from '../../src';
+import { createReducer, Todo, commands as envCommands } from '../environment-interface';
 
-const $LOG = ({ message }: { message: string }) => ({
-  $LOG: { message },
-});
+const commands = {
+  LOG: (message: string) => ({
+    cmd: 'LOG' as const,
+    message,
+  }),
+};
 
-const NOT_LOADED = () => ({
-  state: 'NOT_LOADED' as const,
-});
+export const states = {
+  NOT_LOADED: () => ({
+    state: 'NOT_LOADED' as const,
+    [$COMMAND]: commands.LOG('HEY'),
+  }),
+  LOADING: () => ({
+    state: 'LOADING' as const,
+    [$COMMAND]: envCommands.todosApi.fetchTodos(),
+  }),
+  LOADED: ({ todos }: { todos: Todo[] }) => ({
+    state: 'LOADED' as const,
+    todos,
+  }),
+  ERROR: ({ error }: { error: string }) => ({
+    state: 'ERROR' as const,
+    error,
+  }),
+};
 
-const LOADING = () => ({
-  state: 'LOADING' as const,
-});
+export type State = PickReturnTypes<typeof states>;
 
-const LOADED = ({ todos }: { todos: Todo[] }) => ({
-  state: 'LOADED' as const,
-  todos,
-  $LOG: $LOG({ message: 'HEY' }),
-});
+export const actions = {
+  ADD_TODO: (todo: Todo) => ({
+    type: 'ADD_TODO' as const,
+    todo,
+  }),
+  FETCH_TODOS: () => ({
+    type: 'FETCH_TODOS' as const,
+  }),
+};
 
-const ERROR = ({ error }: { error: string }) => ({
-  state: 'ERROR' as const,
-  error,
-});
-
-export type State = ReturnType<typeof NOT_LOADED | typeof LOADING | typeof LOADED | typeof ERROR>;
-
-type Action =
-  | {
-      type: 'ADD_TODO';
-      todo: Todo;
-    }
-  | {
-      type: 'FETCH_TODOS';
-    };
+type Action = PickReturnTypes<typeof actions>;
 
 export const reducer = createReducer<State, Action>({
   NOT_LOADED: {
-    FETCH_TODOS: () => ({ ...LOADING(), ...commands.todosApi.fetchTodos() }),
+    FETCH_TODOS: () => states.LOADING(),
   },
   LOADING: {
-    'TODOS:FETCH_TODOS_SUCCESS': (_, { todos }) => LOADED({ todos }),
-    'TODOS:FETCH_TODOS_ERROR': (_, { error }) => ERROR({ error }),
+    'TODOS:FETCH_TODOS_SUCCESS': (_, { todos }) => states.LOADED({ todos }),
+    'TODOS:FETCH_TODOS_ERROR': (_, { error }) => states.ERROR({ error }),
   },
   LOADED: {
     ADD_TODO: (state, { todo }) => ({
-      ...LOADED({ todos: [todo].concat(state.todos) }),
-      ...commands.todosApi.saveTodo(todo),
+      ...states.LOADED({ todos: [todo].concat(state.todos) }),
+      [$COMMAND]: envCommands.todosApi.saveTodo(todo),
     }),
   },
   ERROR: {},

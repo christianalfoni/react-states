@@ -2,8 +2,8 @@
 
 Core
 
-- [StatesReducer](#statesreducer)
 - [createReducer](#createreducer)
+- [$COMMAND](#$COMMAND)
 - [useStateEffect](#usestateeffect)
 - [useCommandEffect](#usecommandeffect)
 - [match](#match)
@@ -24,13 +24,11 @@ Testing
 Utils
 
 - [createReducerHandlers](#createReducerHandlers)
-- [transition](#transition)
-- [noop](#noop)
 - [Emit](#emit)
 - [PickState](#pickstate)
 - [PickAction](#pickaction)
-- [PickCommand](#pickcommand)
-- [StatesDispatcher](#StatesDispatcher)
+- [PickStateCommand](#pickstatecommand)
+- [PickReturnTypes](#PickReturnTypes)
 
 Devtools
 
@@ -39,68 +37,80 @@ Devtools
 
 ## Core
 
-### StatesReducer
-
-A type representing the states reducer.
-
-```ts
-import { StatesReducer } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-type Command = {
-  cmd: 'LOG';
-  message: string;
-};
-
-// Commands and actions are optional
-type SomeStatesType = StatesReducer<State, Action, Command>;
-```
-
 ### createReducer
 
 Create a reducer with explicit states
 
 ```ts
-import { createReducer, StatesReducer, StatesTransition } from 'react-states';
+import { createReducer, PickReturnTypes } from 'react-states';
 
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
+const states = {
+  FOO = () => ({
+    state: 'FOO' as const,
+  }),
+  BAR = () => ({
+    state: 'BAR' as const,
+  }),
+};
+
+type State = PickReturnTypes<typeof states>;
+
+const actions = {
+  SWITCH: () => ({
+    type: 'SWITCH' as const,
+  }),
+};
+
+type Action = PickReturnTypes<typeof actions>;
+
+const reducer = createReducer<State, Action>({
+  FOO: {
+    SWITCH: (state, action) => BAR(),
+  },
+  BAR: {
+    SWITCH: (state, action) => FOO(),
+  },
+});
+```
+
+### $COMMAND
+
+Return a command to be executed by an effect
+
+```ts
+import { createReducer, $COMMAND } from 'react-states';
+
+const $LOG = (message: string) => ({
+  cmd: '$LOG' as const,
+  message,
+});
+
+
+const FOO = () => ({
+  state: 'FOO' as const,
+  [$COMMAND]: $LOG('Moved to FOO')
+});
+
+const BAR = () => ({
+  state: 'BAR' as const,
+});
+
+
+type State = ReturnType<typeof FOO | typeof BAR>;
 
 type Action = {
   type: 'SWITCH';
 };
 
-type Command = {
-  cmd: 'LOG';
-  message: string;
-};
-
-type Switcher = StatesReducer<State, Action, Command>;
-
-const reducer = createReducer<Switcher>({
+const reducer = createReducer<State, Action>({
   FOO: {
-    SWITCH: ({ state, action }) => ({
-      state: 'BAR',
+    SWITCH: () => ({
+      ...BAR()
+      [$COMMAND]: $LOG('Moving to BAR')
     }),
   },
   BAR: {
-    SWITCH: ({ state, action }) => [{ state: 'FOO' }, { cmd: 'LOG', message: 'Switched from BAR' }],
+    SWITCH: () => FOO(),
   },
 });
 ```
@@ -139,7 +149,7 @@ Run an effect when the command is part of a transition.
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  useCommandEffect(state, 'SOME_COMMAND', () => {
+  useCommandEffect(state, '$SOME_COMMAND', () => {
     // Run when command is part of transition
   });
 
@@ -241,27 +251,27 @@ Creates a reducer with explicit states typed to the environment. The handlers ca
 import { StatesReducer } from 'react-states';
 import { createReducer } from './environment';
 
-type State =
-  | {
-      state: 'STATE_A';
-    }
-  | {
-      state: 'STATE_B';
-    };
+const STATE_A = () => ({
+  state: 'STATE_A' as const,
+});
+
+const STATE_B = () => ({
+  state: 'STATE_B' as const,
+});
+
+type State = ReturnType<typeof STATE_A | typeof STATE_B>;
 
 type Action = {
   type: 'SWITCH';
 };
 
-type Switcher = StatesReducer<State, Action>;
-
-const reducer = createReducer<Switcher>({
+const reducer = createReducer<State, Action>({
   STATE_A: {
     // Event from the environment
-    SOME_EVENT: () => ({ state: 'STATE_B' }),
+    SOME_EVENT: (state, event) => STATE_B(),
   },
   STATE_B: {
-    SWITCH: (currentState, action) => ({ state: 'FOO' }),
+    SWITCH: (state, action) => STATE_A,
   },
 });
 ```
@@ -276,7 +286,7 @@ import { reducer } from './reducer';
 
 export const SomeComponent: React.FC = () => {
   // Subscribes to environment events
-  const [state, dispatch] = useReducer('some-name', reducer, { state: 'STATE_A' });
+  const [state, dispatch] = useReducer('some-name', reducer, STATE_A());
 
   return <div />;
 };
@@ -327,103 +337,30 @@ Create the handlers for all or specific states.
 **NOTE!** When defining an environment, this util is exposed on the environment.
 
 ```ts
-import { createReducerHandlers, createReducer, StatesReducer, StatesTransition } from 'react-states';
+import { createReducerHandlers, createReducer } from 'react-states';
 
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
+const FOO = () => ({
+  state: 'FOO' as const,
+});
+
+const BAR = () => ({
+  state: 'BAR' as const,
+});
+
+type State = ReturnType<typeof FOO | typeof BAR>;
 
 type Action = {
   type: 'SWITCH';
 };
 
-type Switcher = StatesReducer<State, Action>;
-
-// createReducerHandlers<Switcher, 'BAR'> for specific states
-const handlers = createReducerHandlers<Switcher>({
-  SWITCH: ({ state }) => ({
-    state: state.state === 'FOO' ? 'BAR' : 'FOO',
-  }),
+// createReducerHandlers<State, Action, 'BAR'> for specific states
+const handlers = createReducerHandlers<State, Action>({
+  SWITCH: ({ state }) => (state.state === 'FOO' ? BAR() : FOO()),
 });
 
-const reducer = createReducer<Switcher>({
+const reducer = createReducer<State, Action>({
   FOO: handlers,
   BAR: handlers,
-});
-```
-
-### transition
-
-TypeScript does not have exact generic return types, but this utility validates the transition.
-
-```ts
-import { createReducer, StatesReducer } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-type Switcher = StatesReducer<State, Action>;
-
-const reducer = createReducer<Switcher>({
-  FOO: {
-    SWITCH: ({ transition }) =>
-      transition({
-        state: 'BAR',
-      }),
-  },
-  BAR: {
-    SWITCH: ({ transition }) =>
-      transition({
-        state: 'FOO',
-      }),
-  },
-});
-```
-
-### noop
-
-Explicit return of existing state, resulting in noop.
-
-```ts
-import { createReducer, StatesReducer } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-type Switcher = StatesReducer<State, Action>;
-
-const reducer = createReducer<Switcher>({
-  FOO: {
-    SWITCH: ({ transition }) =>
-      transition({
-        state: 'BAR',
-      }),
-  },
-  BAR: {
-    SWITCH: ({ noop }) => noop(),
-  },
 });
 ```
 
@@ -454,7 +391,7 @@ export const someApi = (emit: Emit<SomeApiEvent>): SomeApi => ({
 Narrows to specific states.
 
 ```ts
-type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
+type NarrowedStates = PickState<SomeState, 'A' | 'B'>;
 ```
 
 ### PickAction
@@ -462,24 +399,15 @@ type NarrowedStates = PickState<SomeStatesType, 'A' | 'B'>;
 Narrows to specific actions.
 
 ```ts
-type NarrowedActions = PickAction<SomeStatesType, 'A' | 'B'>;
+type NarrowedActions = PickAction<SomeAction, 'A' | 'B'>;
 ```
 
-### PickCommand
+### PickCommandState
 
-Narrows to specific commands. **Note** it will return a `TState` shape of the commands,
-not `TCommand`.
-
-```ts
-type NarrowedCommands = PickCommand<SomeStatesType, 'C-A' | 'C-B'>;
-```
-
-### StatesDispatcher
-
-Get the typing for the dispatcher.
+Narrows to specific states which has the commands.
 
 ```ts
-type Dispatcher = StatesDispatcher<SomeStatesType>;
+type NarrowedCommands = PickCommandStates<SomeState, 'C-A' | 'C-B'>;
 ```
 
 ## Devtools

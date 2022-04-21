@@ -4,41 +4,49 @@ import type { Manager } from './devtools/Manager';
 export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
-export const COMMANDS = Symbol('COMMANDS');
 export const DEBUG_ID = Symbol('DEBUG_ID');
 export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 
+export const $COMMAND = Symbol('$COMMAND');
+
 export interface TState {
   state: string;
+  [$COMMAND]?: TCommand;
 }
 
 export interface TAction {
   type: string;
 }
 
-type CommandifyEnvironment<T extends TEnvironment> = {
+export interface TCommand {
+  cmd: string;
+}
+
+export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>> = {
+  [K in keyof T]: ReturnType<T[K]>;
+}[keyof T];
+
+type TCommandifyEnvironment<T extends TEnvironment> = {
   [A in keyof T]: A extends string
     ? {
         [B in keyof T[A]]: T[A][B] extends Function
           ? (
               ...params: Parameters<T[A][B]>
             ) => {
-              $$ENVIRONMENT: {
-                target: B extends string ? `${A}.${B}` : never;
-                params: Parameters<T[A][B]>;
-              };
+              cmd: '$ENVIRONMENT';
+              target: B extends string ? `${A}.${B}` : never;
+              params: Parameters<T[A][B]>;
             }
           : never;
       }
     : never;
 };
 
-type TStateCommandKeys<T extends { state: string }> = Extract<
-  {
-    [K in keyof T]: keyof (T & { state: K });
-  }[keyof T],
-  `\$${string}`
->;
+type TStateCommands<T extends TState> = T extends { [$COMMAND]: infer C }
+  ? C extends TCommand
+    ? C['cmd']
+    : never
+  : never;
 
 export type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
@@ -52,12 +60,10 @@ export type PickState<S extends TState, T extends S['state'] = never> = [T] exte
 
 export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
 
-export type PickCommandState<S extends TState, T extends TStateCommandKeys<S>> = S extends Record<T, unknown>
-  ? S
-  : never;
+export type PickCommandState<S extends TState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
-type StatesHandlers<S extends TState, A extends TAction> = {
-  [AA in A['type']]?: (state: S, action: A extends { type: AA } ? A : never) => S;
+type StatesHandlers<S extends TState, SS extends TState, A extends TAction> = {
+  [AA in A['type']]?: (state: SS, action: A extends { type: AA } ? A : never) => S;
 };
 
 type StatesHandlersWithEnvironment<S extends TState, SS extends TState, A extends TAction, PA extends TAction> = {
@@ -68,11 +74,11 @@ type StatesHandlersWithEnvironment<S extends TState, SS extends TState, A extend
   };
 
 type StatesTransitions<S extends TState, A extends TAction> = {
-  [SS in S['state']]: StatesHandlers<S & { state: SS }, A>;
+  [SS in S['state']]: StatesHandlers<S, S & { state: SS }, A>;
 };
 
 export function createReducerHandlers<S extends TState, A extends TAction, SS extends S['state'] = never>(
-  handlers: StatesHandlers<S & { state: SS }, A>,
+  handlers: StatesHandlers<S, S & { state: SS }, A>,
 ): typeof handlers {
   return handlers;
 }
@@ -82,9 +88,11 @@ type StatesTransitionsWithEnvironment<S extends TState, A extends TAction, PA ex
 };
 
 // A workaround for https://github.com/microsoft/TypeScript/issues/37888
+/*
 export type WithCommands<T> = {
   [COMMANDS]?: T;
 };
+*/
 
 export type StatesReducerFunction<S extends TState, A extends TAction> = (state: S, action: A) => S;
 
@@ -100,7 +108,6 @@ export function transition<S extends TState, A extends TAction>(
   transitions: StatesTransitions<S, A>,
 ) {
   let newState = state;
-  let commands;
 
   // @ts-ignore
   const debugId = state[DEBUG_ID];
@@ -108,12 +115,10 @@ export function transition<S extends TState, A extends TAction>(
   // @ts-ignore
   if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
-    const result = transitions[state.state][action.type](state, action);
+    newState = transitions[state.state][action.type](state, action);
 
-    commands = Array.isArray(result) ? result.slice(1) : undefined;
-    newState = Array.isArray(result) ? result[0] : result;
     // @ts-ignore
-    action[DEBUG_ACTION] && (newState !== state || commands) && action[DEBUG_ACTION](debugId, false);
+    action[DEBUG_ACTION] && newState !== state && action[DEBUG_ACTION](debugId, false);
   } else {
     // @ts-ignore
     action[DEBUG_ACTION] && action[DEBUG_ACTION](debugId, true);
@@ -127,34 +132,16 @@ export function transition<S extends TState, A extends TAction>(
     newState[DEBUG_TRANSITIONS] = transitions;
   }
 
-  // @ts-ignore
-  newState[COMMANDS] = state[COMMANDS] || {};
-
-  // @ts-ignore
-  if (commands) {
-    commands.forEach((command) => {
-      // @ts-ignore
-      newState[COMMANDS][command.cmd] = command;
-    });
-
-    // Ensure it updates
-    if (newState === state) {
-      newState = {
-        ...newState,
-      };
-    }
-  }
-
   return newState;
 }
 
-export function useCommandEffect<S extends TState, CC extends TStateCommandKeys<S>>(
+export function useCommandEffect<S extends TState, CC extends TStateCommands<S>>(
   state: S,
   cmd: CC,
   effect: (command: S extends Record<CC, unknown> ? S[CC] : never) => void,
 ) {
   // @ts-ignore
-  const command = state[cmd];
+  const command = state[$COMMAND] && state[$COMMAND].cmd === cmd ? state[$COMMAND] : undefined;
 
   React.useEffect(() => {
     if (command) {
@@ -286,10 +273,9 @@ const createCommandsProxy = () => {
         get: (target, prop) => {
           return (...params: any[]) => {
             return {
-              $$ENVIRONMENT: {
-                target: `${parentTarget}.${prop as string}`,
-                params,
-              },
+              cmd: '$ENVIRONMENT',
+              target: `${parentTarget}.${prop as string}`,
+              params,
             };
           };
         },
@@ -337,15 +323,34 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
     ): StatesReducerFunction<S, A> {
       return ((state: any, action: any) => transition(state, action, transitions)) as any;
     },
-    useReducer<T extends Reducer<any, any>>(
+    useReducer<T extends Reducer<any, any>, A extends Record<string, (...params: any[]) => TAction>>(
       name: string,
       reducer: T,
+      actions: A,
       initialState: T extends Reducer<infer ST, any> ? ST : never,
-    ) {
+    ): T extends Reducer<infer S, any>
+      ? [
+          S,
+          {
+            [K in keyof A]: A[K] extends (...params: infer P) => any ? (...params: P) => void : never;
+          },
+        ]
+      : never {
       const states = useReducer(reducer, initialState);
       const environment = React.useContext(environmentContext);
 
       useDevtools(name, states);
+
+      const [dispatchActions] = React.useState(() =>
+        Object.keys(actions).reduce((aggr, key) => {
+          // @ts-ignore
+          aggr[key] = (...params: any[]) => states[1](actions[key](...params));
+
+          return aggr;
+        }, {}),
+      );
+
+      const statesWithActions = React.useMemo(() => [states[0], dispatchActions], [states[0]]);
 
       useEffect(() => {
         if (environment) {
@@ -355,20 +360,21 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
       }, []);
 
       //@ts-ignore
-      useCommandEffect(states[0], '$$ENVIRONMENT', ({ target, params }) => {
+      useCommandEffect(states[0], '$ENVIRONMENT', ({ target, params }) => {
+        //@ts-ignore
         const [partA, partB] = target.split('.');
         // @ts-ignore
         environment[partA][partB](...params);
       });
 
-      return states;
+      return statesWithActions as any;
     },
     createReducerHandlers<S extends TState, A extends TAction, ST extends S['state'] = never>(
       handlers: StatesHandlersWithEnvironment<S, [ST] extends [never] ? S : S & { state: ST }, A, EA>,
     ): typeof handlers {
       return handlers;
     },
-    commands: createCommandsProxy() as CommandifyEnvironment<E>,
+    commands: createCommandsProxy() as TCommandifyEnvironment<E>,
   };
 };
 

@@ -1,68 +1,73 @@
 import * as React from 'react';
-import { useCommandEffect, useStateEffect, createReducer } from '../';
+import { useCommandEffect, useStateEffect, createReducer, $COMMAND, PickCommandState, PickReturnTypes } from '../';
 import { colors } from './styles';
 
-const $NOTIFY_RESIZE = (x: number) => ({ $NOTIFY_RESIZE: { x } });
+const commands = {
+  NOTIFY_CLICK: () => ({
+    cmd: '$NOTIFY_CLICK' as const,
+  }),
+  NOTIFY_RESIZE: (x: number) => ({
+    cmd: '$NOTIFY_RESIZE' as const,
+    x,
+  }),
+};
 
-const $NOTIFY_CLICK = () => ({ $NOTIFY_CLICK: {} });
+const states = {
+  IDLE: (notifyClick = false) => ({
+    state: 'IDLE' as const,
+    [$COMMAND]: notifyClick ? commands.NOTIFY_CLICK() : undefined,
+  }),
+  DETECTING_RESIZE: (initialX: number) => ({
+    state: 'DETECTING_RESIZE' as const,
+    initialX,
+  }),
+  RESIZING: (x: number) => ({
+    state: 'RESIZING' as const,
+    x,
+    [$COMMAND]: commands.NOTIFY_RESIZE(x),
+  }),
+};
 
-const IDLE = () => ({
-  state: 'IDLE' as const,
-});
+const actions = {
+  MOUSE_MOVE: (x: number) => ({
+    type: 'MOUSE_MOVE' as const,
+    x,
+  }),
+  MOUSE_UP: (x: number) => ({
+    type: 'MOUSE_UP' as const,
+    x,
+  }),
+  MOUSE_UP_RESIZER: () => ({
+    type: 'MOUSE_UP_RESIZER' as const,
+  }),
+  MOUSE_DOWN: (x: number) => ({
+    type: 'MOUSE_DOWN' as const,
+    x,
+  }),
+};
 
-const DETECTING_RESIZE = (initialX: number) => ({
-  state: 'DETECTING_RESIZE' as const,
-  initialX,
-});
+type State = PickReturnTypes<typeof states>;
 
-const RESIZING = (x: number) => ({
-  state: 'RESIZING' as const,
-  x,
-});
-
-type State = ReturnType<typeof IDLE | typeof DETECTING_RESIZE | typeof RESIZING>;
-
-type Action =
-  | {
-      type: 'MOUSE_MOVE';
-      x: number;
-    }
-  | {
-      type: 'MOUSE_UP';
-      x: number;
-    }
-  | {
-      type: 'MOUSE_UP_RESIZER';
-    }
-  | {
-      type: 'MOUSE_DOWN';
-      x: number;
-    };
+type Action = PickReturnTypes<typeof actions>;
 
 const reducer = createReducer<State, Action>({
   IDLE: {
-    MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE(x),
+    MOUSE_DOWN: (_, { x }) => states.DETECTING_RESIZE(x),
   },
   DETECTING_RESIZE: {
     MOUSE_MOVE: (state, { x }) => {
       if (Math.abs(x - state.initialX) > 3) {
-        return RESIZING(x);
+        return states.RESIZING(x);
       }
 
       return state;
     },
-    MOUSE_UP: () => IDLE(),
-    MOUSE_UP_RESIZER: () => ({
-      ...IDLE(),
-      ...$NOTIFY_CLICK(),
-    }),
+    MOUSE_UP: () => states.IDLE(),
+    MOUSE_UP_RESIZER: () => states.IDLE(true),
   },
   RESIZING: {
-    MOUSE_MOVE: (state, { x }) => ({
-      ...RESIZING(x),
-      ...$NOTIFY_RESIZE,
-    }),
-    MOUSE_UP: () => IDLE(),
+    MOUSE_MOVE: (_, { x }) => states.RESIZING(x),
+    MOUSE_UP: () => states.IDLE(),
   },
 });
 
@@ -75,20 +80,14 @@ export const Resizer = ({
   onClick: () => void;
   isOpen: boolean;
 }) => {
-  const [resizer, dispatch] = React.useReducer(reducer, { state: 'IDLE' });
+  const [resizer, dispatch] = React.useReducer(reducer, states.IDLE());
 
   useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
-      dispatch({
-        type: 'MOUSE_MOVE',
-        x: event.clientX,
-      });
+      dispatch(actions.MOUSE_MOVE(event.clientX));
     };
     const onMouseUp = (event: MouseEvent) => {
-      dispatch({
-        type: 'MOUSE_UP',
-        x: event.clientX,
-      });
+      dispatch(actions.MOUSE_UP(event.clientX));
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -119,15 +118,10 @@ export const Resizer = ({
         zIndex: 99999999,
       }}
       onMouseUp={() => {
-        dispatch({
-          type: 'MOUSE_UP_RESIZER',
-        });
+        dispatch(actions.MOUSE_UP_RESIZER());
       }}
       onMouseDown={(event) => {
-        dispatch({
-          type: 'MOUSE_DOWN',
-          x: event.clientX,
-        });
+        dispatch(actions.MOUSE_DOWN(event.clientX));
       }}
     />
   );
