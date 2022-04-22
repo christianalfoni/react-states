@@ -81,7 +81,7 @@ export function transition<S extends TState, A extends TAction>(state: S, action
 export function useCommandEffect<S extends TState, CC extends TStateCommands<S>>(
   state: S,
   cmd: CC,
-  effect: (command: S extends Record<CC, unknown> ? S[CC] : never) => void,
+  effect: (command: S extends Record<CC, unknown> ? Exclude<S[CC], undefined> : never) => void,
 ) {
   // @ts-ignore
   const command = state[$COMMAND] && state[$COMMAND].cmd === cmd ? state[$COMMAND] : undefined;
@@ -131,9 +131,10 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
 
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
-  matches: T & {
-    [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
-  },
+  matches: T &
+    {
+      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+    },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
@@ -154,7 +155,7 @@ export function matchProp<
   S extends TState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S],
+  }[keyof S]
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -248,7 +249,7 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
 
 const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 
-export const managerContext = React.createContext(null as unknown as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
