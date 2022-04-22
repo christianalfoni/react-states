@@ -22,10 +22,6 @@ export interface TCommand {
   cmd: string;
 }
 
-export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>> = {
-  [K in keyof T]: ReturnType<T[K]>;
-}[keyof T];
-
 type TCommandifyEnvironment<T extends TEnvironment> = {
   [A in keyof T]: A extends string
     ? {
@@ -62,8 +58,8 @@ export type PickAction<A extends TAction, T extends A['type']> = A extends { typ
 
 export type PickCommandState<S extends TState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
-type StatesHandlers<S extends TState, SS extends TState, A extends TAction> = {
-  [AA in A['type']]?: (state: SS, action: A extends { type: AA } ? A : never) => S;
+export type TTransition<S extends TState, A extends TAction, SS extends S['state']> = {
+  [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
 };
 
 type StatesHandlersWithEnvironment<S extends TState, SS extends TState, A extends TAction, PA extends TAction> = {
@@ -73,40 +69,11 @@ type StatesHandlersWithEnvironment<S extends TState, SS extends TState, A extend
     [PAA in PA['type']]?: (state: SS, action: PA extends { type: PAA } ? PA : never) => S;
   };
 
-type StatesTransitions<S extends TState, A extends TAction> = {
-  [SS in S['state']]: StatesHandlers<S, S & { state: SS }, A>;
+export type TTransitions<S extends TState, A extends TAction> = {
+  [SS in S['state']]: TTransition<S, A, SS>;
 };
 
-export function createReducerHandlers<S extends TState, A extends TAction, SS extends S['state'] = never>(
-  handlers: StatesHandlers<S, S & { state: SS }, A>,
-): typeof handlers {
-  return handlers;
-}
-
-type StatesTransitionsWithEnvironment<S extends TState, A extends TAction, PA extends TAction> = {
-  [SS in S['state']]: StatesHandlersWithEnvironment<S, S & { state: SS }, PA, A>;
-};
-
-// A workaround for https://github.com/microsoft/TypeScript/issues/37888
-/*
-export type WithCommands<T> = {
-  [COMMANDS]?: T;
-};
-*/
-
-export type StatesReducerFunction<S extends TState, A extends TAction> = (state: S, action: A) => S;
-
-export function createReducer<S extends TState, A extends TAction = never>(
-  transitions: StatesTransitions<S, A>,
-): StatesReducerFunction<S, A> {
-  return ((state: any, action: any) => transition(state, action, transitions)) as any;
-}
-
-export function transition<S extends TState, A extends TAction>(
-  state: S,
-  action: A,
-  transitions: StatesTransitions<S, A>,
-) {
+export function transition<S extends TState, A extends TAction>(state: S, action: A, transitions: TTransitions<S, A>) {
   let newState = state;
 
   // @ts-ignore
@@ -206,6 +173,19 @@ export function match() {
 
   // @ts-ignore Too complex for TS to do this correctly
   return (matches) => matches[state.state](state);
+}
+
+export function matchProp<
+  S extends TState,
+  P extends {
+    [K in keyof S]: keyof (S & { state: K });
+  }[keyof S]
+>(prop: P): S extends Record<P, unknown> ? S : undefined;
+export function matchProp() {
+  const state = arguments[0];
+  const prop = arguments[1];
+  // @ts-ignore
+  return prop in state ? state : undefined;
 }
 
 export class Emitter<S extends TAction> {
@@ -318,61 +298,8 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
         emitter,
       });
     },
-    createReducer<S extends TState, A extends TAction>(
-      transitions: StatesTransitionsWithEnvironment<S, A, EA>,
-    ): StatesReducerFunction<S, A> {
-      return ((state: any, action: any) => transition(state, action, transitions)) as any;
-    },
-    useReducer<T extends Reducer<any, any>, A extends Record<string, (...params: any[]) => TAction>>(
-      name: string,
-      reducer: T,
-      actions: A,
-      initialState: T extends Reducer<infer ST, any> ? ST : never,
-    ): T extends Reducer<infer S, any>
-      ? [
-          S,
-          {
-            [K in keyof A]: A[K] extends (...params: infer P) => any ? (...params: P) => void : never;
-          },
-        ]
-      : never {
-      const states = useReducer(reducer, initialState);
-      const environment = React.useContext(environmentContext);
-
-      useDevtools(name, states);
-
-      const [dispatchActions] = React.useState(() =>
-        Object.keys(actions).reduce((aggr, key) => {
-          // @ts-ignore
-          aggr[key] = (...params: any[]) => states[1](actions[key](...params));
-
-          return aggr;
-        }, {}),
-      );
-
-      const statesWithActions = React.useMemo(() => [states[0], dispatchActions], [states[0]]);
-
-      useEffect(() => {
-        if (environment) {
-          // @ts-ignore
-          return environment.emitter.subscribe(states[1]);
-        }
-      }, []);
-
-      //@ts-ignore
-      useCommandEffect(states[0], '$ENVIRONMENT', ({ target, params }) => {
-        //@ts-ignore
-        const [partA, partB] = target.split('.');
-        // @ts-ignore
-        environment[partA][partB](...params);
-      });
-
-      return statesWithActions as any;
-    },
-    createReducerHandlers<S extends TState, A extends TAction, ST extends S['state'] = never>(
-      handlers: StatesHandlersWithEnvironment<S, [ST] extends [never] ? S : S & { state: ST }, A, EA>,
-    ): typeof handlers {
-      return handlers;
+    useEnvironmentSubscription: (dispatch: (action: TAction) => void) => {
+      React.useEffect(() => emitter.subscribe(dispatch));
     },
     commands: createCommandsProxy() as TCommandifyEnvironment<E>,
   };

@@ -1,59 +1,57 @@
-import { $COMMAND, PickReturnTypes } from '../../src';
-import { createReducer, Todo, commands as envCommands } from '../environment-interface';
+import { $COMMAND, transition, TTransitions } from '../../src';
+import { Todo, commands, EnvironmentAction } from '../environment-interface';
 
-const commands = {
-  LOG: (message: string) => ({
-    cmd: 'LOG' as const,
-    message,
-  }),
-};
+export type Action =
+  | {
+      type: 'ADD_TODO';
+      todo: Todo;
+    }
+  | {
+      type: 'FETCH_TODOS';
+    };
 
-export const states = {
-  NOT_LOADED: () => ({
-    state: 'NOT_LOADED' as const,
-    [$COMMAND]: commands.LOG('HEY'),
-  }),
-  LOADING: () => ({
-    state: 'LOADING' as const,
-    [$COMMAND]: envCommands.todosApi.fetchTodos(),
-  }),
-  LOADED: ({ todos }: { todos: Todo[] }) => ({
-    state: 'LOADED' as const,
-    todos,
-  }),
-  ERROR: ({ error }: { error: string }) => ({
-    state: 'ERROR' as const,
-    error,
-  }),
-};
+const $LOG = (message: string) => ({
+  cmd: '$LOG' as const,
+  message,
+});
 
-export type State = PickReturnTypes<typeof states>;
+export const NOT_LOADED = () => ({
+  state: 'NOT_LOADED' as const,
+  [$COMMAND]: $LOG('HEY'),
+});
 
-export const actions = {
-  ADD_TODO: (todo: Todo) => ({
-    type: 'ADD_TODO' as const,
-    todo,
-  }),
-  FETCH_TODOS: () => ({
-    type: 'FETCH_TODOS' as const,
-  }),
-};
+const LOADING = () => ({
+  state: 'LOADING' as const,
+  [$COMMAND]: commands.todosApi.fetchTodos(),
+});
 
-type Action = PickReturnTypes<typeof actions>;
+const LOADED = ({ todos }: { todos: Todo[] }) => ({
+  state: 'LOADED' as const,
+  todos,
+});
 
-export const reducer = createReducer<State, Action>({
+const ERROR = ({ error }: { error: string }) => ({
+  state: 'ERROR' as const,
+  error,
+});
+
+export type State = ReturnType<typeof NOT_LOADED | typeof LOADING | typeof LOADED | typeof ERROR>;
+
+const transitions: TTransitions<State, Action | EnvironmentAction> = {
   NOT_LOADED: {
-    FETCH_TODOS: () => states.LOADING(),
+    FETCH_TODOS: () => LOADING(),
   },
   LOADING: {
-    'TODOS:FETCH_TODOS_SUCCESS': (_, { todos }) => states.LOADED({ todos }),
-    'TODOS:FETCH_TODOS_ERROR': (_, { error }) => states.ERROR({ error }),
+    'TODOS:FETCH_TODOS_SUCCESS': (_, { todos }) => LOADED({ todos }),
+    'TODOS:FETCH_TODOS_ERROR': (_, { error }) => ERROR({ error }),
   },
   LOADED: {
     ADD_TODO: (state, { todo }) => ({
-      ...states.LOADED({ todos: [todo].concat(state.todos) }),
-      [$COMMAND]: envCommands.todosApi.saveTodo(todo),
+      ...LOADED({ todos: [todo].concat(state.todos) }),
+      [$COMMAND]: commands.todosApi.saveTodo(todo),
     }),
   },
   ERROR: {},
-});
+};
+
+export const reducer = (state: State, action: Action) => transition(state, action, transitions);

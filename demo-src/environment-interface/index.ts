@@ -1,4 +1,4 @@
-import { defineEnvironment } from '../../src';
+import { defineEnvironment, TTransition } from '../../src';
 
 export type Todo = {
   completed: boolean;
@@ -28,20 +28,10 @@ export type EnvironmentAction = TodosApiAction;
 
 const {
   EnvironmentProvider,
-  createReducer,
   createEnvironment,
   useEnvironment,
-  useReducer,
-  createReducerHandlers,
   commands,
+  useEnvironmentSubscription,
 } = defineEnvironment<Environment, EnvironmentAction>();
 
-export {
-  EnvironmentProvider,
-  createReducer,
-  createEnvironment,
-  useEnvironment,
-  useReducer,
-  createReducerHandlers,
-  commands,
-};
+export { EnvironmentProvider, createEnvironment, useEnvironment, commands, useEnvironmentSubscription };

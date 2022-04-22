@@ -1,27 +1,42 @@
 import * as React from 'react';
 
 import { match, useCommandEffect } from '../src';
-import { states, reducer, actions } from './reducers/todos';
-import { EnvironmentProvider, useReducer } from './environment-interface';
+import { NOT_LOADED, reducer } from './reducers/todos';
+import { EnvironmentProvider, useEnvironmentSubscription } from './environment-interface';
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
-  const [state, dispatch] = useReducer('todos', reducer, actions, states.NOT_LOADED());
+  const [state, dispatch] = React.useReducer(reducer, NOT_LOADED());
 
-  useCommandEffect(state, 'LOG', ({}) => {
+  useEnvironmentSubscription(dispatch);
+
+  useCommandEffect(state, '$LOG', ({}) => {
     console.log('HEY');
   });
 
   return match(state, {
-    NOT_LOADED: () => <button onClick={() => dispatch.FETCH_TODOS()}>Fetch Todos</button>,
+    NOT_LOADED: () => (
+      <button
+        onClick={() =>
+          dispatch({
+            type: 'FETCH_TODOS',
+          })
+        }
+      >
+        Fetch Todos
+      </button>
+    ),
     LOADING: () => <h2>Loading...</h2>,
     LOADED: ({ todos }) => (
       <div>
         <button
           onClick={() => {
-            dispatch.ADD_TODO({
-              completed: false,
-              title: 'New_' + Date.now(),
+            dispatch({
+              type: 'ADD_TODO',
+              todo: {
+                completed: false,
+                title: 'New_' + Date.now(),
+              },
             });
           }}
         >
