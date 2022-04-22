@@ -2,16 +2,17 @@ import * as React from 'react';
 
 import { match, useCommandEffect } from '../src';
 import { NOT_LOADED, reducer } from './reducers/todos';
-import { EnvironmentProvider, useEnvironmentSubscription } from './environment-interface';
+import { EnvironmentProvider, useEnvironment } from './environment-interface';
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
+  const { todosApi, emitter } = useEnvironment();
   const [state, dispatch] = React.useReducer(reducer, NOT_LOADED());
 
-  useEnvironmentSubscription(dispatch);
+  React.useEffect(() => emitter.subscribe(dispatch));
 
-  useCommandEffect(state, '$LOG', ({}) => {
-    console.log('HEY');
+  useCommandEffect(state, '$SAVE_TODO', ({ todo }) => {
+    todosApi.saveTodo(todo);
   });
 
   return match(state, {

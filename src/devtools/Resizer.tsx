@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { transition, useCommandEffect, useStateEffect, $COMMAND, TTransitions, TTransition } from '../';
+import { transition, useCommandEffect, useStateEffect, TTransitions } from '../';
 import { colors } from './styles';
 
 type Action =
@@ -30,24 +30,23 @@ const $NOTIFY_RESIZE = (x: number) => ({
 
 const IDLE = (notifyClick = false) => ({
   state: 'IDLE' as const,
-  [$COMMAND]: notifyClick ? $NOTIFY_CLICK() : undefined,
+  $NOTIFY_CLICK: notifyClick ? $NOTIFY_CLICK() : undefined,
 });
 
 const DETECTING_RESIZE = (initialX: number) => ({
   state: 'DETECTING_RESIZE' as const,
   initialX,
-  MOUSE_MOVE: (x: number) => RESIZING(x),
 });
 
 const RESIZING = (x: number) => ({
   state: 'RESIZING' as const,
   x,
-  [$COMMAND]: $NOTIFY_RESIZE(x),
+  $NOTIFY_RESIZE: $NOTIFY_RESIZE(x),
 });
 
 type State = ReturnType<typeof IDLE | typeof DETECTING_RESIZE | typeof RESIZING>;
 
-const handlers: TTransitions<State, Action> = {
+const transitions: TTransitions<State, Action> = {
   IDLE: {
     MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE(x),
   },
@@ -68,7 +67,7 @@ const handlers: TTransitions<State, Action> = {
   },
 };
 
-const reducer = (state: State, action: Action) => transition(state, action, handlers);
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 
 export const Resizer = ({
   onResize,
@@ -80,7 +79,7 @@ export const Resizer = ({
   isOpen: boolean;
 }) => {
   const [resizer, dispatch] = React.useReducer(reducer, IDLE());
-
+   
   useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
       dispatch({ type: 'MOUSE_MOVE', x: event.clientX });
@@ -101,7 +100,7 @@ export const Resizer = ({
   useCommandEffect(resizer, '$NOTIFY_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
-
+  
   useCommandEffect(resizer, '$NOTIFY_CLICK', () => {
     onClick();
   });

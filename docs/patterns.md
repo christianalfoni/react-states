@@ -10,39 +10,40 @@ Expose the reducer and related effects as a hook.
 import { useReducer } from 'react';
 import { States, StateTransition, createReducer, useStateEffect } from 'react-states';
 
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
 type Action = {
   type: 'SWITCH';
 };
 
-export type Switcher = States<State, Action>;
+const FOO = () => ({
+  state: 'FOO' as const,
+});
 
-type Transition = StateTransition<Switcher>;
+const BAR = () => ({
+  state: 'BAR' as const,
+});
+
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    SWITCH: () => BAR(),
+  },
+  BAR: {
+    SWITCH: () => FOO(),
+  },
+};
+
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 
 type SwitcherProviderProps = {
   initialState?: State;
 };
 
-const reducer = createReducer<Switcher>({
-  FOO: {
-    SWITCH: (): Transition => ({ state: 'BAR' }),
-  },
-  BAR: {
-    SWITCH: (): Transition => ({ state: 'FOO' }),
-  },
-});
-
 // Allow setting initialState for more reusability and also
 // improved testability
 export const useSwitcher = ({ initialState }: { initialState?: State }) => {
-  const switcherReducer = useReducer(reducer, initialState || { state: 'FOO' });
+  const switcherReducer = useReducer(reducer, initialState || FOO());
+
+  useDevtools('Switcher', switcherReducer);
+
   const [state] = switcherReducer;
 
   useStateEffect(state, 'BAR', () => {

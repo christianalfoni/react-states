@@ -1,4 +1,4 @@
-import React, { Dispatch, Reducer, useEffect, useReducer } from 'react';
+import React, { Dispatch } from 'react';
 import type { Manager } from './devtools/Manager';
 
 export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
@@ -7,11 +7,8 @@ export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
 export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 
-export const $COMMAND = Symbol('$COMMAND');
-
 export interface TState {
   state: string;
-  [$COMMAND]?: TCommand;
 }
 
 export interface TAction {
@@ -22,27 +19,13 @@ export interface TCommand {
   cmd: string;
 }
 
-type TCommandifyEnvironment<T extends TEnvironment> = {
-  [A in keyof T]: A extends string
+type TStateCommands<S extends TState> = {
+  [K in S['state']]: S extends { state: K }
     ? {
-        [B in keyof T[A]]: T[A][B] extends Function
-          ? (
-              ...params: Parameters<T[A][B]>
-            ) => {
-              cmd: '$ENVIRONMENT';
-              target: B extends string ? `${A}.${B}` : never;
-              params: Parameters<T[A][B]>;
-            }
-          : never;
-      }
+        [K in keyof S]: S[K] extends TCommand | undefined ? K : never;
+      }[keyof S]
     : never;
-};
-
-type TStateCommands<T extends TState> = T extends { [$COMMAND]: infer C }
-  ? C extends TCommand
-    ? C['cmd']
-    : never
-  : never;
+}[S['state']];
 
 export type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
@@ -61,13 +44,6 @@ export type PickCommandState<S extends TState, T extends TStateCommands<S>> = S 
 export type TTransition<S extends TState, A extends TAction, SS extends S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
 };
-
-type StatesHandlersWithEnvironment<S extends TState, SS extends TState, A extends TAction, PA extends TAction> = {
-  [AA in A['type']]?: (state: SS, action: A extends { type: AA } ? A : never) => S;
-} &
-  {
-    [PAA in PA['type']]?: (state: SS, action: PA extends { type: PAA } ? PA : never) => S;
-  };
 
 export type TTransitions<S extends TState, A extends TAction> = {
   [SS in S['state']]: TTransition<S, A, SS>;
@@ -155,10 +131,9 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
 
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
-  matches: T &
-    {
-      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
-    },
+  matches: T & {
+    [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+  },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
@@ -179,8 +154,8 @@ export function matchProp<
   S extends TState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S]
->(prop: P): S extends Record<P, unknown> ? S : undefined;
+  }[keyof S],
+>(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
   const prop = arguments[1];
@@ -202,7 +177,7 @@ export class Emitter<S extends TAction> {
   }
 }
 
-export type Emit<S extends TAction> = (subscription: S) => void;
+export type TEmit<S extends TAction> = (subscription: S) => void;
 
 /**
  * @deprecated
@@ -245,36 +220,6 @@ export const createEnvironment = <E extends Record<string, any>>() => {
   };
 };
 
-const createCommandsProxy = () => {
-  const createMethodProxy = (parentTarget: string) =>
-    new Proxy(
-      {},
-      {
-        get: (target, prop) => {
-          return (...params: any[]) => {
-            return {
-              cmd: '$ENVIRONMENT',
-              target: `${parentTarget}.${prop as string}`,
-              params,
-            };
-          };
-        },
-      },
-    );
-
-  const apiProxy = new Proxy(
-    {},
-    {
-      get: (target, prop) => {
-        console.group('WTF?');
-        return createMethodProxy(prop as string);
-      },
-    },
-  );
-
-  return apiProxy;
-};
-
 export const defineEnvironment = <E extends TEnvironment, EA extends TAction = never>() => {
   const emitter = new Emitter<EA>();
   const boundEmit = emitter.emit.bind(emitter);
@@ -293,21 +238,17 @@ export const defineEnvironment = <E extends TEnvironment, EA extends TAction = n
     EnvironmentProvider: Provider,
     // @ts-ignore
     useEnvironment: (): E & { emitter: Emitter<S> } => React.useContext(environmentContext),
-    createEnvironment: (environment: (emit: Emit<EA>) => E) => {
+    createEnvironment: (environment: (emit: TEmit<EA>) => E) => {
       return Object.assign(environment(boundEmit), {
         emitter,
       });
     },
-    useEnvironmentSubscription: (dispatch: (action: TAction) => void) => {
-      React.useEffect(() => emitter.subscribe(dispatch));
-    },
-    commands: createCommandsProxy() as TCommandifyEnvironment<E>,
   };
 };
 
 const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 
-export const managerContext = React.createContext((null as unknown) as Manager);
+export const managerContext = React.createContext(null as unknown as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context

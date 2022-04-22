@@ -2,11 +2,11 @@
 
 Core
 
-- [createReducer](#createreducer)
-- [$COMMAND](#$COMMAND)
+- [transition](#transition)
 - [useStateEffect](#usestateeffect)
-- [useCommandEffect](#usecommandeffect)
 - [match](#match)
+- [matchProp](#matchprop)
+- [useCommandEffect](#usecommandeffect)
 
 Environment
 
@@ -14,21 +14,19 @@ Environment
 - [createEnvironment](#createenvironment)
 - [EnvironmentProvider](#environmentprovider)
 - [useEnvironment](#useenvironment)
-- [createReducer](#createreducer-1)
-- [useReducer](#usereducer)
 
 Testing
 
 - [renderReducer](#renderreducer)
 
-Utils
+Types and Type Utils
 
-- [createReducerHandlers](#createReducerHandlers)
-- [Emit](#emit)
+- [TTransitions](#TTransitions)
+- [TTransition](#TTransition)
+- [TEmit](#TEmit)
 - [PickState](#pickstate)
 - [PickAction](#pickaction)
 - [PickStateCommand](#pickstatecommand)
-- [PickReturnTypes](#PickReturnTypes)
 
 Devtools
 
@@ -37,82 +35,37 @@ Devtools
 
 ## Core
 
-### createReducer
+### transition
 
-Create a reducer with explicit states
-
-```ts
-import { createReducer, PickReturnTypes } from 'react-states';
-
-const states = {
-  FOO = () => ({
-    state: 'FOO' as const,
-  }),
-  BAR = () => ({
-    state: 'BAR' as const,
-  }),
-};
-
-type State = PickReturnTypes<typeof states>;
-
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
-};
-
-type Action = PickReturnTypes<typeof actions>;
-
-const reducer = createReducer<State, Action>({
-  FOO: {
-    SWITCH: (state, action) => BAR(),
-  },
-  BAR: {
-    SWITCH: (state, action) => FOO(),
-  },
-});
-```
-
-### $COMMAND
-
-Return a command to be executed by an effect
+Transition state and action in a reducer
 
 ```ts
-import { createReducer, $COMMAND } from 'react-states';
+import { transition, TTransitions } from 'react-states';
 
-const $LOG = (message: string) => ({
-  cmd: '$LOG' as const,
-  message,
-});
-
+type Action = {
+  type: 'SWITCH';
+};
 
 const FOO = () => ({
   state: 'FOO' as const,
-  [$COMMAND]: $LOG('Moved to FOO')
 });
 
 const BAR = () => ({
   state: 'BAR' as const,
 });
 
-
 type State = ReturnType<typeof FOO | typeof BAR>;
 
-type Action = {
-  type: 'SWITCH';
-};
-
-const reducer = createReducer<State, Action>({
+const transitions: TTransitions<State, Action> = {
   FOO: {
-    SWITCH: () => ({
-      ...BAR()
-      [$COMMAND]: $LOG('Moving to BAR')
-    }),
+    SWITCH: (state, action) => BAR(),
   },
   BAR: {
-    SWITCH: () => FOO(),
+    SWITCH: (state, action) => FOO(),
   },
-});
+};
+
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 ```
 
 ### useStateEffect
@@ -141,22 +94,6 @@ const SomeComponent = () => {
 };
 ```
 
-### useCommandEffect
-
-Run an effect when the command is part of a transition.
-
-```ts
-const SomeComponent = () => {
-  const [state, dispatch] = useReducer(reducer, initialState);
-
-  useCommandEffect(state, '$SOME_COMMAND', () => {
-    // Run when command is part of transition
-  });
-
-  return null;
-};
-```
-
 ### match
 
 ```ts
@@ -169,6 +106,70 @@ const SomeComponent = () => {
     SOME_STATE: () => 'Hello',
     OTHER_STATE: () => 'Ops',
   });
+};
+```
+
+### matchProp
+
+```ts
+const SomeComponent = () => {
+  const [state, dispatch] = useReducer(reducer, {
+    state: 'SOME_STATE',
+  });
+
+  return matchProp(state, 'someProp')?.someProp ?? 'Not there';
+};
+```
+
+### useCommandEffect
+
+Run an effect when the command is part of a transition.
+
+```ts
+import { transition, TTransitions } from 'react-states';
+
+type Action = {
+  type: 'SWITCH';
+};
+
+const $LOG = (message: string) => ({
+  cmd: '$LOG' as const,
+  message,
+});
+
+const FOO = () => ({
+  state: 'FOO' as const,
+  $LOG: $LOG('Moving into FOO'),
+});
+
+const BAR = () => ({
+  state: 'BAR' as const,
+  $LOG: $LOG('Moving into BAR'),
+});
+
+type State = ReturnType<typeof FOO | typeof BAR>;
+
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    SWITCH: (state, action) => BAR(),
+  },
+  BAR: {
+    SWITCH: (state, action) => FOO(),
+  },
+};
+
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
+```
+
+```ts
+const SomeComponent = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  useCommandEffect(state, '$LOG', ({ message }) => {
+    console.log(message);
+  });
+
+  return null;
 };
 ```
 
@@ -237,56 +238,11 @@ Use the environment interface.
 import { useEnvironment } from './environment';
 
 export const SomeComponent: React.FC = () => {
-  const { someApi } = useEnvironment();
+  const { someApi, emitter } = useEnvironment();
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE());
 
-  return <div />;
-};
-```
-
-### createReducer
-
-Creates a reducer with explicit states typed to the environment. The handlers can be any environment event in addition to actions.
-
-```ts
-import { StatesReducer } from 'react-states';
-import { createReducer } from './environment';
-
-const STATE_A = () => ({
-  state: 'STATE_A' as const,
-});
-
-const STATE_B = () => ({
-  state: 'STATE_B' as const,
-});
-
-type State = ReturnType<typeof STATE_A | typeof STATE_B>;
-
-type Action = {
-  type: 'SWITCH';
-};
-
-const reducer = createReducer<State, Action>({
-  STATE_A: {
-    // Event from the environment
-    SOME_EVENT: (state, event) => STATE_B(),
-  },
-  STATE_B: {
-    SWITCH: (state, action) => STATE_A,
-  },
-});
-```
-
-### useReducer
-
-Use a reducer tied to the environment, meaning it will receive any events from the environment in addition to its dispatched actions.
-
-```tsx
-import { useReducer } from './environment';
-import { reducer } from './reducer';
-
-export const SomeComponent: React.FC = () => {
-  // Subscribes to environment events
-  const [state, dispatch] = useReducer('some-name', reducer, STATE_A());
+  // Dispatch environment actions into reducer
+  useEffect(() => emitter.subscribe(dispatch));
 
   return <div />;
 };
@@ -330,14 +286,16 @@ it('should do something', () => {
 
 ## Utils
 
-### createReducerHandlers
+### TTransitions
 
-Create the handlers for all or specific states.
-
-**NOTE!** When defining an environment, this util is exposed on the environment.
+Types the object with all states and handlers
 
 ```ts
-import { createReducerHandlers, createReducer } from 'react-states';
+import { transition, TTransitions } from 'react-states';
+
+type Action = {
+  type: 'SWITCH';
+};
 
 const FOO = () => ({
   state: 'FOO' as const,
@@ -349,27 +307,48 @@ const BAR = () => ({
 
 type State = ReturnType<typeof FOO | typeof BAR>;
 
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    SWITCH: (state, action) => BAR(),
+  },
+  BAR: {
+    SWITCH: (state, action) => FOO(),
+  },
+};
+```
+
+### TTransition
+
+Types the object with a specific state and handlers
+
+```ts
+import { transition, TTransition } from 'react-states';
+
 type Action = {
   type: 'SWITCH';
 };
 
-// createReducerHandlers<State, Action, 'BAR'> for specific states
-const handlers = createReducerHandlers<State, Action>({
-  SWITCH: ({ state }) => (state.state === 'FOO' ? BAR() : FOO()),
+const FOO = () => ({
+  state: 'FOO' as const,
 });
 
-const reducer = createReducer<State, Action>({
-  FOO: handlers,
-  BAR: handlers,
+const BAR = () => ({
+  state: 'BAR' as const,
 });
+
+type State = ReturnType<typeof FOO | typeof BAR>;
+
+const fooTransitions: TTransition<State, Action, 'FOO'> = {
+  SWITCH: (state, action) => BAR(),
+};
 ```
 
-### Emit
+### TEmit
 
 Type the emitter when creating environment .
 
 ```ts
-import { Emit } from 'react-states';
+import { TEmit } from 'react-states';
 
 export type SomeApiEvent = {
   type: 'FOO';
@@ -379,7 +358,7 @@ export type SomeApi = {
   doThis(): void;
 };
 
-export const someApi = (emit: Emit<SomeApiEvent>): SomeApi => ({
+export const someApi = (emit: TEmit<SomeApiEvent>): SomeApi => ({
   doThis() {
     emit({ type: 'FOO' });
   },

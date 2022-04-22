@@ -1,5 +1,5 @@
-import { $COMMAND, transition, TTransitions } from '../../src';
-import { Todo, commands, EnvironmentAction } from '../environment-interface';
+import { transition, TTransitions } from '../../src';
+import { Todo, EnvironmentAction } from '../environment-interface';
 
 export type Action =
   | {
@@ -10,24 +10,23 @@ export type Action =
       type: 'FETCH_TODOS';
     };
 
-const $LOG = (message: string) => ({
-  cmd: '$LOG' as const,
-  message,
+const $SAVE_TODO = (todo: Todo) => ({
+  cmd: '$SAVE_TODO' as const,
+  todo,
 });
 
 export const NOT_LOADED = () => ({
   state: 'NOT_LOADED' as const,
-  [$COMMAND]: $LOG('HEY'),
 });
 
 const LOADING = () => ({
   state: 'LOADING' as const,
-  [$COMMAND]: commands.todosApi.fetchTodos(),
 });
 
-const LOADED = ({ todos }: { todos: Todo[] }) => ({
+const LOADED = ({ todos, newTodo }: { todos: Todo[]; newTodo?: Todo }) => ({
   state: 'LOADED' as const,
   todos,
+  $SAVE_TODO: newTodo ? $SAVE_TODO(newTodo) : undefined,
 });
 
 const ERROR = ({ error }: { error: string }) => ({
@@ -46,10 +45,7 @@ const transitions: TTransitions<State, Action | EnvironmentAction> = {
     'TODOS:FETCH_TODOS_ERROR': (_, { error }) => ERROR({ error }),
   },
   LOADED: {
-    ADD_TODO: (state, { todo }) => ({
-      ...LOADED({ todos: [todo].concat(state.todos) }),
-      [$COMMAND]: commands.todosApi.saveTodo(todo),
-    }),
+    ADD_TODO: (state, { todo }) => LOADED({ todos: [todo].concat(state.todos), newTodo: todo }),
   },
   ERROR: {},
 };

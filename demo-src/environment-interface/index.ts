@@ -26,12 +26,6 @@ export type Environment = {
 
 export type EnvironmentAction = TodosApiAction;
 
-const {
-  EnvironmentProvider,
-  createEnvironment,
-  useEnvironment,
-  commands,
-  useEnvironmentSubscription,
-} = defineEnvironment<Environment, EnvironmentAction>();
+const { EnvironmentProvider, createEnvironment, useEnvironment } = defineEnvironment<Environment, EnvironmentAction>();
 
-export { EnvironmentProvider, createEnvironment, useEnvironment, commands, useEnvironmentSubscription };
+export { EnvironmentProvider, createEnvironment, useEnvironment };
