@@ -1,4 +1,4 @@
-import { PickCommand, PickReturnTypes, transition, TTransitions } from '../../src';
+import { PickCommand, PickReturnTypes, IAction, ICommand, transition, IState, TTransitions } from '../../src';
 import { Todo, EnvironmentAction } from '../environment-interface';
 
 const actions = {
@@ -11,7 +11,7 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions>;
+type Action = PickReturnTypes<typeof actions, IAction>;
 
 const commands = {
   $SAVE_TODO: (todo: Todo) => ({
@@ -20,7 +20,7 @@ const commands = {
   }),
 };
 
-type Commands = PickReturnTypes<typeof commands>;
+type Commands = PickReturnTypes<typeof commands, ICommand>;
 
 const states = {
   NOT_LOADED: () => ({
@@ -42,7 +42,7 @@ const states = {
   }),
 };
 
-export type State = PickReturnTypes<typeof states>;
+export type State = PickReturnTypes<typeof states, IState>;
 
 export const { NOT_LOADED, LOADED, LOADING, ERROR } = states;
 

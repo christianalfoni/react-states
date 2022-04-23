@@ -1,20 +1,20 @@
-import { TAction, TCommand, TState } from "../";
+import { IAction, ICommand, IState } from '../';
 
 export type DevtoolMessage =
   | {
-      type: "dispatch";
-      action: TAction;
+      type: 'dispatch';
+      action: IAction;
       ignored: boolean;
     }
   | {
-      type: "state";
+      type: 'state';
       state: {
         state: string;
       };
       triggerTransitions: () => void;
     }
   | {
-      type: "transitions";
+      type: 'transitions';
       transitions: {
         [key: string]: {
           [key: string]: Function;
@@ -22,7 +22,7 @@ export type DevtoolMessage =
       };
     }
   | {
-      type: "command";
+      type: 'command';
       command: {
         cmd: string;
       };
@@ -30,16 +30,16 @@ export type DevtoolMessage =
 
 export type HistoryItem =
   | {
-      type: "state";
-      state: TState;
+      type: 'state';
+      state: IState;
     }
   | {
-      type: "command";
-      command: TCommand;
+      type: 'command';
+      command: ICommand;
     }
   | {
-      type: "action";
-      action: TAction;
+      type: 'action';
+      action: IAction;
       ignored: boolean;
     };
 
@@ -89,11 +89,9 @@ export class Manager {
     this.ensureStates(id);
 
     switch (message.type) {
-      case "state": {
+      case 'state': {
         // You might trigger dispatches before the devtools has sent its initial state
-        const isFirstState =
-          this.states[id].history.filter((item) => item.type === "state")
-            .length === 0;
+        const isFirstState = this.states[id].history.filter((item) => item.type === 'state').length === 0;
 
         this.states = {
           ...this.states,
@@ -104,13 +102,13 @@ export class Manager {
               ? [
                   ...this.states[id].history,
                   {
-                    type: "state",
+                    type: 'state',
                     state: message.state,
                   },
                 ]
               : [
                   {
-                    type: "state",
+                    type: 'state',
                     state: message.state,
                   },
                   ...this.states[id].history,
@@ -120,14 +118,14 @@ export class Manager {
         };
         break;
       }
-      case "command": {
+      case 'command': {
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
             history: [
               {
-                type: "command",
+                type: 'command',
                 command: message.command,
               },
               ...this.states[id].history,
@@ -136,7 +134,7 @@ export class Manager {
         };
         break;
       }
-      case "transitions": {
+      case 'transitions': {
         this.states = {
           ...this.states,
           [id]: {
@@ -146,14 +144,14 @@ export class Manager {
         };
         break;
       }
-      case "dispatch": {
+      case 'dispatch': {
         this.states = {
           ...this.states,
           [id]: {
             ...this.states[id],
             history: [
               {
-                type: "action",
+                type: 'action',
                 action: message.action,
                 ignored: message.ignored,
               },

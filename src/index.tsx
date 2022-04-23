@@ -7,68 +7,68 @@ export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
 export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 
-export interface TState {
+export interface IState {
   state: string;
 }
 
-export interface TAction {
+export interface IAction {
   type: string;
 }
 
-export interface TCommand {
+export interface ICommand {
   cmd: string;
 }
 
-type TStateCommands<S extends TState> = {
+type TStateCommands<S extends IState> = {
   [K in S['state']]: S extends {
     state: K;
   }
     ? {
-        [K in keyof S]: Exclude<S[K], undefined> extends TCommand ? K : never;
+        [K in keyof S]: Exclude<S[K], undefined> extends ICommand ? K : never;
       }[keyof S]
     : never;
 }[S['state']];
 
-type TStateActions<S extends TState> = {
+type TStateActions<S extends IState> = {
   [K in S['state']]: S extends { state: K }
     ? {
-        [K in keyof S]: S[K] extends (...params: any[]) => infer A ? (A extends TAction ? A['type'] : never) : never;
+        [K in keyof S]: S[K] extends (...params: any[]) => infer A ? (A extends IAction ? A['type'] : never) : never;
       }[keyof S]
     : never;
 }[S['state']];
 
-type TMatch<S extends TState, R = any> = {
+type TMatch<S extends IState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
 };
 
-export type PickState<S extends TState, T extends S['state'] = never> = [T] extends [never]
+export type PickState<S extends IState, T extends S['state'] = never> = [T] extends [never]
   ? S
   : S extends { state: T }
   ? S
   : never;
 
-export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>> = {
-  [K in keyof T]: ReturnType<T[K]>;
+export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>, U> = {
+  [K in keyof T]: ReturnType<T[K]> extends U ? ReturnType<T[K]> : unknown;
 }[keyof T];
 
-export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
+export type PickAction<A extends IAction, T extends A['type']> = A extends { type: T } ? A : never;
 
-export type PickCommand<C extends TCommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
+export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
 
-export type PickCommandState<S extends TState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
+export type PickCommandState<S extends IState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
-export type TTransition<S extends TState, A extends TAction, SS extends S['state']> = {
+export type TTransition<S extends IState, A extends IAction, SS extends S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
 } &
   {
     [U in TStateActions<S & { state: SS }>]: (state: S & { state: SS }, action: A extends { type: U } ? A : never) => S;
   };
 
-export type TTransitions<S extends TState, A extends TAction> = {
+export type TTransitions<S extends IState, A extends IAction> = {
   [SS in S['state']]: TTransition<S, A, SS>;
 };
 
-export function transition<S extends TState, A extends TAction>(state: S, action: A, transitions: TTransitions<S, A>) {
+export function transition<S extends IState, A extends IAction>(state: S, action: A, transitions: TTransitions<S, A>) {
   let newState = state;
 
   // @ts-ignore
@@ -97,7 +97,7 @@ export function transition<S extends TState, A extends TAction>(state: S, action
   return newState;
 }
 
-export function useCommandEffect<S extends TState, CC extends TStateCommands<S>>(
+export function useCommandEffect<S extends IState, CC extends TStateCommands<S>>(
   state: S,
   cmd: CC,
   effect: (command: S extends Record<CC, unknown> ? Exclude<S[CC], undefined> : never) => void,
@@ -120,7 +120,7 @@ export function useCommandEffect<S extends TState, CC extends TStateCommands<S>>
   }, [command]);
 }
 
-export function useStateEffect<S extends TState, SS extends S['state']>(
+export function useStateEffect<S extends IState, SS extends S['state']>(
   state: S,
   current: SS | SS[],
   effect: (state: S extends { state: SS } ? S : never) => void | (() => void),
@@ -148,11 +148,11 @@ export function useStateEffect<S extends TState, SS extends S['state']>(
   }
 }
 
-export function match<S extends TState, T extends TMatch<S>>(
+export function match<S extends IState, T extends TMatch<S>>(
   state: S,
   matches: T &
     {
-      [K in keyof T]: S extends TState ? (K extends S['state'] ? T[K] : never) : never;
+      [K in keyof T]: S extends IState ? (K extends S['state'] ? T[K] : never) : never;
     },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
@@ -171,7 +171,7 @@ export function match() {
 }
 
 export function matchProp<
-  S extends TState,
+  S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
   }[keyof S]
@@ -183,7 +183,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export class Emitter<S extends TAction> {
+export class Emitter<S extends IAction> {
   private listeners: Array<(subscription: S) => void> = [];
   emit(subscription: S) {
     this.listeners.forEach((listener) => listener(subscription));
@@ -197,17 +197,17 @@ export class Emitter<S extends TAction> {
   }
 }
 
-export type TEmit<S extends TAction> = (subscription: S) => void;
+export type TEmit<S extends IAction> = (subscription: S) => void;
 
 /**
  * @deprecated
  */
-export const createSubscription = <S extends TAction>() => new Emitter<S>();
+export const createSubscription = <S extends IAction>() => new Emitter<S>();
 
 /**
  * @deprecated
  */
-export const useSubscription = <S extends TAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
+export const useSubscription = <S extends IAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
   React.useEffect(
     () =>
       subscription.subscribe((subscription) => {
@@ -240,7 +240,7 @@ export const createEnvironment = <E extends Record<string, any>>() => {
   };
 };
 
-export const defineEnvironment = <E extends TEnvironment, EA extends TAction = never>() => {
+export const defineEnvironment = <E extends TEnvironment, EA extends IAction = never>() => {
   const emitter = new Emitter<EA>();
   const boundEmit = emitter.emit.bind(emitter);
   const Provider = ({ children, environment }: { children: React.ReactNode; environment: E }) => {
