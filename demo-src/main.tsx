@@ -7,7 +7,6 @@ const rootElement = document.getElementById('root');
 
 render(
   <DevtoolsProvider>
-    <DevtoolsManager />
     <App />
   </DevtoolsProvider>,
   rootElement,

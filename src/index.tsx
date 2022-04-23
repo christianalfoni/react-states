@@ -120,10 +120,18 @@ export function useCommandEffect<S extends IState, CC extends TStateCommands<S>>
   }, [command]);
 }
 
-export function useStateEffect<S extends IState, SS extends S['state']>(
+export function useStateEffect<S extends IState, SS extends S['state'] | S['state'][]>(
   state: S,
-  current: SS | SS[],
-  effect: (state: S extends { state: SS } ? S : never) => void | (() => void),
+  current: SS,
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : S extends { state: SS }
+        ? S
+        : never
+      : never,
+  ) => void | (() => void),
 ) {
   if (Array.isArray(current)) {
     // @ts-ignore
