@@ -127,9 +127,9 @@ export function useStateEffect<S extends IState, SS extends S['state'] | S['stat
     state: SS extends S['state'][]
       ? S extends { state: SS[number] }
         ? S
-        : S extends { state: SS }
-        ? S
         : never
+      : S extends { state: SS }
+      ? S
       : never,
   ) => void | (() => void),
 ) {
