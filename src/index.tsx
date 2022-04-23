@@ -20,9 +20,11 @@ export interface TCommand {
 }
 
 type TStateCommands<S extends TState> = {
-  [K in S['state']]: S extends { state: K }
+  [K in S['state']]: S extends {
+    state: K;
+  }
     ? {
-        [K in keyof S]: S[K] extends TCommand | undefined ? K : never;
+        [K in keyof S]: Exclude<S[K], undefined> extends TCommand ? K : never;
       }[keyof S]
     : never;
 }[S['state']];
