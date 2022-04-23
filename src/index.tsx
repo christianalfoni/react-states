@@ -57,7 +57,7 @@ export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cm
 
 export type PickCommandState<S extends IState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
-export type TTransition<S extends IState, A extends IAction, SS extends S['state']> = {
+export type TTransition<S extends IState, A extends IAction, SS extends S['state'] = S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
 } &
   {
