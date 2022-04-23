@@ -1,44 +1,41 @@
 import * as React from 'react';
 
-import { match, useCommandEffect } from '../src';
+import { match, useCommandEffect, useDevtools, useStateEffect } from '../src';
 import { NOT_LOADED, reducer } from './reducers/todos';
 import { EnvironmentProvider, useEnvironment } from './environment-interface';
 import { browserEnvironment } from './environments/browser';
 
 const Test = () => {
   const { todosApi, emitter } = useEnvironment();
-  const [state, dispatch] = React.useReducer(reducer, NOT_LOADED());
+  const todosReducer = React.useReducer(reducer, NOT_LOADED());
+
+  useDevtools('Todos', todosReducer);
+
+  const [state, dispatch] = todosReducer;
 
   React.useEffect(() => emitter.subscribe(dispatch));
+
+  useStateEffect(state, 'LOADING', () => {
+    todosApi.fetchTodos();
+  });
 
   useCommandEffect(state, '$SAVE_TODO', ({ todo }) => {
     todosApi.saveTodo(todo);
   });
 
   return match(state, {
-    NOT_LOADED: () => (
-      <button
-        onClick={() =>
-          dispatch({
-            type: 'FETCH_TODOS',
-          })
-        }
-      >
-        Fetch Todos
-      </button>
-    ),
+    NOT_LOADED: ({ FETCH_TODOS }) => <button onClick={() => dispatch(FETCH_TODOS())}>Fetch Todos</button>,
     LOADING: () => <h2>Loading...</h2>,
-    LOADED: ({ todos }) => (
+    LOADED: ({ todos, ADD_TODO }) => (
       <div>
         <button
           onClick={() => {
-            dispatch({
-              type: 'ADD_TODO',
-              todo: {
+            dispatch(
+              ADD_TODO({
                 completed: false,
                 title: 'New_' + Date.now(),
-              },
-            });
+              }),
+            );
           }}
         >
           Add Todo

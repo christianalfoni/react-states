@@ -1,8 +1,8 @@
 export const colors = {
-  purple: '#5962DF',
-  yellow: '#FCD647',
+  purple: '#a855f7',
+  yellow: '#eab308',
   green: '#5DCC67',
-  blue: '#0971F1',
+  blue: '#3b82f6',
   orange: '#F7A239',
   red: '#FF3B30',
   foreground: 'rgb(36, 36, 36)',

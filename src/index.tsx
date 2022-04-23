@@ -27,7 +27,15 @@ type TStateCommands<S extends TState> = {
     : never;
 }[S['state']];
 
-export type TMatch<S extends TState, R = any> = {
+type TStateActions<S extends TState> = {
+  [K in S['state']]: S extends { state: K }
+    ? {
+        [K in keyof S]: S[K] extends (...params: any[]) => infer A ? (A extends TAction ? A['type'] : never) : never;
+      }[keyof S]
+    : never;
+}[S['state']];
+
+type TMatch<S extends TState, R = any> = {
   [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
 };
 
@@ -37,13 +45,22 @@ export type PickState<S extends TState, T extends S['state'] = never> = [T] exte
   ? S
   : never;
 
+export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>> = {
+  [K in keyof T]: ReturnType<T[K]>;
+}[keyof T];
+
 export type PickAction<A extends TAction, T extends A['type']> = A extends { type: T } ? A : never;
+
+export type PickCommand<C extends TCommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
 
 export type PickCommandState<S extends TState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
 export type TTransition<S extends TState, A extends TAction, SS extends S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
-};
+} &
+  {
+    [U in TStateActions<S & { state: SS }>]: (state: S & { state: SS }, action: A extends { type: U } ? A : never) => S;
+  };
 
 export type TTransitions<S extends TState, A extends TAction> = {
   [SS in S['state']]: TTransition<S, A, SS>;
@@ -84,7 +101,7 @@ export function useCommandEffect<S extends TState, CC extends TStateCommands<S>>
   effect: (command: S extends Record<CC, unknown> ? Exclude<S[CC], undefined> : never) => void,
 ) {
   // @ts-ignore
-  const command = state[$COMMAND] && state[$COMMAND].cmd === cmd ? state[$COMMAND] : undefined;
+  const command = state[cmd];
 
   React.useEffect(() => {
     if (command) {

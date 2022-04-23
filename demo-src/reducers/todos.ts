@@ -1,40 +1,50 @@
-import { transition, TTransitions } from '../../src';
+import { PickCommand, PickReturnTypes, transition, TTransitions } from '../../src';
 import { Todo, EnvironmentAction } from '../environment-interface';
 
-export type Action =
-  | {
-      type: 'ADD_TODO';
-      todo: Todo;
-    }
-  | {
-      type: 'FETCH_TODOS';
-    };
+const actions = {
+  ADD_TODO: (todo: Todo) => ({
+    type: 'ADD_TODO' as const,
+    todo,
+  }),
+  FETCH_TODOS: () => ({
+    type: 'FETCH_TODOS' as const,
+  }),
+};
 
-const $SAVE_TODO = (todo: Todo) => ({
-  cmd: '$SAVE_TODO' as const,
-  todo,
-});
+type Action = PickReturnTypes<typeof actions>;
 
-export const NOT_LOADED = () => ({
-  state: 'NOT_LOADED' as const,
-});
+const commands = {
+  $SAVE_TODO: (todo: Todo) => ({
+    cmd: '$SAVE_TODO' as const,
+    todo,
+  }),
+};
 
-const LOADING = () => ({
-  state: 'LOADING' as const,
-});
+type Commands = PickReturnTypes<typeof commands>;
 
-const LOADED = ({ todos, newTodo }: { todos: Todo[]; newTodo?: Todo }) => ({
-  state: 'LOADED' as const,
-  todos,
-  $SAVE_TODO: newTodo ? $SAVE_TODO(newTodo) : undefined,
-});
+const states = {
+  NOT_LOADED: () => ({
+    state: 'NOT_LOADED' as const,
+    FETCH_TODOS: actions.FETCH_TODOS,
+  }),
+  LOADING: () => ({
+    state: 'LOADING' as const,
+  }),
+  LOADED: ({ todos, $SAVE_TODO }: { todos: Todo[]; $SAVE_TODO?: PickCommand<Commands, '$SAVE_TODO'> }) => ({
+    state: 'LOADED' as const,
+    todos,
+    $SAVE_TODO,
+    ADD_TODO: actions.ADD_TODO,
+  }),
+  ERROR: ({ error }: { error: string }) => ({
+    state: 'ERROR' as const,
+    error,
+  }),
+};
 
-const ERROR = ({ error }: { error: string }) => ({
-  state: 'ERROR' as const,
-  error,
-});
+export type State = PickReturnTypes<typeof states>;
 
-export type State = ReturnType<typeof NOT_LOADED | typeof LOADING | typeof LOADED | typeof ERROR>;
+export const { NOT_LOADED, LOADED, LOADING, ERROR } = states;
 
 const transitions: TTransitions<State, Action | EnvironmentAction> = {
   NOT_LOADED: {
@@ -45,7 +55,7 @@ const transitions: TTransitions<State, Action | EnvironmentAction> = {
     'TODOS:FETCH_TODOS_ERROR': (_, { error }) => ERROR({ error }),
   },
   LOADED: {
-    ADD_TODO: (state, { todo }) => LOADED({ todos: [todo].concat(state.todos), newTodo: todo }),
+    ADD_TODO: (state, { todo }) => LOADED({ todos: [todo].concat(state.todos), $SAVE_TODO: commands.$SAVE_TODO(todo) }),
   },
   ERROR: {},
 };
