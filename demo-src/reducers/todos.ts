@@ -13,8 +13,8 @@ import { Todo, EnvironmentAction } from '../environment-interface';
 
 const actions = {
   ADD_TODO: (params: { todo: Todo }) => ({
-    type: 'ADD_TODO' as const,
     ...params,
+    type: 'ADD_TODO' as const,
   }),
   FETCH_TODOS: () => ({
     type: 'FETCH_TODOS' as const,
@@ -25,8 +25,8 @@ type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
   SAVE_TODO: (params: { todo: Todo }) => ({
-    cmd: 'SAVE_TODO' as const,
     ...params,
+    cmd: 'SAVE_TODO' as const,
   }),
 };
 
@@ -34,21 +34,21 @@ type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
   NOT_LOADED: () => ({
-    state: 'NOT_LOADED' as const,
     ...pick(actions, 'FETCH_TODOS'),
+    state: 'NOT_LOADED' as const,
   }),
   LOADING: () => ({
     state: 'LOADING' as const,
   }),
   LOADED: (params: { todos: Todo[] }, command?: PickCommand<Command, 'SAVE_TODO'>) => ({
-    state: 'LOADED' as const,
     ...params,
-    [$COMMAND]: command,
     ...pick(actions, 'ADD_TODO'),
+    [$COMMAND]: command,
+    state: 'LOADED' as const,
   }),
   ERROR: (params: { error: string }) => ({
-    state: 'ERROR' as const,
     ...params,
+    state: 'ERROR' as const,
   }),
 };
 

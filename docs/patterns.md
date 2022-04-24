@@ -11,51 +11,54 @@ Defining the different creators.
 import { ReturnTypes, IAction, ICommand, IState, PickCommand, pick } from 'react-states';
 
 const actions = {
-  // Use single params argument and spread
+  // Use single params argument, spread it and set
+  // "type" last
   ACTION_A: (params: { foo: string; bar: string }) => ({
-    type: 'ACTION_A' as const,
     ...params,
+    type: 'ACTION_A' as const,
   }),
 };
 
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  // Use single params argument and spread
+  // Use single params argument, spread it first and
+  // set type "cmd" last
   COMMAND_A: (params: { foo: string; bar: string }) => ({
-    type: 'COMMAND_B' as const,
     ...params,
+    cmd: 'COMMAND_B' as const,
   }),
 };
 
 type Command = PickReturnType<typeof commands, ICommand>;
 
 const states = {
-  // Use single params argument and spread
+  // Use single params argument, spread it first and
+  // set "state" last
   STATE_A: (params: { foo: string; bar: string }) => ({
-    state: 'STATE_A' as const,
     ...params,
+    state: 'STATE_A' as const,
   }),
   // Use second argument for commands
   STATE_B: (params: { foo: string; bar: string }, command?: PickCommand<Command, 'COMMAND_A'>) => ({
-    state: 'STATE_B' as const,
     ...params,
     [$COMMAND]: command,
+    state: 'STATE_B' as const,
   }),
   // When always firing a command, include it directly
   STATE_C: (params: { foo: string; bar: string }) => ({
-    state: 'STATE_C' as const,
     ...params,
     [$COMMAND]: commands.COMMAND_A({ foo: 'foo', bar: 'bar' }),
+    state: 'STATE_C' as const,
   }),
   // Include actions by spreading all or pick utility
   STATE_D: (params: { foo: string; bar: string }) => ({
-    state: 'STATE_D' as const,
     ...params,
     // Include all actions
     ...actions,
     // Pick certain ones
     ...pick(actions, 'ACTION_A', 'ACTION_B'),
+    state: 'STATE_D' as const,
   }),
 };
 ```
