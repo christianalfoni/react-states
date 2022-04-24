@@ -1,5 +1,4 @@
 import React, { Dispatch } from 'react';
-import { TCommand } from '../cjs';
 import type { Manager } from './devtools/Manager';
 
 export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
