@@ -8,13 +8,15 @@
 Defining the different creators.
 
 ```ts
-import { ReturnTypes, IAction, ICommand, IState, PickPartialCommands, pick } from 'react-states';
+import { ReturnTypes, IAction, ICommand, IState, PickCommand, pick } from 'react-states';
 
 const actions = {
-  // Use single params argument and spread
-  ACTION_A: (params: { foo: string; bar: string }) => ({
+  // Use single params argument and destructure to
+  // ensure exact return value
+  ACTION_A: ({ foo, bar }: { foo: string; bar: string }) => ({
     type: 'ACTION_A' as const,
-    ...params,
+    foo,
+    bar,
   }),
 };
 
@@ -25,37 +27,48 @@ const commands = {
   $COMMAND_A: () => ({
     cmd: '$COMMAND_A' as const,
   }),
-  // Use single params argument and spread
-  $COMMAND_B: (params: { foo: string; bar: string }) => ({
+  // Use single params argument and desctructure to
+  // ensure exact return value
+  $COMMAND_B: ({ foo, bar }: { foo: string; bar: string }) => ({
     type: 'COMMAND_B' as const,
-    ...params,
+    foo,
+    bar,
   }),
 };
 
 type Command = PickReturnType<typeof commands, ICommand>;
 
 const states = {
-  // Use single params argument and spread
-  STATE_A: (params: { foo: string; bar: string }) => ({
+  // Use single params argument and destructure to
+  // ensure exact return value
+  STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
     state: 'STATE_A' as const,
-    ...params,
+    foo,
+    bar,
   }),
-  // Use PickParticalCommands to include any optional commands
-  // to fire
-  STATE_B: (params: { foo: string; bar: string } & PickPartialCommands<Command, '$COMMAND_A'>) => ({
+  // Use second argument for commands
+  STATE_B: ({ foo, bar }: { foo: string; bar: string }, command?: PickCommand<Command, 'COMMAND_A'>) => ({
     state: 'STATE_B' as const,
-    ...params,
+    foo,
+    bar,
+    [$COMMAND]: command,
+  }),
+  STATE_C: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_C' as const,
+    foo,
+    bar,
     // When always firing a command, include it directly
-    $COMMAND_B: commands.$COMMAND_B({ foo: 'foo', bar: 'bar' }),
+    [$COMMAND]: commands.$COMMAND_B({ foo: 'foo', bar: 'bar' }),
   }),
   // Include actions by spreading all or pick utility
-  STATE_C: (params: { foo: string; bar: string }) => ({
-    state: 'STATE_C' as const,
-    ...params,
+  STATE_D: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_D' as const,
+    foo,
+    bar,
     // Include all actions
     ...actions,
     // Pick certain ones
-    ...pick(actions, 'ACTION_A'),
+    ...pick(actions, 'ACTION_A', 'ACTION_B'),
   }),
 };
 ```
@@ -79,9 +92,11 @@ type Action = ReturnTypes<typeof actions, IAction>;
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
+    ...actions,
   }),
   BAR: () => ({
     state: 'BAR' as const,
+    ...actions,
   }),
 };
 

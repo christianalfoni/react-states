@@ -12,7 +12,7 @@ import {
 import { Todo, EnvironmentAction } from '../environment-interface';
 
 const actions = {
-  ADD_TODO: (todo: Todo) => ({
+  ADD_TODO: ({ todo }: { todo: Todo }) => ({
     type: 'ADD_TODO' as const,
     todo,
   }),
@@ -24,7 +24,7 @@ const actions = {
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  SAVE_TODO: (todo: Todo) => ({
+  SAVE_TODO: ({ todo }: { todo: Todo }) => ({
     cmd: 'SAVE_TODO' as const,
     todo,
   }),
@@ -40,9 +40,10 @@ const states = {
   LOADING: () => ({
     state: 'LOADING' as const,
   }),
-  LOADED: (params: { todos: Todo[]; [$COMMAND]?: PickCommand<Command, 'SAVE_TODO'> }) => ({
+  LOADED: ({ todos }: { todos: Todo[] }, command?: PickCommand<Command, 'SAVE_TODO'>) => ({
     state: 'LOADED' as const,
-    ...params,
+    todos,
+    [$COMMAND]: command,
     ...pick(actions, 'ADD_TODO'),
   }),
   ERROR: ({ error }: { error: string }) => ({
@@ -64,7 +65,7 @@ const transitions: TTransitions<State, Action | EnvironmentAction> = {
     'TODOS:FETCH_TODOS_ERROR': (_, { error }) => ERROR({ error }),
   },
   LOADED: {
-    ADD_TODO: (state, { todo }) => LOADED({ todos: [todo].concat(state.todos), [$COMMAND]: commands.SAVE_TODO(todo) }),
+    ADD_TODO: (state, { todo }) => LOADED({ todos: [todo].concat(state.todos) }, commands.SAVE_TODO({ todo })),
   },
   ERROR: {},
 };

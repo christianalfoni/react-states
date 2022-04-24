@@ -6,6 +6,7 @@ Core
 - [useStateEffect](#usestateeffect)
 - [match](#match)
 - [matchProp](#matchprop)
+- [pick](#pick)
 - [useCommandEffect](#usecommandeffect)
 
 Environment
@@ -55,11 +56,11 @@ type Action = ReturnTypes<typeof actions, IAction>;
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
   BAR = () => ({
     state: 'BAR' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
 };
 
@@ -128,12 +129,51 @@ const SomeComponent = () => {
 };
 ```
 
+### pick
+
+```ts
+import { TTransitions, ReturnTypes, IAction, IState, pick } from 'react-states';
+
+const actions = {
+  ACTION_A: () => ({
+    type: 'ACTION_A' as const,
+  }),
+  ACTION_B: () => ({
+    type: 'ACTION_B' as const,
+  }),
+};
+
+type Action = ReturnTypes<typeof actions, IAction>;
+
+const states = {
+  FOO: () => ({
+    state: 'FOO' as const,
+    ...pick(actions, 'ACTION_A', 'ACTION_B'),
+  }),
+  BAR = () => ({
+    state: 'BAR' as const,
+    ...pick(actions, 'ACTION_B'),
+  }),
+};
+
+type State = ReturnTypes<typeof states, IState>;
+
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    SWITCH: (state, action) => BAR(),
+  },
+  BAR: {
+    SWITCH: (state, action) => FOO(),
+  },
+};
+```
+
 ### useCommandEffect
 
 Run an effect when the command is part of a transition.
 
 ```ts
-import { transition, TTransitions, ReturnTypes, IState, IAction, ICommand } from 'react-states';
+import { transition, TTransitions, ReturnTypes, IState, IAction, ICommand, $COMMAND } from 'react-states';
 
 const actions = {
   SWITCH: () => ({
@@ -144,9 +184,9 @@ const actions = {
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  $LOG: (params: { message: string }) => ({
-    cmd: '$LOG' as const,
-    ...params,
+  LOG: ({ message }: { message: string }) => ({
+    cmd: 'LOG' as const,
+    message,
   }),
 };
 
@@ -155,12 +195,12 @@ type Command = ReturnTypes<typeof commands, ICommand>;
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
-    $LOG: $LOG('Moved into FOO'),
+    [$COMMAND]: commands.LOG('Moved into FOO'),
     ...actions,
   }),
   BAR: () => ({
     state: 'BAR' as const,
-    $LOG: $LOG('Moved into BAR'),
+    [$COMMAND]: commands.LOG('Moved into BAR'),
     ...actions,
   }),
 };
@@ -183,7 +223,7 @@ const reducer = (state: State, action: Action) => transition(state, action, tran
 const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, FOO());
 
-  useCommandEffect(state, '$LOG', ({ message }) => {
+  useCommandEffect(state, 'LOG', ({ message }) => {
     console.log(message);
   });
 
@@ -322,11 +362,11 @@ type Action = ReturnTypes<typeof actions, IAction>;
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
   BAR = () => ({
     state: 'BAR' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
 };
 
@@ -440,22 +480,6 @@ Narrows to specific command.
 
 ```ts
 type NarrowedCommands = PickCommand<Command, 'A' | 'B'>;
-```
-
-### PickPartialCommands
-
-Creates a partial record of commands.
-
-```ts
-type PartialRecord = PickPartialCommands<Command, 'A' | 'B'>;
-```
-
-### PickCommandState
-
-Narrows to specific states which has the commands.
-
-```ts
-type NarrowedCommandStates = PickCommandStates<SomeState, 'C-A' | 'C-B'>;
 ```
 
 ## Devtools

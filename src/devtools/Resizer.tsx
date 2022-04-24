@@ -16,18 +16,18 @@ import {
 import { colors } from './styles';
 
 const actions = {
-  MOUSE_MOVE: (x: number) => ({
+  MOUSE_MOVE: ({ x }: { x: number }) => ({
     type: 'MOUSE_MOVE' as const,
     x,
   }),
-  MOUSE_UP: (x: number) => ({
+  MOUSE_UP: ({ x }: { x: number }) => ({
     type: 'MOUSE_UP' as const,
     x,
   }),
   MOUSE_UP_RESIZER: () => ({
     type: 'MOUSE_UP_RESIZER' as const,
   }),
-  MOUSE_DOWN: (x: number) => ({
+  MOUSE_DOWN: ({ x }: { x: number }) => ({
     type: 'MOUSE_DOWN' as const,
     x,
   }),
@@ -39,7 +39,7 @@ const commands = {
   NOTIFY_CLICK: () => ({
     cmd: 'NOTIFY_CLICK' as const,
   }),
-  NOTIFY_RESIZE: (x: number) => ({
+  NOTIFY_RESIZE: ({ x }: { x: number }) => ({
     cmd: 'NOTIFY_RESIZE' as const,
     x,
   }),
@@ -48,25 +48,21 @@ const commands = {
 type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
-  IDLE: (
-    params: {
-      [$COMMAND]?: PickCommand<Command, 'NOTIFY_CLICK'>;
-    } = {},
-  ) => ({
+  IDLE: (command?: PickCommand<Command, 'NOTIFY_CLICK'>) => ({
     state: 'IDLE' as const,
-    ...params,
+    [$COMMAND]: command,
     ...pick(actions, 'MOUSE_DOWN'),
   }),
-  DETECTING_RESIZE: (params: { initialX: number }) => ({
+  DETECTING_RESIZE: ({ initialX }: { initialX: number }) => ({
     state: 'DETECTING_RESIZE' as const,
-    ...params,
+    initialX,
     ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
   }),
-  RESIZING: (params: { x: number }) => ({
+  RESIZING: ({ x }: { x: number }) => ({
     state: 'RESIZING' as const,
-    ...params,
+    x,
     ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
-    [$COMMAND]: commands.NOTIFY_RESIZE(params.x),
+    [$COMMAND]: commands.NOTIFY_RESIZE({ x }),
   }),
 };
 
@@ -87,10 +83,7 @@ const transitions: TTransitions<State, Action> = {
       return state;
     },
     MOUSE_UP: () => IDLE(),
-    MOUSE_UP_RESIZER: () =>
-      IDLE({
-        [$COMMAND]: commands.NOTIFY_CLICK(),
-      }),
+    MOUSE_UP_RESIZER: () => IDLE(commands.NOTIFY_CLICK()),
   },
   RESIZING: {
     MOUSE_MOVE: (_, { x }) => RESIZING({ x }),
@@ -113,10 +106,10 @@ export const Resizer = ({
 
   useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], ({ MOUSE_MOVE, MOUSE_UP }) => {
     const onMouseMove = (event: MouseEvent) => {
-      dispatch(MOUSE_MOVE(event.clientX));
+      dispatch(MOUSE_MOVE({ x: event.clientX }));
     };
     const onMouseUp = (event: MouseEvent) => {
-      dispatch(MOUSE_UP(event.clientX));
+      dispatch(MOUSE_UP({ x: event.clientX }));
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -150,7 +143,7 @@ export const Resizer = ({
       <div
         style={style}
         onMouseDown={(event) => {
-          dispatch(MOUSE_DOWN(event.clientX));
+          dispatch(MOUSE_DOWN({ x: event.clientX }));
         }}
       />
     ),
