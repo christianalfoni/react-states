@@ -11,7 +11,7 @@ import {
   IState,
   match,
   pick,
-  PickPartialCommands,
+  $COMMAND,
 } from '../';
 import { colors } from './styles';
 
@@ -36,11 +36,11 @@ const actions = {
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  $NOTIFY_CLICK: () => ({
-    cmd: '$NOTIFY_CLICK' as const,
+  NOTIFY_CLICK: () => ({
+    cmd: 'NOTIFY_CLICK' as const,
   }),
-  $NOTIFY_RESIZE: (x: number) => ({
-    cmd: '$NOTIFY_RESIZE' as const,
+  NOTIFY_RESIZE: (x: number) => ({
+    cmd: 'NOTIFY_RESIZE' as const,
     x,
   }),
 };
@@ -48,7 +48,11 @@ const commands = {
 type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
-  IDLE: (params: PickPartialCommands<Command, '$NOTIFY_CLICK'> = {}) => ({
+  IDLE: (
+    params: {
+      [$COMMAND]?: PickCommand<Command, 'NOTIFY_CLICK'>;
+    } = {},
+  ) => ({
     state: 'IDLE' as const,
     ...params,
     ...pick(actions, 'MOUSE_DOWN'),
@@ -61,8 +65,8 @@ const states = {
   RESIZING: (params: { x: number }) => ({
     state: 'RESIZING' as const,
     ...params,
-    $NOTIFY_RESIZE: commands.$NOTIFY_RESIZE(params.x),
     ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
+    [$COMMAND]: commands.NOTIFY_RESIZE(params.x),
   }),
 };
 
@@ -85,7 +89,7 @@ const transitions: TTransitions<State, Action> = {
     MOUSE_UP: () => IDLE(),
     MOUSE_UP_RESIZER: () =>
       IDLE({
-        $NOTIFY_CLICK: commands.$NOTIFY_CLICK(),
+        [$COMMAND]: commands.NOTIFY_CLICK(),
       }),
   },
   RESIZING: {
@@ -124,11 +128,11 @@ export const Resizer = ({
     };
   });
 
-  useCommandEffect(resizer, '$NOTIFY_RESIZE', ({ x }) => {
+  useCommandEffect(resizer, 'NOTIFY_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useCommandEffect(resizer, '$NOTIFY_CLICK', () => {
+  useCommandEffect(resizer, 'NOTIFY_CLICK', () => {
     onClick();
   });
 

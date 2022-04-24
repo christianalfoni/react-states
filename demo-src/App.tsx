@@ -19,7 +19,7 @@ const Test = () => {
     todosApi.fetchTodos();
   });
 
-  useCommandEffect(state, '$SAVE_TODO', ({ todo }) => {
+  useCommandEffect(state, 'SAVE_TODO', ({ todo }) => {
     todosApi.saveTodo(todo);
   });
 

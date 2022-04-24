@@ -1,4 +1,5 @@
 import React, { Dispatch } from 'react';
+import { TCommand } from '../cjs';
 import type { Manager } from './devtools/Manager';
 
 export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
@@ -7,8 +8,11 @@ export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
 export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 
+export const $COMMAND = Symbol('$COMMAND');
+
 export interface IState {
   state: string;
+  [$COMMAND]?: ICommand;
 }
 
 export interface IAction {
@@ -23,9 +27,9 @@ type TStateCommands<S extends IState> = {
   [K in S['state']]: S extends {
     state: K;
   }
-    ? {
-        [K in keyof S]: Exclude<S[K], undefined> extends ICommand ? K : never;
-      }[keyof S]
+    ? S extends { [$COMMAND]?: ICommand }
+      ? Exclude<S[typeof $COMMAND], undefined>['cmd']
+      : never
     : never;
 }[S['state']];
 
@@ -54,12 +58,6 @@ export type ReturnTypes<T extends Record<string, (...args: any[]) => any>, U> = 
 export type PickAction<A extends IAction, T extends A['type']> = A extends { type: T } ? A : never;
 
 export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
-
-export type PickPartialCommands<T extends ICommand, C extends T['cmd']> = {
-  [K in C]?: T & { cmd: C };
-};
-
-export type PickCommandState<S extends IState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
 export type TTransition<S extends IState, A extends IAction, SS extends S['state'] = S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
@@ -104,7 +102,9 @@ export function transition<S extends IState, A extends IAction>(state: S, action
 export function useCommandEffect<S extends IState, CC extends TStateCommands<S>>(
   state: S,
   cmd: CC,
-  effect: (command: S extends Record<CC, unknown> ? Exclude<S[CC], undefined> : never) => void,
+  effect: (
+    command: S extends { [$COMMAND]?: ICommand } ? Exclude<S[typeof $COMMAND], undefined> & { cmd: CC } : never,
+  ) => void,
 ) {
   // @ts-ignore
   const command = state[cmd];
