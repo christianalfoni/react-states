@@ -106,7 +106,7 @@ export function useCommandEffect<S extends IState, CC extends TStateCommands<S>>
   ) => void,
 ) {
   // @ts-ignore
-  const command = state[cmd];
+  const command = state[$COMMAND] && state[$COMMAND][cmd];
 
   React.useEffect(() => {
     if (command) {
