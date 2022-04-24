@@ -16,20 +16,20 @@ import {
 import { colors } from './styles';
 
 const actions = {
-  MOUSE_MOVE: ({ x }: { x: number }) => ({
+  MOUSE_MOVE: (params: { x: number }) => ({
     type: 'MOUSE_MOVE' as const,
-    x,
+    ...params,
   }),
-  MOUSE_UP: ({ x }: { x: number }) => ({
+  MOUSE_UP: (params: { x: number }) => ({
     type: 'MOUSE_UP' as const,
-    x,
+    ...params,
   }),
   MOUSE_UP_RESIZER: () => ({
     type: 'MOUSE_UP_RESIZER' as const,
   }),
-  MOUSE_DOWN: ({ x }: { x: number }) => ({
+  MOUSE_DOWN: (params: { x: number }) => ({
     type: 'MOUSE_DOWN' as const,
-    x,
+    ...params,
   }),
 };
 
@@ -39,9 +39,9 @@ const commands = {
   NOTIFY_CLICK: () => ({
     cmd: 'NOTIFY_CLICK' as const,
   }),
-  NOTIFY_RESIZE: ({ x }: { x: number }) => ({
+  NOTIFY_RESIZE: (params: { x: number }) => ({
     cmd: 'NOTIFY_RESIZE' as const,
-    x,
+    ...params,
   }),
 };
 
@@ -53,16 +53,16 @@ const states = {
     [$COMMAND]: command,
     ...pick(actions, 'MOUSE_DOWN'),
   }),
-  DETECTING_RESIZE: ({ initialX }: { initialX: number }) => ({
+  DETECTING_RESIZE: (params: { initialX: number }) => ({
     state: 'DETECTING_RESIZE' as const,
-    initialX,
+    ...params,
     ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
   }),
-  RESIZING: ({ x }: { x: number }) => ({
+  RESIZING: (params: { x: number }) => ({
     state: 'RESIZING' as const,
-    x,
+    ...params,
     ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
-    [$COMMAND]: commands.NOTIFY_RESIZE({ x }),
+    [$COMMAND]: commands.NOTIFY_RESIZE({ x: params.x }),
   }),
 };
 

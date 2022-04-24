@@ -184,9 +184,9 @@ const actions = {
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  LOG: ({ message }: { message: string }) => ({
+  LOG: (params: { message: string }) => ({
     cmd: 'LOG' as const,
-    message,
+    ...params,
   }),
 };
 
