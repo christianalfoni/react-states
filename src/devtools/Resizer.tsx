@@ -16,20 +16,20 @@ import {
 import { colors } from './styles';
 
 const actions = {
-  MOUSE_MOVE: (params: { x: number }) => ({
-    ...params,
+  MOUSE_MOVE: (x: number) => ({
     type: 'MOUSE_MOVE' as const,
+    x,
   }),
-  MOUSE_UP: (params: { x: number }) => ({
-    ...params,
+  MOUSE_UP: (x: number) => ({
     type: 'MOUSE_UP' as const,
+    x,
   }),
   MOUSE_UP_RESIZER: () => ({
     type: 'MOUSE_UP_RESIZER' as const,
   }),
-  MOUSE_DOWN: (params: { x: number }) => ({
-    ...params,
+  MOUSE_DOWN: (x: number) => ({
     type: 'MOUSE_DOWN' as const,
+    x,
   }),
 };
 
@@ -106,10 +106,10 @@ export const Resizer = ({
 
   useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], ({ MOUSE_MOVE, MOUSE_UP }) => {
     const onMouseMove = (event: MouseEvent) => {
-      dispatch(MOUSE_MOVE({ x: event.clientX }));
+      dispatch(MOUSE_MOVE(event.clientX));
     };
     const onMouseUp = (event: MouseEvent) => {
-      dispatch(MOUSE_UP({ x: event.clientX }));
+      dispatch(MOUSE_UP(event.clientX));
     };
 
     window.addEventListener('mousemove', onMouseMove);
@@ -143,7 +143,7 @@ export const Resizer = ({
       <div
         style={style}
         onMouseDown={(event) => {
-          dispatch(MOUSE_DOWN({ x: event.clientX }));
+          dispatch(MOUSE_DOWN(event.clientX));
         }}
       />
     ),

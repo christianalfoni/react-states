@@ -11,54 +11,49 @@ Defining the different creators.
 import { ReturnTypes, IAction, ICommand, IState, PickCommand, pick } from 'react-states';
 
 const actions = {
-  // Use single params argument, spread it and set
-  // "type" last
   ACTION_A: (params: { foo: string; bar: string }) => ({
-    ...params,
     type: 'ACTION_A' as const,
+    ...params,
   }),
 };
 
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  // Use single params argument, spread it first and
-  // set type "cmd" last
-  COMMAND_A: (params: { foo: string; bar: string }) => ({
-    ...params,
+  COMMAND_A: (someValue: string) => ({
     cmd: 'COMMAND_B' as const,
+    someValue,
   }),
 };
 
 type Command = PickReturnType<typeof commands, ICommand>;
 
 const states = {
-  // Use single params argument, spread it first and
-  // set "state" last
+  // First argument is state related values.
   STATE_A: (params: { foo: string; bar: string }) => ({
-    ...params,
     state: 'STATE_A' as const,
+    ...params,
   }),
   // Use second argument for commands
   STATE_B: (params: { foo: string; bar: string }, command?: PickCommand<Command, 'COMMAND_A'>) => ({
-    ...params,
-    [$COMMAND]: command,
     state: 'STATE_B' as const,
+    [$COMMAND]: command,
+    ...params,
   }),
   // When always firing a command, include it directly
   STATE_C: (params: { foo: string; bar: string }) => ({
-    ...params,
-    [$COMMAND]: commands.COMMAND_A({ foo: 'foo', bar: 'bar' }),
     state: 'STATE_C' as const,
-  }),
-  // Include actions by spreading all or pick utility
-  STATE_D: (params: { foo: string; bar: string }) => ({
+    [$COMMAND]: commands.COMMAND_A({ foo: 'foo', bar: 'bar' }),
     ...params,
+  }),
+  // Include actions by spreading all or use pick utility
+  STATE_D: (params: { foo: string; bar: string }) => ({
+    state: 'STATE_D' as const,
     // Include all actions
     ...actions,
     // Pick certain ones
     ...pick(actions, 'ACTION_A', 'ACTION_B'),
-    state: 'STATE_D' as const,
+    ...params,
   }),
 };
 ```

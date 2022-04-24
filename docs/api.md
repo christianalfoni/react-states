@@ -55,12 +55,12 @@ type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
-    ...actions,
     state: 'FOO' as const,
+    ...actions,
   }),
   BAR = () => ({
-    ...actions,
     state: 'BAR' as const,
+    ...actions,
   }),
 };
 
@@ -147,12 +147,12 @@ type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
-    ...pick(actions, 'ACTION_A', 'ACTION_B'),
     state: 'FOO' as const,
+    ...pick(actions, 'ACTION_A', 'ACTION_B'),
   }),
   BAR = () => ({
-    ...pick(actions, 'ACTION_B'),
     state: 'BAR' as const,
+    ...pick(actions, 'ACTION_B'),
   }),
 };
 
@@ -184,9 +184,9 @@ const actions = {
 type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  LOG: (params: { message: string }) => ({
-    ...params,
+  LOG: (message: string) => ({
     cmd: 'LOG' as const,
+    message,
   }),
 };
 
@@ -194,14 +194,14 @@ type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
   FOO: () => ({
-    ...actions,
     state: 'FOO' as const,
     [$COMMAND]: commands.LOG('Moved into FOO'),
+    ...actions,
   }),
   BAR: () => ({
-    ...actions,
     state: 'BAR' as const,
     [$COMMAND]: commands.LOG('Moved into BAR'),
+    ...actions,
   }),
 };
 
@@ -361,12 +361,12 @@ type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
-    ...actions,
     state: 'FOO' as const,
+    ...actions,
   }),
   BAR = () => ({
-    ...actions,
     state: 'BAR' as const,
+    ...actions,
   }),
 };
 
@@ -401,12 +401,12 @@ type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
-    ...actions,
     state: 'FOO' as const,
+    ...actions,
   }),
   BAR = () => ({
-    ...actions,
     state: 'BAR' as const,
+    ...actions,
   }),
 };
 
