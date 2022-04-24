@@ -24,7 +24,7 @@ Types and Type Utils
 - [TTransitions](#TTransitions)
 - [TTransition](#TTransition)
 - [TEmit](#TEmit)
-- [PickReturnTypes](#pickreturntypes)
+- [ReturnTypes](#returntypes)
 - [PickState](#pickstate)
 - [PickAction](#pickaction)
 - [PickCommand](#pickcommand)
@@ -42,7 +42,7 @@ Devtools
 Transition state and action in a reducer
 
 ```ts
-import { transition, TTransitions, PickReturnTypes, IAction, IState } from 'react-states';
+import { transition, TTransitions, ReturnTypes, IAction, IState } from 'react-states';
 
 const actions = {
   SWITCH: () => ({
@@ -50,7 +50,7 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
@@ -63,7 +63,7 @@ const states = {
   }),
 };
 
-type State = PickReturnTypes<typeof states, IState>;
+type State = ReturnTypes<typeof states, IState>;
 
 export const { FOO, BAR } = states;
 
@@ -133,7 +133,7 @@ const SomeComponent = () => {
 Run an effect when the command is part of a transition.
 
 ```ts
-import { transition, TTransitions, PickReturnTypes, IState, IAction, ICommand } from 'react-states';
+import { transition, TTransitions, ReturnTypes, IState, IAction, ICommand } from 'react-states';
 
 const actions = {
   SWITCH: () => ({
@@ -141,31 +141,31 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
-  $LOG: (message: string) => ({
+  $LOG: (params: { message: string }) => ({
     cmd: '$LOG' as const,
-    message,
+    ...params,
   }),
 };
 
-type Command = PickReturnTypes<typeof commands, ICommand>;
+type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
-    SWITCH: actions.SWITCH,
     $LOG: $LOG('Moved into FOO'),
+    ...actions,
   }),
   BAR: () => ({
     state: 'BAR' as const,
-    SWITCH: actions.SWITCH,
     $LOG: $LOG('Moved into BAR'),
+    ...actions,
   }),
 };
 
-type State = PickReturnTypes<typeof states, IState>;
+type State = ReturnTypes<typeof states, IState>;
 
 const transitions: TTransitions<State, Action> = {
   FOO: {
@@ -309,7 +309,7 @@ it('should do something', () => {
 Types the object with all states and handlers
 
 ```ts
-import { transition, TTransitions, PickReturnTypes, IAction, IState } from 'react-states';
+import { transition, TTransitions, ReturnTypes, IAction, IState } from 'react-states';
 
 const actions = {
   SWITCH: () => ({
@@ -317,7 +317,7 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
@@ -330,7 +330,7 @@ const states = {
   }),
 };
 
-type State = PickReturnTypes<typeof states, IState>;
+type State = ReturnTypes<typeof states, IState>;
 
 export const { FOO, BAR } = states;
 
@@ -349,7 +349,7 @@ const transitions: TTransitions<State, Action> = {
 Types the object with a specific state and its transitions
 
 ```ts
-import { transition, TTransitions, TTransition, PickReturnTypes, IAction, IState } from 'react-states';
+import { transition, TTransitions, TTransition, ReturnTypes, IAction, IState } from 'react-states';
 
 const actions = {
   SWITCH: () => ({
@@ -357,20 +357,20 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const states = {
   FOO: () => ({
     state: 'FOO' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
   BAR = () => ({
     state: 'BAR' as const,
-    SWITCH: actions.SWITCH,
+    ...actions,
   }),
 };
 
-type State = PickReturnTypes<typeof states, IState>;
+type State = ReturnTypes<typeof states, IState>;
 
 export const { FOO, BAR } = states;
 
@@ -401,21 +401,21 @@ export const someApi = (emit: TEmit<SomeApiEvent>): SomeApi => ({
 });
 ```
 
-### PickReturnTypes<typeof states, T>
+### ReturnTypes
 
-Point to a record of state/action/command factories and create a union of their return types. Gives `unknown` when invalid types returned.
+Point to a record of state/action/command creators and create a union of their return types. Gives `unknown` when invalid types returned.
 
 ```ts
 const actions = {
   DO_THIS: () => ({
-    type: 'DO_THIS',
+    type: 'DO_THIS' as const,
   }),
   DO_THAT: () => ({
-    type: 'DO_THAT',
+    type: 'DO_THAT' as const,
   }),
 };
 
-type Action = PickReturnType<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 ```
 
 ### PickState
@@ -440,6 +440,14 @@ Narrows to specific command.
 
 ```ts
 type NarrowedCommands = PickCommand<Command, 'A' | 'B'>;
+```
+
+### PickPartialCommands
+
+Creates a partial record of commands.
+
+```ts
+type PartialRecord = PickPartialCommands<Command, 'A' | 'B'>;
 ```
 
 ### PickCommandState

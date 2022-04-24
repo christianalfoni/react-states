@@ -4,12 +4,14 @@ import {
   useCommandEffect,
   useStateEffect,
   TTransitions,
-  PickReturnTypes,
+  ReturnTypes,
   IAction,
   ICommand,
   PickCommand,
   IState,
   match,
+  pick,
+  PickPartialCommands,
 } from '../';
 import { colors } from './styles';
 
@@ -31,7 +33,7 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
   $NOTIFY_CLICK: () => ({
@@ -43,51 +45,51 @@ const commands = {
   }),
 };
 
-type Command = PickReturnTypes<typeof commands, ICommand>;
+type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
-  IDLE: ($NOTIFY_CLICK?: PickCommand<Command, '$NOTIFY_CLICK'>) => ({
+  IDLE: (params: PickPartialCommands<Command, '$NOTIFY_CLICK'> = {}) => ({
     state: 'IDLE' as const,
-    $NOTIFY_CLICK,
-    MOUSE_DOWN: actions.MOUSE_DOWN,
+    ...params,
+    ...pick(actions, 'MOUSE_DOWN'),
   }),
-  DETECTING_RESIZE: (initialX: number) => ({
+  DETECTING_RESIZE: (params: { initialX: number }) => ({
     state: 'DETECTING_RESIZE' as const,
-    initialX,
-    MOUSE_MOVE: actions.MOUSE_MOVE,
-    MOUSE_UP: actions.MOUSE_UP,
-    MOUSE_UP_RESIZER: actions.MOUSE_UP_RESIZER,
+    ...params,
+    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
   }),
-  RESIZING: (x: number) => ({
+  RESIZING: (params: { x: number }) => ({
     state: 'RESIZING' as const,
-    x,
-    $NOTIFY_RESIZE: commands.$NOTIFY_RESIZE(x),
-    MOUSE_MOVE: actions.MOUSE_MOVE,
-    MOUSE_UP: actions.MOUSE_UP,
+    ...params,
+    $NOTIFY_RESIZE: commands.$NOTIFY_RESIZE(params.x),
+    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
   }),
 };
 
-type State = PickReturnTypes<typeof states, IState>;
+type State = ReturnTypes<typeof states, IState>;
 
 const { IDLE, DETECTING_RESIZE, RESIZING } = states;
 
 const transitions: TTransitions<State, Action> = {
   IDLE: {
-    MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE(x),
+    MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE({ initialX: x }),
   },
   DETECTING_RESIZE: {
     MOUSE_MOVE: (state, { x }) => {
       if (Math.abs(x - state.initialX) > 3) {
-        return RESIZING(x);
+        return RESIZING({ x });
       }
 
       return state;
     },
     MOUSE_UP: () => IDLE(),
-    MOUSE_UP_RESIZER: () => IDLE(commands.$NOTIFY_CLICK()),
+    MOUSE_UP_RESIZER: () =>
+      IDLE({
+        $NOTIFY_CLICK: commands.$NOTIFY_CLICK(),
+      }),
   },
   RESIZING: {
-    MOUSE_MOVE: (_, { x }) => RESIZING(x),
+    MOUSE_MOVE: (_, { x }) => RESIZING({ x }),
     MOUSE_UP: () => IDLE(),
   },
 };

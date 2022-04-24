@@ -47,13 +47,17 @@ export type PickState<S extends IState, T extends S['state'] = never> = [T] exte
   ? S
   : never;
 
-export type PickReturnTypes<T extends Record<string, (...args: any[]) => any>, U> = {
+export type ReturnTypes<T extends Record<string, (...args: any[]) => any>, U> = {
   [K in keyof T]: ReturnType<T[K]> extends U ? ReturnType<T[K]> : unknown;
 }[keyof T];
 
 export type PickAction<A extends IAction, T extends A['type']> = A extends { type: T } ? A : never;
 
 export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
+
+export type PickPartialCommands<T extends ICommand, C extends T['cmd']> = {
+  [K in C]?: T & { cmd: C };
+};
 
 export type PickCommandState<S extends IState, T extends TStateCommands<S>> = S extends Record<T, unknown> ? S : never;
 
@@ -154,6 +158,23 @@ export function useStateEffect<S extends IState, SS extends S['state'] | S['stat
       // @ts-ignore
     }, [state.state === current]);
   }
+}
+
+export function pick<T extends Record<string, unknown>, U extends (keyof T)[]>(record: T, ...keys: U) {
+  return keys.reduce<
+    {
+      [K in U[number]]: T[K];
+    }
+  >(
+    (aggr, key) => {
+      aggr[key] = record[key];
+
+      return aggr;
+    },
+    {} as {
+      [K in U[number]]: T[K];
+    },
+  );
 }
 
 export function match<S extends IState, T extends TMatch<S>>(

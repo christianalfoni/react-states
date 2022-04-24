@@ -1,4 +1,4 @@
-import { PickCommand, PickReturnTypes, IAction, ICommand, transition, IState, TTransitions } from '../../src';
+import { ReturnTypes, IAction, ICommand, transition, IState, TTransitions, pick, PickPartialCommands } from '../../src';
 import { Todo, EnvironmentAction } from '../environment-interface';
 
 const actions = {
@@ -11,7 +11,7 @@ const actions = {
   }),
 };
 
-type Action = PickReturnTypes<typeof actions, IAction>;
+type Action = ReturnTypes<typeof actions, IAction>;
 
 const commands = {
   $SAVE_TODO: (todo: Todo) => ({
@@ -20,21 +20,20 @@ const commands = {
   }),
 };
 
-type Commands = PickReturnTypes<typeof commands, ICommand>;
+type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
   NOT_LOADED: () => ({
     state: 'NOT_LOADED' as const,
-    FETCH_TODOS: actions.FETCH_TODOS,
+    ...pick(actions, 'FETCH_TODOS'),
   }),
   LOADING: () => ({
     state: 'LOADING' as const,
   }),
-  LOADED: ({ todos, $SAVE_TODO }: { todos: Todo[]; $SAVE_TODO?: PickCommand<Commands, '$SAVE_TODO'> }) => ({
+  LOADED: (params: { todos: Todo[] } & PickPartialCommands<Command, '$SAVE_TODO'>) => ({
     state: 'LOADED' as const,
-    todos,
-    $SAVE_TODO,
-    ADD_TODO: actions.ADD_TODO,
+    ...params,
+    ...pick(actions, 'ADD_TODO'),
   }),
   ERROR: ({ error }: { error: string }) => ({
     state: 'ERROR' as const,
@@ -42,7 +41,7 @@ const states = {
   }),
 };
 
-export type State = PickReturnTypes<typeof states, IState>;
+export type State = ReturnTypes<typeof states, IState>;
 
 export const { NOT_LOADED, LOADED, LOADING, ERROR } = states;
 
