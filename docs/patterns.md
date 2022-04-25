@@ -42,16 +42,16 @@ const states = {
   // Use second argument for commands
   STATE_B: ({ foo, bar }: { foo: string; bar: string }, command?: PickCommand<Command, 'COMMAND_A'>) => ({
     state: 'STATE_B' as const,
-    [$COMMAND]: command,
     foo,
     bar,
+    [$COMMAND]: command,
   }),
   // When always firing a command, include it directly
   STATE_C: ({ foo, bar }: { foo: string; bar: string }) => ({
     state: 'STATE_C' as const,
-    [$COMMAND]: commands.COMMAND_A({ foo: 'foo', bar: 'bar' }),
     foo,
     bar,
+    [$COMMAND]: commands.COMMAND_A({ foo: 'foo', bar: 'bar' }),
   }),
   // Include actions by spreading all or use pick utility
   STATE_D: ({ foo, bar }: { foo: string; bar: string }) => ({
@@ -148,7 +148,7 @@ const states = {
     foo,
     bar,
   }),
-  STATE_B: ({ foo, baz }: Pick<BaseSTate, 'foo' | 'baz'>) => ({
+  STATE_B: ({ foo, baz }: Pick<BaseState, 'foo' | 'baz'>) => ({
     state: 'STATE_B' as const,
     foo,
     baz,

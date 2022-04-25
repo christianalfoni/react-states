@@ -29,7 +29,6 @@ Types and Type Utils
 - [PickState](#pickstate)
 - [PickAction](#pickaction)
 - [PickCommand](#pickcommand)
-- [PickStateCommand](#pickstatecommand)
 
 Devtools
 
