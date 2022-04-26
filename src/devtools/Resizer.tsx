@@ -53,16 +53,16 @@ const states = {
     [$COMMAND]: command,
     state: 'IDLE' as const,
   }),
-  DETECTING_RESIZE: (params: { initialX: number }) => ({
-    ...params,
-    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
+  DETECTING_RESIZE: ({ initialX }: { initialX: number }) => ({
     state: 'DETECTING_RESIZE' as const,
+    initialX,
+    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
   }),
-  RESIZING: (params: { x: number }) => ({
-    ...params,
-    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
-    [$COMMAND]: commands.NOTIFY_RESIZE({ x: params.x }),
+  RESIZING: ({ x }: { x: number }) => ({
     state: 'RESIZING' as const,
+    x,
+    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
+    [$COMMAND]: commands.NOTIFY_RESIZE({ x }),
   }),
 };
 
@@ -122,6 +122,7 @@ export const Resizer = ({
   });
 
   useCommandEffect(resizer, 'NOTIFY_RESIZE', ({ x }) => {
+    console.log('HÈHM');
     onResize(window.innerWidth - x);
   });
 
