@@ -159,23 +159,6 @@ export function useStateEffect<S extends IState, SS extends S['state'] | S['stat
   }
 }
 
-export function pick<T extends Record<string, unknown>, U extends (keyof T)[]>(record: T, ...keys: U) {
-  return keys.reduce<
-    {
-      [K in U[number]]: T[K];
-    }
-  >(
-    (aggr, key) => {
-      aggr[key] = record[key];
-
-      return aggr;
-    },
-    {} as {
-      [K in U[number]]: T[K];
-    },
-  );
-}
-
 export function match<S extends IState, T extends TMatch<S>>(
   state: S,
   matches: T &

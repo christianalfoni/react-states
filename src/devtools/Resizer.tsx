@@ -10,7 +10,6 @@ import {
   PickCommand,
   IState,
   match,
-  pick,
   $COMMAND,
 } from '../';
 import { colors } from './styles';
@@ -49,20 +48,23 @@ type Command = ReturnTypes<typeof commands, ICommand>;
 
 const states = {
   IDLE: (command?: PickCommand<Command, 'NOTIFY_CLICK'>) => ({
-    ...pick(actions, 'MOUSE_DOWN'),
-    [$COMMAND]: command,
     state: 'IDLE' as const,
+    [$COMMAND]: command,
+    MOUSE_DOWN: actions.MOUSE_DOWN,
   }),
   DETECTING_RESIZE: ({ initialX }: { initialX: number }) => ({
     state: 'DETECTING_RESIZE' as const,
     initialX,
-    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP', 'MOUSE_UP_RESIZER'),
+    MOUSE_MOVE: actions.MOUSE_MOVE,
+    MOUSE_UP: actions.MOUSE_UP,
+    MOUSE_UP_RESIZER: actions.MOUSE_UP_RESIZER,
   }),
   RESIZING: ({ x }: { x: number }) => ({
     state: 'RESIZING' as const,
     x,
-    ...pick(actions, 'MOUSE_MOVE', 'MOUSE_UP'),
     [$COMMAND]: commands.NOTIFY_RESIZE({ x }),
+    MOUSE_MOVE: actions.MOUSE_MOVE,
+    MOUSE_UP: actions.MOUSE_UP,
   }),
 };
 

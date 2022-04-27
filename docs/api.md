@@ -6,7 +6,6 @@ Core
 - [useStateEffect](#usestateeffect)
 - [match](#match)
 - [matchProp](#matchprop)
-- [pick](#pick)
 - [useCommandEffect](#usecommandeffect)
 
 Environment
@@ -125,45 +124,6 @@ const SomeComponent = () => {
   const [state, dispatch] = useReducer(reducer, FOO());
 
   return matchProp(state, 'someProp')?.someProp ?? 'Not there';
-};
-```
-
-### pick
-
-```ts
-import { TTransitions, ReturnTypes, IAction, IState, pick } from 'react-states';
-
-const actions = {
-  ACTION_A: () => ({
-    type: 'ACTION_A' as const,
-  }),
-  ACTION_B: () => ({
-    type: 'ACTION_B' as const,
-  }),
-};
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    ...pick(actions, 'ACTION_A', 'ACTION_B'),
-  }),
-  BAR = () => ({
-    state: 'BAR' as const,
-    ...pick(actions, 'ACTION_B'),
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: (state, action) => BAR(),
-  },
-  BAR: {
-    SWITCH: (state, action) => FOO(),
-  },
 };
 ```
 

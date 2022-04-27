@@ -1,14 +1,4 @@
-import {
-  ReturnTypes,
-  IAction,
-  ICommand,
-  transition,
-  IState,
-  TTransitions,
-  pick,
-  PickCommand,
-  $COMMAND,
-} from '../../src';
+import { ReturnTypes, IAction, ICommand, transition, IState, TTransitions, PickCommand, $COMMAND } from '../../src';
 import { Todo, EnvironmentAction } from '../environment-interface';
 
 const actions = {
@@ -35,7 +25,7 @@ type Command = ReturnTypes<typeof commands, ICommand>;
 const states = {
   NOT_LOADED: () => ({
     state: 'NOT_LOADED' as const,
-    ...pick(actions, 'FETCH_TODOS'),
+    FETCH_TODOS: actions.FETCH_TODOS,
   }),
   LOADING: () => ({
     state: 'LOADING' as const,
@@ -44,7 +34,7 @@ const states = {
     state: 'LOADED' as const,
     todos,
     [$COMMAND]: command,
-    ...pick(actions, 'ADD_TODO'),
+    ADD_TODO: actions.ADD_TODO,
   }),
   ERROR: (error: string) => ({
     state: 'ERROR' as const,
