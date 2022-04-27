@@ -1,209 +1,233 @@
 # API
 
-Core
-
-- [transition](#transition)
-- [useStateEffect](#usestateeffect)
-- [match](#match)
-- [matchProp](#matchprop)
-- [useCommandEffect](#usecommandeffect)
-
-Environment
-
-- [defineEnvironment](#defineenvironment)
-- [createEnvironment](#createenvironment)
-- [EnvironmentProvider](#environmentprovider)
-- [useEnvironment](#useenvironment)
-
-Testing
-
-- [renderReducer](#renderreducer)
-
-Types and Type Utils
-
-- [TTransitions](#TTransitions)
-- [TTransition](#TTransition)
-- [TEmit](#TEmit)
-- [ReturnTypes](#returntypes)
-- [PickState](#pickstate)
-- [PickAction](#pickaction)
-- [PickCommand](#pickcommand)
-
-Devtools
-
-- [DevtoolsProvider](#devtoolsprovider)
-- [useDevtools](#usedevtools)
-
-## Core
-
-### transition
-
-Transition state and action in a reducer
+## Transition
 
 ```ts
-import { transition, TTransitions, ReturnTypes, IAction, IState } from 'react-states';
+import { transition } from 'react-states';
 
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
-};
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    ...actions,
-  }),
-  BAR = () => ({
-    state: 'BAR' as const,
-    ...actions,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-export const { FOO, BAR } = states;
-
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: (state, action) => BAR(),
-  },
-  BAR: {
-    SWITCH: (state, action) => FOO(),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-```
-
-### useStateEffect
-
-Run an effect when entering a specific state.
-
-```ts
-const SomeComponent = () => {
-  const [state, dispatch] = useReducer(reducer, initialState);
-
-  useStateEffect(state, 'FOO', () => {
-    // Run when entering state
-    return () => {
-      // Dispose when exiting the state
+type State =
+  | {
+      state: 'NOT_LOADED';
+    }
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      data: string[];
+    }
+  | {
+      state: 'ERROR';
+      error: string;
     };
+
+type Action =
+  | {
+      type: 'LOAD';
+    }
+  | {
+      type: 'LOAD_SUCCESS';
+      data: string[];
+    }
+  | {
+      type: 'LOAD_ERROR';
+      error: string;
+    };
+
+const reducer = (state: State, action: Action) =>
+  transition(state, action, {
+    NOT_LOADED: {
+      LOAD: () => ({ state: 'LOADING' }),
+    },
+    LOADING: {
+      LOAD_SUCCESS: (_, { data }) => ({ state: 'LOADED', data }),
+      LOAD_ERROR: (_, { error }) => ({ state: 'ERROR', error }),
+    },
+    LOADED: {},
+    ERRORL: {},
   });
 
-  useStateEffect(state, ['FOO', 'BAR'], () => {
-    // Run when entering either state
-    return () => {
-      // Dispose when exiting to other state
-    };
-  });
-
-  return null;
-};
+export const useData = () => useReducer(reducer, { state: 'NOT_LOADED' });
 ```
 
-### match
+### Utilities
+
+#### match
 
 ```tsx
-const SomeComponent = () => {
-  const [state, dispatch] = useReducer(reducer, FOO());
+import { match } from 'react-states';
+import { useData } from './useData';
 
-  return match(state, {
-    FOO: ({ SWITCH }) => <div onClick={() => dispatch(SWITCH())}>FOO</div>,
-    BAR: ({ SWITCH }) => <div onClick={() => dispatch(SWITCH())}>BAR</div>,
-  });
+const DataComponent = () => {
+  const [state, dispatch] = useData();
+
+  return (
+    <div>
+      {match(state, {
+        NOT_LOADED: () => <button onClick={() => dispatch({ type: 'LOAD' })}>Load data</button>,
+        LOADING: () => 'Loading...',
+        LOADED: ({ data }) => (
+          <ul>
+            {data.map((item, index) => (
+              <li key={index}>{item}</li>
+            ))}
+          </ul>
+        ),
+        ERROR: ({ error }) => <span style={{ color: 'red' }}>{error}</span>,
+      })}
+    </div>
+  );
 };
 ```
 
-### matchProp
+#### matchProp
 
-```ts
-const SomeComponent = () => {
-  const [state, dispatch] = useReducer(reducer, FOO());
+```tsx
+import { matchProp } from 'react-states';
+import { useData } from './useData';
 
-  return matchProp(state, 'someProp')?.someProp ?? 'Not there';
+const DataComponent = () => {
+  const [state, dispatch] = useData();
+
+  const data = matchProp(state, 'data')?.data ?? [];
+
+  return (
+    <ul>
+      {data.map((item, index) => (
+        <li key={index}>{item}</li>
+      ))}
+    </ul>
+  );
 };
 ```
 
-### useCommandEffect
+#### useStateEffect
 
-Run an effect when the command is part of a transition.
+```tsx
+import { useStateEffect } from 'react-states';
+import { useData } from './useData';
 
-```ts
-import { transition, TTransitions, ReturnTypes, IState, IAction, ICommand, $COMMAND } from 'react-states';
+const DataComponent = () => {
+  const [state, dispatch] = useData();
 
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
-};
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const commands = {
-  LOG: (message: string) => ({
-    cmd: 'LOG' as const,
-    message,
-  }),
-};
-
-type Command = ReturnTypes<typeof commands, ICommand>;
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    [$COMMAND]: commands.LOG('Moved into FOO'),
-    ...actions,
-  }),
-  BAR: () => ({
-    state: 'BAR' as const,
-    [$COMMAND]: commands.LOG('Moved into BAR'),
-    ...actions,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: (state, action) => BAR(),
-  },
-  BAR: {
-    SWITCH: (state, action) => FOO(),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-```
-
-```ts
-const SomeComponent = () => {
-  const [state, dispatch] = useReducer(reducer, FOO());
-
-  useCommandEffect(state, 'LOG', ({ message }) => {
-    console.log(message);
+  useStateEffect(state, 'NOT_LOADED', () => {
+    fetch('/data')
+      .then((response) => response.json())
+      .then((data) =>
+        dispatch({
+          type: 'LOAD_SUCCESS',
+          data,
+        }),
+      )
+      .catch((error) =>
+        dispatch({
+          type: 'LOAD_ERROR',
+          error: error.message,
+        }),
+      );
   });
 
-  return null;
+  return <div />;
 };
 ```
 
-### defineEnvironment
+#### useCommandEffect
 
-Define an environment with its interface and any events to emit
+```tsx
+import { transition, $COMMAND } from 'react-states';
+
+type Command = {
+  cmd: 'SAVE_DATA';
+  data: string[];
+};
+
+type State =
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      [$COMMAND]?: Command;
+    }
+  | {
+      state: 'ERROR';
+      error: string;
+    };
+
+type Action =
+  | {
+      type: 'LOAD';
+    }
+  | {
+      type: 'LOAD_SUCCESS';
+      data: string[];
+    }
+  | {
+      type: 'LOAD_ERROR';
+      error: string;
+    }
+  | {
+      type: 'ADD_ITEM';
+    };
+
+const reducer = (state: State, action: Action) =>
+  transition(state, action, {
+    LOADING: {
+      LOAD_SUCCESS: (_, { data }) => ({
+        state: 'LOADED',
+        data,
+      }),
+      LOAD_ERROR: (_, { error }) => ({
+        state: 'ERROR',
+        error,
+      }),
+    },
+    LOADED: {
+      ADD_ITEM: ({ data }, { item }) => {
+        const data = [item].concat(data);
+
+        return {
+          state: 'LOADED',
+          data,
+          [$COMMAND]: {
+            cmd: 'SAVE_DATA',
+            data,
+          },
+        };
+      },
+    },
+    ERROR: {},
+  });
+
+const DataComponent = () => {
+  const [state, dispatch] = useReducer(reducer, { state: 'LOADING' });
+
+  useCommandEffect(state, 'SAVE_DATA', ({ data }) => {
+    localStorage.setItem('data', JSON.stringify(data));
+  });
+
+  return <div />;
+};
+```
+
+#### defineEnvironment
 
 ```tsx
 import { defineEnvironment } from 'react-states';
 
-export type EnvironmentEvent = {
-  type: 'DID_SOMETHING';
-};
+export type EnvironmentEvent =
+  | {
+      type: 'DATA:LOAD_SUCCESS';
+      data: string;
+    }
+  | {
+      type: 'DATA:LOAD_ERROR';
+      error: string;
+    };
 
 export type Environment = {
-  someApi: {
-    doSomething(): void;
+  dataLoader: {
+    load(): void;
   };
 };
 
@@ -213,26 +237,34 @@ export const { createEnvironment, EnvironmentProvider, useEnvironment } = define
 >();
 ```
 
-### createEnvironment
-
-Create a specific implementation of the environment interface,
-where you can emit events.
+##### createEnvironment
 
 ```ts
 import { createEnvironment } from './environment-interface';
 
 export const environment = createEnvironment((emit) => ({
-  someApi: {
-    doSomething() {
-      emit({ type: 'DID_SOMETHING' });
+  dataLoader: {
+    load() {
+      fetch('/data')
+        .then((response) => response.json())
+        .then((data) =>
+          emit({
+            type: 'DATA:LOAD_SUCCESS',
+            data,
+          }),
+        )
+        .catch((error) =>
+          emit({
+            type: 'DATA:LOAD_ERROR',
+            error: error.message,
+          }),
+        );
     },
   },
 }));
 ```
 
-### EnvironmentProvider
-
-Expose a specific environment to the application.
+##### EnvironmentProvider
 
 ```tsx
 import { EnvironmentProvider } from './environment-interface';
@@ -247,27 +279,54 @@ export const AppWrapper: React.FC = () => {
 };
 ```
 
-### useEnvironment
-
-Use the environment interface.
+##### useEnvironment
 
 ```tsx
-import { useEnvironment } from './environment-interface';
+import { transition } from 'react-states';
+import { useEnvironment, EnvironmentEvent } from '../environment-interface';
 
-export const SomeComponent: React.FC = () => {
-  const { someApi, emitter } = useEnvironment();
-  const [state, dispatch] = useReducer(reducer, FOO());
+type State =
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      data: string[];
+    }
+  | {
+      state: 'ERROR';
+      error: string;
+    };
 
-  // Dispatch environment actions into reducer
-  useEffect(() => emitter.subscribe(dispatch), []);
+type Action = {
+  type: 'LOAD';
+};
+
+const reducer = (state: State, action: Action | EnvironmentEvent) =>
+  transition(state, action, {
+    LOADING: {
+      'DATA:LOAD_SUCCESS': (_, { data }) => ({ state: 'LOADED', data }),
+      'DATA:LOAD_ERROR': (_, { error }) => ({ state: 'ERROR', error }),
+    },
+    LOADED: {},
+    ERRORL: {},
+  });
+
+const DataComponent = () => {
+  const { dataLoader, emitter } = useEnvironment();
+  const [state, dispatch] = useData();
+
+  useEffect(() => emitter.subscribe(dispatch));
+
+  useStateEffect(state, 'LOADING', () => {
+    dataLoader.load();
+  });
 
   return <div />;
 };
 ```
 
-## Testing
-
-### renderReducer
+#### renderReducer
 
 ```tsx
 import { act } from '@testing-library/react';
@@ -277,61 +336,54 @@ import { createEnvironment } from './environments/test';
 it('should do something', () => {
   const environment = createEnvironment();
   const [state, dispatch] = renderReducer(
-    () => useSwitcher(),
-    (Switcher) => (
+    () => useData(),
+    (UseData) => (
       <EnvironmentProvider environment={environment}>
-        <Switcher />
+        <UseData />
       </EnvironmentProvider>
     ),
   );
 
   act(() => {
-    dispatch({ type: 'SWITCH' });
+    dispatch({ type: 'LOAD' });
   });
 
-  expect(state.state).toBe('BAR');
+  expect(state.state).toBe('LOADING');
+
+  expect(environment.dataLoader.load).toBeCalled();
 
   act(() => {
     environment.emitter.emit({
-      type: 'SOME_EVENT',
+      type: 'DATA:LOAD_SUCCESS',
+      items: ['foo', 'bar'],
     });
   });
 
-  expect(state.state).toBe('BAZ');
+  expect(state).toEqual({
+    state: 'LOADED',
+    items: ['foo', 'bar'],
+  });
 });
 ```
 
-## Utils
+### Utility Types
 
-### TTransitions
-
-Types the object with all states and handlers
+#### TTransitions
 
 ```ts
-import { transition, TTransitions, ReturnTypes, IAction, IState } from 'react-states';
+import { transition, TTransitions } from 'react-states';
 
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    };
+
+type Action = {
+  type: 'SWITCH';
 };
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    ...actions,
-  }),
-  BAR = () => ({
-    state: 'BAR' as const,
-    ...actions,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-export const { FOO, BAR } = states;
 
 const transitions: TTransitions<State, Action> = {
   FOO: {
@@ -341,41 +393,39 @@ const transitions: TTransitions<State, Action> = {
     SWITCH: (state, action) => FOO(),
   },
 };
+
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 ```
 
-### TTransition
-
-Types the object with a specific state and its transitions
+#### TTransition
 
 ```ts
-import { transition, TTransitions, TTransition, ReturnTypes, IAction, IState } from 'react-states';
+import { transition, TTransitions, TTransition } from 'react-states';
 
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    };
+
+type Action = {
+  type: 'SWITCH';
 };
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    ...actions,
-  }),
-  BAR = () => ({
-    state: 'BAR' as const,
-    ...actions,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-export const { FOO, BAR } = states;
 
 const fooTransitions: TTransition<State, Action, 'FOO'> = {
   SWITCH: (state, action) => BAR(),
 };
+
+const transitions: TTransitions<State, Action> = {
+  FOO: fooTransitions,
+  BAR: {
+    SWITCH: (state, action) => FOO(),
+  },
+};
+
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 
 const transitions: TTransitions<State, Action> = {
   FOO: fooTransitions,
@@ -385,9 +435,7 @@ const transitions: TTransitions<State, Action> = {
 };
 ```
 
-### TEmit
-
-Type the emitter when creating environment.
+#### TEmit
 
 ```ts
 import { TEmit } from 'react-states';
@@ -400,52 +448,60 @@ export const someApi = (emit: TEmit<SomeApiEvent>): SomeApi => ({
 });
 ```
 
-### ReturnTypes
-
-Point to a record of state/action/command creators and create a union of their return types. Gives `unknown` when invalid types returned.
+#### ReturnTypes
 
 ```ts
-const actions = {
-  DO_THIS: () => ({
-    type: 'DO_THIS' as const,
+import { ReturnTypes, IAction, IState, ICommand } from 'react-states';
+
+const states = {
+  FOO: () => ({
+    state: 'FOO' as const,
   }),
-  DO_THAT: () => ({
-    type: 'DO_THAT' as const,
+  BAR: () => ({
+    state: 'BAR' as const,
+  }),
+};
+
+type State = ReturnTypes<typeof states, IState>;
+
+const actions = {
+  SWITCH: () => ({
+    type: 'SWITCH' as const,
   }),
 };
 
 type Action = ReturnTypes<typeof actions, IAction>;
+
+const commands = {
+  LOG: () => ({
+    cmd: 'LOG' as const,
+  }),
+};
+
+type Command = ReturnTypes<typeof actions, ICommand>;
 ```
 
-### PickState
-
-Narrows to specific states.
+#### PickState
 
 ```ts
-type NarrowedStates = PickState<State, 'A' | 'B'>;
+type ABState = PickState<State, 'A' | 'B'>;
 ```
 
-### PickAction
-
-Narrows to specific actions.
+#### PickAction
 
 ```ts
-type NarrowedActions = PickAction<Action, 'A' | 'B'>;
+type ABAction = PickAction<Action, 'A' | 'B'>;
 ```
 
-### PickCommand
-
-Narrows to specific command.
+#### PickCommand
 
 ```ts
-type NarrowedCommands = PickCommand<Command, 'A' | 'B'>;
+type ABCommand = PickCommand<Command, 'A' | 'B'>;
 ```
 
-## Devtools
+### Devtools
 
-### DevtoolsProvider
-
-Expose the devtools manager and the UI.
+#### DevtoolsProvider
 
 ```tsx
 import { DevtoolsProvider } from 'react-states/devtools';
@@ -459,19 +515,19 @@ export const AppWrapper: React.FC = () => {
 };
 ```
 
-### useDevtools
-
-Manually expose the reducer on the devtools. **Note!** the `useReducer` from the environment does this automatically.
+#### useDevtools
 
 ```tsx
 import { useReducer } from 'react';
 import { useDevtools } from 'react-states/devtools';
 
 export const SomeComponent: React.FC = () => {
-  const switchReducer = useReducer(reducer, FOO());
+  const dataReducer = useData();
 
-  useDevtools('Switch', switchReducer);
+  useDevtools('Data', dataReducer);
 
-  const [state, dispatch] = switchReducer;
+  const [state, dispatch] = dataReducer;
+
+  return <div />;
 };
 ```
