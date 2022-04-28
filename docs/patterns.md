@@ -4,6 +4,7 @@
 - [Lift Transitions](#lift-transitions)
 - [BaseState](#BaseState)
 - [Creators](#Creators)
+- [Environment Interface](#Environment-Interface)
 
 ## Hook
 
@@ -62,48 +63,49 @@ export const useSwitcher = (initialState?: State) => {
 ```ts
 import { transition, TTransitions, TTransition, ReturnTypes, PickState, IState, pick } from 'react-states';
 
-const actions = {
-  GO_TO_FOO: () => ({
-    type: 'GO_TO_FOO' as const,
-  }),
-  GO_TO_BAR: () => ({
-    type: 'GO_TO_BAR' as const,
-  }),
-  GO_TO_BAZ: () => ({
-    type: 'GO_TO_BAZ' as const,
-  }),
-};
+type Action =
+  | {
+      type: 'GO_TO_FOO';
+    }
+  | {
+      type: 'GO_TO_BAR';
+    }
+  | {
+      type: 'GO_TO_BAZ';
+    };
 
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-    ...actions,
-  }),
-  BAR: () => ({
-    state: 'BAR' as const,
-    ...actions,
-  }),
-  BAZ: () => ({
-    state: 'BAZ' as const,
-    ...actions,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    }
+  | {
+      state: 'BAZ';
+    };
 
 // A single transition to be used in any state
 const GO_TO_FOO = (state: State) => FOO();
 
 // Multiple transitions to be used in any state
 const baseTransitions: TTransition<State, Action> = {
-  GO_TO_FOO: () => FOO(),
-  GO_TO_BAR: () => BAR(),
+  GO_TO_FOO: (): State => ({
+    state: 'FOO',
+  }),
+  GO_TO_BAR: (): State => ({
+    state: 'BAR',
+  }),
 };
 
 // Multiple transitions to be used in specific states
 const fooBarTransitions: TTransition<State, Action, 'FOO' | 'BAR'> = {
-  GO_TO_FOO: () => FOO(),
-  GO_TO_BAR: () => BAR(),
+  GO_TO_FOO: (): State => ({
+    state: 'FOO',
+  }),
+  GO_TO_BAR: (): State => ({
+    state: 'BAR',
+  }),
 };
 
 // All transitions
@@ -223,4 +225,55 @@ type State = ReturnType<typeof STATE_A>;
 const [state, dispatch] = useReducer(reducer);
 
 dispatch(state.ACTION_A({ foo: 'foo', bar: 'bar' }));
+```
+
+# Environment Interface
+
+```tsx
+import * as React from 'react';
+import { createEmitter } from 'react-states';
+
+export type EnvironmentEvent =
+  | {
+      type: 'DATA-FETCHER:FETCH_SUCCESS';
+      data: any[];
+    }
+  | {
+      type: 'DATA-FETCHER:FETCH_ERROR';
+      error: string;
+    };
+
+export type Environment = {
+  dataFetcher: {
+    fetch(): void;
+  };
+};
+
+const context = React.createContext({} as Environment);
+
+export const useEnvironment = () => React.useContext(context);
+
+export const EnvironmentProvider: React.FC<{ environment: Environment }> = ({ children, environment }) => (
+  <context.Provider value={environment}>{children}</context.Provider>
+);
+
+export const createEnvironment = (constr: (emit: TEmit<EnvironmentEvent>) => Environment) => {
+  const emitter = createEmitter<EnvironmentEvent>();
+  return {
+    ...emitter,
+    ...constr(emitter.emit),
+  };
+};
+```
+
+```ts
+import { createEnvironment } from '../environment-interface';
+
+export const environment = createEnvironment((emit) => ({
+  dataFetcher: {
+    fetch: () => {
+      emit({ type: 'DATA-FETCHER:FETCH_SUCCESS' });
+    },
+  },
+}));
 ```

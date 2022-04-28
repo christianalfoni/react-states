@@ -256,3 +256,27 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
 
   return reducer;
 };
+
+export type TEmit<T extends IAction> = (event: T) => void;
+
+export type TSubscribe<T extends IAction> = (listener: (event: T) => void) => void;
+
+export const createEmitter = <T extends IAction>(): {
+  emit: TEmit<T>;
+  subscribe: TSubscribe<T>;
+} => {
+  const listeners: TEmit<T>[] = [];
+
+  return {
+    emit(event) {
+      listeners.forEach((listener) => listener(event));
+    },
+    subscribe(listener) {
+      listeners.push(listener);
+
+      return () => {
+        listeners.splice(listeners.indexOf(listener), 1);
+      };
+    },
+  };
+};

@@ -248,6 +248,25 @@ it('should do something', () => {
 });
 ```
 
+#### createEmitter
+
+```ts
+import { createEmitter } from 'react-states';
+
+type SomeEvent =
+  | {
+      type: 'A';
+    }
+  | {
+      type: 'B';
+    };
+
+const emitter = createEmitter<SomeEvent>();
+
+emitter.emit({ type: 'A' });
+const dispose = emitter.subscribe((event) => {});
+```
+
 ### Utility Types
 
 #### TTransitions
