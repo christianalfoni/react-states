@@ -9,6 +9,8 @@ export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
 
 export const $COMMAND = Symbol('$COMMAND');
 
+const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
+
 export interface IState {
   state: string;
   [$COMMAND]?: ICommand;
@@ -50,26 +52,23 @@ export type PickState<S extends IState, T extends S['state'] = never> = [T] exte
   ? S
   : never;
 
-export type ReturnTypes<T extends Record<string, (...args: any[]) => any>, U> = {
-  [K in keyof T]: ReturnType<T[K]> extends U ? ReturnType<T[K]> : unknown;
-}[keyof T];
-
 export type PickAction<A extends IAction, T extends A['type']> = A extends { type: T } ? A : never;
 
 export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
 
 export type TTransition<S extends IState, A extends IAction, SS extends S['state'] = S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
-} &
-  {
-    [U in TStateActions<S & { state: SS }>]: (state: S & { state: SS }, action: A extends { type: U } ? A : never) => S;
-  };
+};
 
 export type TTransitions<S extends IState, A extends IAction> = {
   [SS in S['state']]: TTransition<S, A, SS>;
 };
 
-export function transition<S extends IState, A extends IAction>(state: S, action: A, transitions: TTransitions<S, A>) {
+export function transition<S extends IState, A extends IAction>(
+  state: S,
+  action: A,
+  transitions: TTransitions<S, A>,
+): S {
   let newState = state;
 
   // @ts-ignore
@@ -161,10 +160,9 @@ export function useStateEffect<S extends IState, SS extends S['state'] | S['stat
 
 export function match<S extends IState, T extends TMatch<S>>(
   state: S,
-  matches: T &
-    {
-      [K in keyof T]: S extends IState ? (K extends S['state'] ? T[K] : never) : never;
-    },
+  matches: T & {
+    [K in keyof T]: S extends IState ? (K extends S['state'] ? T[K] : never) : never;
+  },
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
@@ -185,7 +183,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S]
+  }[keyof S],
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -194,92 +192,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export class Emitter<S extends IAction> {
-  private listeners: Array<(subscription: S) => void> = [];
-  emit(subscription: S) {
-    this.listeners.forEach((listener) => listener(subscription));
-  }
-  subscribe(listener: (subscription: S) => void) {
-    this.listeners.push(listener);
-
-    return () => {
-      this.listeners.splice(this.listeners.indexOf(listener), 1);
-    };
-  }
-}
-
-export type TEmit<S extends IAction> = (subscription: S) => void;
-
-/**
- * @deprecated
- */
-export const createSubscription = <S extends IAction>() => new Emitter<S>();
-
-/**
- * @deprecated
- */
-export const useSubscription = <S extends IAction>(subscription: Emitter<S>, dispatch: React.Dispatch<S>) => {
-  React.useEffect(
-    () =>
-      subscription.subscribe((subscription) => {
-        dispatch(subscription);
-      }),
-    [],
-  );
-};
-
-export type TEnvironment = {
-  [api: string]: {
-    [key: string]: any;
-  };
-};
-
-const environmentContext = React.createContext({});
-
-/**
- * @deprecated
- */
-export const createEnvironment = <E extends Record<string, any>>() => {
-  const context = React.createContext<E>({} as E);
-  const Provider = ({ children, environment }: { children: React.ReactNode; environment: Partial<E> }) => {
-    return <context.Provider value={environment as E}>{children}</context.Provider>;
-  };
-
-  return {
-    EnvironmentProvider: Provider,
-    useEnvironment: () => React.useContext(context),
-  };
-};
-
-export const defineEnvironment = <E extends TEnvironment, EA extends IAction = never>() => {
-  const emitter = new Emitter<EA>();
-  const boundEmit = emitter.emit.bind(emitter);
-  const Provider = ({ children, environment }: { children: React.ReactNode; environment: E }) => {
-    return (
-      <environmentContext.Provider
-        // @ts-ignore
-        value={environment}
-      >
-        {children}
-      </environmentContext.Provider>
-    );
-  };
-
-  return {
-    EnvironmentProvider: Provider,
-    // @ts-ignore
-    useEnvironment: (): E & { emitter: Emitter<S> } => React.useContext(environmentContext),
-    createEnvironment: (environment: (emit: TEmit<EA>) => E) => {
-      return Object.assign(environment(boundEmit), {
-        emitter,
-      });
-    },
-  };
-};
-
-const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
-
-export const managerContext = React.createContext((null as unknown) as Manager);
+export const managerContext = React.createContext(null as unknown as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context

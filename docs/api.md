@@ -37,17 +37,15 @@ type Action =
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     NOT_LOADED: {
-      LOAD: () => ({ state: 'LOADING' }),
+      LOAD: (): State => ({ state: 'LOADING' }),
     },
     LOADING: {
-      LOAD_SUCCESS: (_, { data }) => ({ state: 'LOADED', data }),
-      LOAD_ERROR: (_, { error }) => ({ state: 'ERROR', error }),
+      LOAD_SUCCESS: (_, { data }): State => ({ state: 'LOADED', data }),
+      LOAD_ERROR: (_, { error }): State => ({ state: 'ERROR', error }),
     },
     LOADED: {},
     ERRORL: {},
   });
-
-export const useData = () => useReducer(reducer, { state: 'NOT_LOADED' });
 ```
 
 ### Utilities
@@ -173,17 +171,17 @@ type Action =
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     LOADING: {
-      LOAD_SUCCESS: (_, { data }) => ({
+      LOAD_SUCCESS: (_, { data }): State => ({
         state: 'LOADED',
         data,
       }),
-      LOAD_ERROR: (_, { error }) => ({
+      LOAD_ERROR: (_, { error }): State => ({
         state: 'ERROR',
         error,
       }),
     },
     LOADED: {
-      ADD_ITEM: ({ data }, { item }) => {
+      ADD_ITEM: ({ data }, { item }): State => {
         const data = [item].concat(data);
 
         return {
@@ -204,122 +202,6 @@ const DataComponent = () => {
 
   useCommandEffect(state, 'SAVE_DATA', ({ data }) => {
     localStorage.setItem('data', JSON.stringify(data));
-  });
-
-  return <div />;
-};
-```
-
-#### defineEnvironment
-
-```tsx
-import { defineEnvironment } from 'react-states';
-
-export type EnvironmentEvent =
-  | {
-      type: 'DATA:LOAD_SUCCESS';
-      data: string;
-    }
-  | {
-      type: 'DATA:LOAD_ERROR';
-      error: string;
-    };
-
-export type Environment = {
-  dataLoader: {
-    load(): void;
-  };
-};
-
-export const { createEnvironment, EnvironmentProvider, useEnvironment } = defineEnvironment<
-  Environment,
-  EnvironmentEvent
->();
-```
-
-##### createEnvironment
-
-```ts
-import { createEnvironment } from './environment-interface';
-
-export const environment = createEnvironment((emit) => ({
-  dataLoader: {
-    load() {
-      fetch('/data')
-        .then((response) => response.json())
-        .then((data) =>
-          emit({
-            type: 'DATA:LOAD_SUCCESS',
-            data,
-          }),
-        )
-        .catch((error) =>
-          emit({
-            type: 'DATA:LOAD_ERROR',
-            error: error.message,
-          }),
-        );
-    },
-  },
-}));
-```
-
-##### EnvironmentProvider
-
-```tsx
-import { EnvironmentProvider } from './environment-interface';
-import { environment } from './environments/browser';
-
-export const AppWrapper: React.FC = () => {
-  return (
-    <EnvironmentProvider environment={environment}>
-      <App />
-    </EnvironmentProvider>
-  );
-};
-```
-
-##### useEnvironment
-
-```tsx
-import { transition } from 'react-states';
-import { useEnvironment, EnvironmentEvent } from '../environment-interface';
-
-type State =
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      data: string[];
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
-
-type Action = {
-  type: 'LOAD';
-};
-
-const reducer = (state: State, action: Action | EnvironmentEvent) =>
-  transition(state, action, {
-    LOADING: {
-      'DATA:LOAD_SUCCESS': (_, { data }) => ({ state: 'LOADED', data }),
-      'DATA:LOAD_ERROR': (_, { error }) => ({ state: 'ERROR', error }),
-    },
-    LOADED: {},
-    ERRORL: {},
-  });
-
-const DataComponent = () => {
-  const { dataLoader, emitter } = useEnvironment();
-  const [state, dispatch] = useData();
-
-  useEffect(() => emitter.subscribe(dispatch));
-
-  useStateEffect(state, 'LOADING', () => {
-    dataLoader.load();
   });
 
   return <div />;
@@ -387,10 +269,14 @@ type Action = {
 
 const transitions: TTransitions<State, Action> = {
   FOO: {
-    SWITCH: (state, action) => BAR(),
+    SWITCH: (state, action): State => ({
+      state: 'BAR',
+    }),
   },
   BAR: {
-    SWITCH: (state, action) => FOO(),
+    SWITCH: (state, action): State => ({
+      state: 'FOO',
+    }),
   },
 };
 
@@ -415,13 +301,17 @@ type Action = {
 };
 
 const fooTransitions: TTransition<State, Action, 'FOO'> = {
-  SWITCH: (state, action) => BAR(),
+  SWITCH: (state, action): State => ({
+    state: 'FOO',
+  }),
 };
 
 const transitions: TTransitions<State, Action> = {
   FOO: fooTransitions,
   BAR: {
-    SWITCH: (state, action) => FOO(),
+    SWITCH: (state, action): State => ({
+      state: 'FOO',
+    }),
   },
 };
 
@@ -430,55 +320,11 @@ const reducer = (state: State, action: Action) => transition(state, action, tran
 const transitions: TTransitions<State, Action> = {
   FOO: fooTransitions,
   BAR: {
-    SWITCH: () => FOO(),
+    SWITCH: (): State => ({
+      state: 'FOO',
+    }),
   },
 };
-```
-
-#### TEmit
-
-```ts
-import { TEmit } from 'react-states';
-import { SomeApi, SomeApiEvent } from '../environment-interface/someApi';
-
-export const someApi = (emit: TEmit<SomeApiEvent>): SomeApi => ({
-  doThis() {
-    emit({ type: 'FOO' });
-  },
-});
-```
-
-#### ReturnTypes
-
-```ts
-import { ReturnTypes, IAction, IState, ICommand } from 'react-states';
-
-const states = {
-  FOO: () => ({
-    state: 'FOO' as const,
-  }),
-  BAR: () => ({
-    state: 'BAR' as const,
-  }),
-};
-
-type State = ReturnTypes<typeof states, IState>;
-
-const actions = {
-  SWITCH: () => ({
-    type: 'SWITCH' as const,
-  }),
-};
-
-type Action = ReturnTypes<typeof actions, IAction>;
-
-const commands = {
-  LOG: () => ({
-    cmd: 'LOG' as const,
-  }),
-};
-
-type Command = ReturnTypes<typeof actions, ICommand>;
 ```
 
 #### PickState

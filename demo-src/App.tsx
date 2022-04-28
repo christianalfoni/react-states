@@ -1,41 +1,44 @@
 import * as React from 'react';
 
 import { match, useCommandEffect, useDevtools, useStateEffect } from '../src';
-import { NOT_LOADED, reducer } from './reducers/todos';
-import { EnvironmentProvider, useEnvironment } from './environment-interface';
-import { browserEnvironment } from './environments/browser';
+import { reducer } from './reducers/todos';
 
 const Test = () => {
-  const { todosApi, emitter } = useEnvironment();
-  const todosReducer = React.useReducer(reducer, NOT_LOADED());
+  const todosReducer = React.useReducer(reducer, {
+    state: 'NOT_LOADED',
+  });
 
   useDevtools('Todos', todosReducer);
 
   const [state, dispatch] = todosReducer;
 
-  React.useEffect(() => emitter.subscribe(dispatch));
-
   useStateEffect(state, 'LOADING', () => {
-    todosApi.fetchTodos();
+    setTimeout(() => {
+      dispatch({
+        type: 'FETCH_TODOS_SUCCESS',
+        todos: [],
+      });
+    }, 500);
   });
 
   useCommandEffect(state, 'SAVE_TODO', ({ todo }) => {
-    todosApi.saveTodo(todo);
+    // Save somewhere
   });
 
   return match(state, {
-    NOT_LOADED: ({ FETCH_TODOS }) => <button onClick={() => dispatch(FETCH_TODOS())}>Fetch Todos</button>,
+    NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'FETCH_TODOS' })}>Fetch Todos</button>,
     LOADING: () => <h2>Loading...</h2>,
-    LOADED: ({ todos, ADD_TODO }) => (
+    LOADED: ({ todos }) => (
       <div>
         <button
           onClick={() => {
-            dispatch(
-              ADD_TODO({
+            dispatch({
+              type: 'ADD_TODO',
+              todo: {
                 completed: false,
                 title: 'New_' + Date.now(),
-              }),
-            );
+              },
+            });
           }}
         >
           Add Todo
@@ -63,11 +66,7 @@ export function App() {
       >
         toggle
       </button>
-      {state ? (
-        <EnvironmentProvider environment={browserEnvironment}>
-          <Test />
-        </EnvironmentProvider>
-      ) : null}
+      {state ? <Test /> : null}
     </div>
   );
 }
