@@ -59,22 +59,28 @@ import { useData } from './useData';
 const DataComponent = () => {
   const [state, dispatch] = useData();
 
-  return (
-    <div>
-      {match(state, {
-        NOT_LOADED: () => <button onClick={() => dispatch({ type: 'LOAD' })}>Load data</button>,
-        LOADING: () => 'Loading...',
-        LOADED: ({ data }) => (
-          <ul>
-            {data.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        ),
-        ERROR: ({ error }) => <span style={{ color: 'red' }}>{error}</span>,
-      })}
-    </div>
+  const partialMatch = match(
+    state,
+    {
+      LOADED: ({ data }) => data,
+    },
+    (otherStates) => [],
   );
+
+  const exhaustiveMatch = match(state, {
+    NOT_LOADED: () => <button onClick={() => dispatch({ type: 'LOAD' })}>Load data</button>,
+    LOADING: () => 'Loading...',
+    LOADED: ({ data }) => (
+      <ul>
+        {data.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    ),
+    ERROR: ({ error }) => <span style={{ color: 'red' }}>{error}</span>,
+  });
+
+  return <div />;
 };
 ```
 

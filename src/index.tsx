@@ -43,7 +43,11 @@ type TStateActions<S extends IState> = {
 }[S['state']];
 
 type TMatch<S extends IState, R = any> = {
-  [SS in S['state']]: (state: S extends { state: SS } ? S : never) => R;
+  [SS in S['state']]: (state: S & { state: SS }) => R;
+};
+
+type TPartialMatch<S extends IState, R = any> = {
+  [SS in S['state']]?: (state: S & { state: SS }) => R;
 };
 
 export type PickState<S extends IState, T extends S['state'] = never> = [T] extends [never]
@@ -160,23 +164,29 @@ export function useStateEffect<S extends IState, SS extends S['state'] | S['stat
 
 export function match<S extends IState, T extends TMatch<S>>(
   state: S,
-  matches: T & {
-    [K in keyof T]: S extends IState ? (K extends S['state'] ? T[K] : never) : never;
-  },
+  matches: T,
 ): {
   [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
 }[keyof T];
+export function match<S extends IState, T extends TPartialMatch<S>, U>(
+  state: S,
+  matches: T,
+  _: (state: S & { state: Exclude<S['state'], keyof T> }) => U,
+):
+  | {
+      [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
+    }[keyof T]
+  | U;
 export function match() {
   const state = arguments[0];
   const matches = arguments[1];
+  const _ = arguments[2];
 
-  if (matches) {
-    // @ts-ignore This is an exhaustive check
-    return matches[state.state](state);
+  if (_) {
+    return (matches[state.state] || _)(state);
   }
 
-  // @ts-ignore Too complex for TS to do this correctly
-  return (matches) => matches[state.state](state);
+  return matches[state.state](state);
 }
 
 export function matchProp<
