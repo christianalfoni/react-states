@@ -152,73 +152,84 @@ type State =
 Instead of defining your state, actions and commands with explicit types you can create state/action/command creators instead. This gives additional type safety by protecting against invalid spreading and gives explicit return types. It also allow action creators to be exposed through your state.
 
 ```ts
-const COMMAND_A = (someValue: string) => ({
-  cmd: 'COMMAND_B' as const,
-  someValue,
-});
+const commands = {
+  COMMAND_A: (someValue: string) => ({
+    cmd: 'COMMAND_B' as const,
+    someValue,
+  }),
+};
 
-type Command = ReturnType<typeof COMMAND_A>;
+type Command = ReturnType<typeof commands[keyof typeof commands]>;
 
-const ACTION_A = (params: { foo: string; bar: string }) => ({
-  type: 'ACTION_A' as const,
-});
+const actions = {
+  ACTION_A: (params: { foo: string; bar: string }) => ({
+    type: 'ACTION_A' as const,
+  }),
+  ACTION_B: (params: { foo: string; bar: string }) => ({
+    type: 'ACTION_B' as const,
+  }),
+};
 
-const ACTION_B = (params: { foo: string; bar: string }) => ({
-  type: 'ACTION_B' as const,
-});
+type Action = ReturnType<typeof actions[keyof typeof actions]>;
 
-type Action = ReturnType<typeof ACTION_A | typeof ACTION_B>;
+const states = {
+  // First argument is state related values and should always be
+  // destructured. This protects against TypeScript not protecting
+  // invalid spreading
+  STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_A' as const,
+    foo,
+    bar,
+  }),
 
-// First argument is state related values and should always be
-// destructured. This protects against TypeScript not protecting
-// invalid spreading
-const STATE_A = ({ foo, bar }: { foo: string; bar: string }) => ({
-  state: 'STATE_A' as const,
-  foo,
-  bar,
-});
+  // Use second argument for commands
+  STATE_B: ({ foo, bar }: { foo: string; bar: string }, command?: Command) => ({
+    state: 'STATE_B' as const,
+    foo,
+    bar,
+    [$COMMAND]: command,
+  }),
 
-// Use second argument for commands
-const STATE_B = ({ foo, bar }: { foo: string; bar: string }, command?: Command) => ({
-  state: 'STATE_B' as const,
-  foo,
-  bar,
-  [$COMMAND]: command,
-});
+  // When always firing a command, include it directly
+  STATE_C: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_C' as const,
+    foo,
+    bar,
+    [$COMMAND]: COMMAND_A({ foo: 'foo', bar: 'bar' }),
+  }),
 
-// When always firing a command, include it directly
-const STATE_C = ({ foo, bar }: { foo: string; bar: string }) => ({
-  state: 'STATE_C' as const,
-  foo,
-  bar,
-  [$COMMAND]: COMMAND_A({ foo: 'foo', bar: 'bar' }),
-});
+  // Include actions by spreading all or use pick utility
+  STATE_D: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_D' as const,
+    foo,
+    bar,
+  }),
+};
 
-// Include actions by spreading all or use pick utility
-const STATE_D = ({ foo, bar }: { foo: string; bar: string }) => ({
-  state: 'STATE_D' as const,
-  foo,
-  bar,
-});
+type State = ReturnType<typeof states[keyof typeof states]>;
 ```
 
 You can include action creators with the state to emphasize what actions are available in what states.
 
 ```ts
-const ACTION_A = (params: { foo: string; bar: string }) => ({
-  type: 'ACTION_A' as const,
-});
+const actions = {
+  ACTION_A: (params: { foo: string; bar: string }) => ({
+    type: 'ACTION_A' as const,
+  }),
+};
 
-type Action = ReturnType<typeof ACTION_A>;
+type Action = ReturnType<typeof actions[keyof typeof actions]>;
 
-const STATE_A = ({ foo, bar }: { foo: string; bar: string }) => ({
-  state: 'STATE_A' as const,
-  foo,
-  bar,
-  ACTION_A,
-});
+const states = {
+  STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
+    state: 'STATE_A' as const,
+    foo,
+    bar,
+    ACITON_A: actions.ACTION_A,
+  }),
+};
 
-type State = ReturnType<typeof STATE_A>;
+type State = ReturnType<typeof states[keyof typeof states]>;
 ```
 
 ```tsx
@@ -276,4 +287,23 @@ export const environment = createEnvironment((emit) => ({
     },
   },
 }));
+```
+
+```tsx
+import { EnvironmentProvider, useEnvironment } from '../environment-interface';
+import { environment } from '../environments/browser';
+
+const MyComponent = () => {
+  const { dataFetcher } = useEnvironment();
+
+  return <div />;
+};
+
+const App = () => {
+  return (
+    <EnvironmentProvider environment={environment}>
+      <MyComponent />
+    </EnvironmentProvider>
+  );
+};
 ```
