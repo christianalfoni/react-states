@@ -37,32 +37,7 @@ describe('react-states', () => {
       }),
     ).toBe(state);
   });
-  test('should exec effects based on state', () => {
-    const state = {
-      state: 'FOO',
-    };
-    let hasRun = false;
-    match(state, {
-      FOO: () => {
-        hasRun = true;
-      },
-    });
-    expect(hasRun).toBe(true);
-  });
-  test('should return disposer', () => {
-    const state = {
-      state: 'FOO',
-    };
-    let isDisposed = false;
-    const disposer = match(state, {
-      FOO: () => () => {
-        isDisposed = true;
-      },
-    });
-    disposer();
-    expect(isDisposed).toBe(true);
-  });
-  test('should transform', () => {
+  test('should match', () => {
     const state = {
       state: 'FOO',
     };
@@ -72,14 +47,27 @@ describe('react-states', () => {
       }),
     ).toBe('foo');
   });
-  test('should transform', () => {
-    const state = {
-      state: 'FOO',
-    };
+  test('should have fallback match', () => {
+    type State =
+      | {
+          state: 'FOO';
+        }
+      | {
+          state: 'BAR';
+        };
+    
+        const state = {
+      state: 'BAR',
+    } as State;
+    
     expect(
-      match(state, {
-        FOO: () => 'foo',
-      }),
-    ).toBe('foo');
+      match(
+        state,
+        {
+          FOO: () => 'foo',
+        },
+        () => 'bar',
+      ),
+    ).toBe('bar');
   });
 });
