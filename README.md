@@ -5,7 +5,7 @@
 ## Install
 
 ```sh
-npm install react-states@next
+npm install react-states
 ```
 
 ## Explaining explicit states
@@ -16,6 +16,7 @@ npm install react-states@next
 
 - [Resizer in the Devtools](./src/devtools//Resizer.tsx)
 - [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
+- [ExcalidrawFirebase](https://github.com/codesandbox/excalidraw-firebase/tree/main/src)
 
 ## Documentation
 
