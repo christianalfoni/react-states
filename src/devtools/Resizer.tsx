@@ -1,32 +1,8 @@
 import * as React from 'react';
-import { createReducer, match, useEnterEffect, useMatchEffect, useTransientEffect, WithTransientContext } from '../';
+import { transition, useCommandEffect, useStateEffect, PickCommand, match, $COMMAND } from '../';
 import { colors } from './styles';
 
-type Context =
-  | {
-      state: 'IDLE';
-    }
-  | {
-      state: 'DETECTING_RESIZE';
-      initialX: number;
-    }
-  | {
-      state: 'RESIZING';
-      x: number;
-    };
-
-type TransientContext =
-  | {
-      state: 'NOTIFYING_RESIZE';
-      x: number;
-    }
-  | {
-      state: 'NOTIFYING_CLICK';
-    };
-
-type FeatureContext = WithTransientContext<TransientContext, Context>;
-
-type Event =
+type Action =
   | {
       type: 'MOUSE_MOVE';
       x: number;
@@ -43,42 +19,56 @@ type Event =
       x: number;
     };
 
-const reducer = createReducer<FeatureContext, Event>(
-  {
+const $NOTIFY_CLICK = () => ({
+  cmd: 'NOTIFY_CLICK' as const,
+});
+
+const $NOTIFY_RESIZE = (x: number) => ({
+  cmd: 'NOTIFY_RESIZE' as const,
+  x,
+});
+
+type Command = ReturnType<typeof $NOTIFY_CLICK | typeof $NOTIFY_RESIZE>;
+
+const IDLE = (command?: PickCommand<Command, 'NOTIFY_CLICK'>) => ({
+  state: 'IDLE' as const,
+  [$COMMAND]: command,
+});
+
+const DETECTING_RESIZE = (initialX: number) => ({
+  state: 'DETECTING_RESIZE' as const,
+  initialX,
+});
+
+const RESIZING = (x: number) => ({
+  state: 'RESIZING' as const,
+  x,
+  [$COMMAND]: $NOTIFY_RESIZE(x),
+});
+
+type State = ReturnType<typeof IDLE | typeof DETECTING_RESIZE | typeof RESIZING>;
+
+const reducer = (state: State, action: Action) =>
+  transition(state, action, {
     IDLE: {
-      MOUSE_DOWN: ({ x }) => ({
-        state: 'DETECTING_RESIZE',
-        initialX: x,
-      }),
+      MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE(x),
     },
     DETECTING_RESIZE: {
-      MOUSE_MOVE: ({ x }, context) => {
-        if (Math.abs(x - context.initialX) > 3) {
-          return { state: 'RESIZING', x };
+      MOUSE_MOVE: (mouseDownState, { x }) => {
+        if (Math.abs(x - mouseDownState.initialX) > 3) {
+          return RESIZING(x);
         }
 
-        return context;
+        return mouseDownState;
       },
-      MOUSE_UP: () => ({ state: 'IDLE' }),
-      MOUSE_UP_RESIZER: () => ({
-        state: 'NOTIFYING_CLICK',
-      }),
+      MOUSE_UP: () => IDLE(),
+      MOUSE_UP_RESIZER: () => IDLE($NOTIFY_CLICK()),
     },
     RESIZING: {
-      MOUSE_MOVE: ({ x }) => ({ state: 'NOTIFYING_RESIZE', x }),
-      MOUSE_UP: () => ({ state: 'IDLE' }),
+      MOUSE_MOVE: (_, { x }) => RESIZING(x),
+      MOUSE_UP: () => IDLE(),
     },
-  },
-  {
-    NOTIFYING_RESIZE: ({ x }) => ({
-      state: 'RESIZING',
-      x,
-    }),
-    NOTIFYING_CLICK: () => ({
-      state: 'IDLE',
-    }),
-  },
-);
+  });
 
 export const Resizer = ({
   onResize,
@@ -89,19 +79,17 @@ export const Resizer = ({
   onClick: () => void;
   isOpen: boolean;
 }) => {
-  const [resize, send] = React.useReducer(reducer, {
-    state: 'IDLE',
-  });
+  const [resizer, dispatch] = React.useReducer(reducer, IDLE());
 
-  useMatchEffect(resize, ['DETECTING_RESIZE', 'RESIZING'], () => {
+  useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
-      send({
+      dispatch({
         type: 'MOUSE_MOVE',
         x: event.clientX,
       });
     };
     const onMouseUp = (event: MouseEvent) => {
-      send({
+      dispatch({
         type: 'MOUSE_UP',
         x: event.clientX,
       });
@@ -116,34 +104,45 @@ export const Resizer = ({
     };
   });
 
-  useTransientEffect(resize, 'NOTIFYING_RESIZE', ({ x }) => {
+  useCommandEffect(resizer, 'NOTIFY_RESIZE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useTransientEffect(resize, 'NOTIFYING_CLICK', () => {
+  useCommandEffect(resizer, 'NOTIFY_CLICK', () => {
     onClick();
   });
 
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        height: '100%',
-        width: '10px',
-        backgroundColor: colors.blue,
-        userSelect: 'none',
-      }}
-      onMouseUp={() => {
-        send({
-          type: 'MOUSE_UP_RESIZER',
-        });
-      }}
-      onMouseDown={(event) => {
-        send({
-          type: 'MOUSE_DOWN',
-          x: event.clientX,
-        });
-      }}
-    />
-  );
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    height: '100%',
+    width: '10px',
+    backgroundColor: colors.blue,
+    userSelect: 'none',
+    zIndex: 99999999,
+  };
+
+  return match(resizer, {
+    IDLE: () => (
+      <div
+        style={style}
+        onMouseDown={(event) => {
+          dispatch({
+            type: 'MOUSE_DOWN',
+            x: event.clientX,
+          });
+        }}
+      />
+    ),
+    DETECTING_RESIZE: () => (
+      <div
+        style={style}
+        onMouseUp={() => {
+          dispatch({
+            type: 'MOUSE_UP_RESIZER',
+          });
+        }}
+      />
+    ),
+    RESIZING: () => <div style={style} />,
+  });
 };

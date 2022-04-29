@@ -1,31 +1,38 @@
-import { match, createReducer } from '.';
+import { COMMANDS, match, transition } from '.';
+
+type State = { state: 'FOO' } | { state: 'BAR' };
+type Action = { type: 'SWITCH' };
 
 describe('react-states', () => {
   test('should transition states', () => {
-    const context = {
+    const state: State = {
       state: 'FOO',
     };
-    const transition = createReducer({
-      FOO: {
-        SWITCH: () => ({ state: 'BAR' }),
-      },
-      BAR: {},
-    });
+
+    const run = (state: State, action: Action) =>
+      transition(state, action, {
+        FOO: {
+          SWITCH: (): State => ({ state: 'BAR' }),
+        },
+        BAR: {},
+      });
     expect(
-      transition(context, {
+      run(state, {
         type: 'SWITCH',
       }).state,
     ).toBe('BAR');
   });
   test('should ignore invalid transitions', () => {
-    const state = {
+    const state: State = {
       state: 'FOO',
     };
-    const transition = createReducer({
-      FOO: {},
-    });
+    const run = (state: State, action: Action) =>
+      transition(state, action, {
+        FOO: {},
+        BAR: {},
+      });
     expect(
-      transition(state, {
+      run(state, {
         type: 'SWITCH',
       }),
     ).toBe(state);
@@ -74,5 +81,34 @@ describe('react-states', () => {
         FOO: () => 'foo',
       }),
     ).toBe('foo');
+  });
+  test('should handle commands', () => {
+    const state: State = {
+      state: 'FOO',
+    };
+    type Command = {
+      cmd: 'TEST';
+    };
+    const run = (state: State, action: Action) =>
+      transition<State, Action, Command>(state, action, {
+        FOO: {
+          SWITCH: ({ state }) => [
+            state,
+            {
+              cmd: 'TEST',
+            },
+          ],
+        },
+        BAR: {},
+      });
+
+    const newState = run(state, {
+      type: 'SWITCH',
+    });
+
+    expect(newState.state).toBe(state.state);
+    expect((newState as any)[COMMANDS].TEST).toEqual({
+      cmd: 'TEST',
+    });
   });
 });

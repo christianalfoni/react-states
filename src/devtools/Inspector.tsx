@@ -98,7 +98,7 @@ const PathKey = ({ path, onClickPath, onToggleExpand, disabled, delimiter }: Pat
       onClick={
         disabled
           ? undefined
-          : event => {
+          : (event) => {
               event.stopPropagation();
               if (onClickPath && (event.metaKey || event.ctrlKey)) {
                 onClickPath(path.split(delimiter));
@@ -151,7 +151,7 @@ const Nested = React.memo(
       return (
         <div
           style={styles.inlineNested}
-          onClick={event => {
+          onClick={(event) => {
             event.stopPropagation();
             onToggleExpand(path.split(delimiter));
           }}
@@ -167,7 +167,7 @@ const Nested = React.memo(
       return (
         <div
           style={styles.inlineNested}
-          onClick={event => {
+          onClick={(event) => {
             event.stopPropagation();
             onToggleExpand(path.split(delimiter));
           }}
@@ -184,12 +184,7 @@ const Nested = React.memo(
             {isArray ? (
               keys.length + ' items'
             ) : (
-              <span style={styles.inlineNested}>
-                {keys
-                  .sort()
-                  .slice(0, 3)
-                  .join(', ') + '...'}
-              </span>
+              <span style={styles.inlineNested}>{keys.sort().slice(0, 3).join(', ') + '...'}</span>
             )}
           </span>
           {endBracket}
@@ -201,7 +196,7 @@ const Nested = React.memo(
       <div>
         <div
           style={styles.bracket(true)}
-          onClick={event => {
+          onClick={(event) => {
             event.stopPropagation();
             onToggleExpand(path.split(delimiter));
           }}
@@ -232,7 +227,7 @@ const Nested = React.memo(
               )
             : Object.keys(value)
                 .sort()
-                .map(key => {
+                .map((key) => {
                   return renderValue({
                     path: path.concat((path ? delimiter : '') + key),
                     value: value[key],
@@ -300,6 +295,20 @@ const ValueComponent = React.memo(
           <div onMouseOver={() => setHoveringString(true)} onMouseOut={() => setHoveringString(false)}>
             "{value.length > 50 && !isHoveringString ? value.substr(0, 50) + '...' : value}"
           </div>
+        </div>
+      );
+    }
+
+    if (typeof value === 'function') {
+      return (
+        <div style={styles.otherValue}>
+          <PathKey
+            path={path}
+            delimiter={delimiter}
+            onClickPath={onClickPath}
+            disabled={!onSubmitState || hasWrapper}
+          />
+          <div>action</div>
         </div>
       );
     }

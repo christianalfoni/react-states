@@ -1,66 +1,17 @@
 import * as React from 'react';
 import { Resizer } from './Resizer';
-import { DEBUG_TRANSITIONS, DEBUG_IS_EVENT_IGNORED, States } from '../';
+import { managerContext } from '../';
 
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
 
-const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
-
-const managerContext = React.createContext({} as Manager);
-
 export const useDevtoolsManager = () => React.useContext(managerContext);
 
-// We have to type as any as States<any, any> throws error not matching
-// the explicit context
-export const useDevtools = (id: string, reducer: States<any, any>) => {
-  const manager = React.useContext(managerContext);
-  const [context, dispatch] = reducer;
-
-  React.useEffect(() => () => manager.dispose(id), [id, manager]);
-
-  reducer[1] = (event: any) => {
-    event[DEBUG_IS_EVENT_IGNORED] = false;
-
-    dispatch(event);
-
-    if (event.type === DEBUG_TRIGGER_TRANSITIONS) {
-      manager.onMessage(id, {
-        type: 'transitions',
-        // @ts-ignore
-        transitions: context[DEBUG_TRANSITIONS],
-      });
-      return;
-    }
-
-    manager.onMessage(id, {
-      type: 'dispatch',
-      event,
-      ignored: event[DEBUG_IS_EVENT_IGNORED],
-    });
-  };
-
-  React.useEffect(() => {
-    manager.onMessage(id, {
-      type: 'state',
-      context,
-      // @ts-ignore
-      transitions: context[DEBUG_TRANSITIONS],
-      triggerTransitions: () => {
-        // We dispatch to ensure the transition is run
-        reducer[1]({
-          type: DEBUG_TRIGGER_TRANSITIONS,
-        });
-      },
-    });
-  }, [id, manager, context]);
-};
-
-export const DevtoolsProvider = ({ children }: { children: React.ReactNode }) => {
+export const DevtoolsProvider = ({ children, show = true }: { children: React.ReactNode; show?: boolean }) => {
   return (
     <managerContext.Provider value={new Manager()}>
-      <div suppressHydrationWarning>{typeof document === 'undefined' ? null : <DevtoolsManager />}</div>
+      <div suppressHydrationWarning>{typeof document === 'undefined' || !show ? null : <DevtoolsManager />}</div>
       {children}
     </managerContext.Provider>
   );

@@ -1,37 +1,72 @@
 import * as React from 'react';
-import { match } from '../src';
-import { useAuth } from './AuthFeature';
+
+import { match, useCommandEffect, useDevtools, useStateEffect } from '../src';
+import { reducer } from './reducers/todos';
 
 const Test = () => {
-  const [auth, send] = useAuth();
-
-  match(auth, {
-    LOADED: () => null,
+  const todosReducer = React.useReducer(reducer, {
+    state: 'NOT_LOADED',
   });
 
-  return (
-    <h2
-      onClick={() => {
-        send({
-          type: 'TODO_ADDED',
-          todo: {
-            completed: true,
-            title: 'Awesome',
-          },
-        });
-      }}
-    >
-      Start editing to see some magic!
-    </h2>
-  );
+  useDevtools('Todos', todosReducer);
+
+  const [state, dispatch] = todosReducer;
+
+  useStateEffect(state, 'LOADING', () => {
+    setTimeout(() => {
+      dispatch({
+        type: 'FETCH_TODOS_SUCCESS',
+        todos: [],
+      });
+    }, 500);
+  });
+
+  useCommandEffect(state, 'SAVE_TODO', ({ todo }) => {
+    // Save somewhere
+  });
+
+  return match(state, {
+    NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'FETCH_TODOS' })}>Fetch Todos</button>,
+    LOADING: () => <h2>Loading...</h2>,
+    LOADED: ({ todos }) => (
+      <div>
+        <button
+          onClick={() => {
+            dispatch({
+              type: 'ADD_TODO',
+              todo: {
+                completed: false,
+                title: 'New_' + Date.now(),
+              },
+            });
+          }}
+        >
+          Add Todo
+        </button>
+        <ul>
+          {todos.map((todo, index) => (
+            <li key={index}>{todo.title}</li>
+          ))}
+        </ul>
+      </div>
+    ),
+    ERROR: ({ error }) => <h4>{error}</h4>,
+  });
 };
 
 export function App() {
-  const [auth, dispatch] = useAuth();
+  const [state, setState] = React.useState(true);
 
   return (
     <div className="App">
-      <Test />
+      <button
+        onClick={() => {
+          setState(!state);
+        }}
+      >
+        toggle
+      </button>
+      {state ? <Test /> : null}
     </div>
   );
 }

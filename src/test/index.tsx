@@ -1,9 +1,8 @@
 import { render } from '@testing-library/react';
 import React from 'react';
-import { States } from '..';
 
-export function renderHook<T extends States<any, any>>(
-  hookCallback: () => T,
+export function renderReducer<T extends [any, React.Dispatch<any>]>(
+  reducerCallback: () => T,
   renderCallback: (UseStates: React.FC) => Parameters<typeof render>[0],
 ) {
   // We create an emmpty context object only used for the testing, this
@@ -12,13 +11,13 @@ export function renderHook<T extends States<any, any>>(
   // itself in the test, but can not see any reason why you would want to
   const statesReducer: T = [{}, () => {}] as any;
   const HookComponent = () => {
-    const updatedStatesReducer = hookCallback();
+    const updatedStatesReducer = reducerCallback();
     // We clean up the testing object
-    Object.keys(statesReducer[0]).forEach(key => {
+    Object.keys(statesReducer[0]).forEach((key) => {
       delete statesReducer[0][key];
     });
     // We update from the updated statesReducer
-    Object.keys(updatedStatesReducer[0]).forEach(key => {
+    Object.keys(updatedStatesReducer[0]).forEach((key) => {
       statesReducer[0][key] = updatedStatesReducer[0][key];
     });
     // We update the dispatcher as well, though really
@@ -29,3 +28,8 @@ export function renderHook<T extends States<any, any>>(
   render(renderCallback(HookComponent));
   return statesReducer;
 }
+
+/**
+ * @deprecated
+ */
+export const renderHook = renderReducer;

@@ -12,6 +12,7 @@ result.js.map
 cjs
 test
 !src/*
+!tutorials/**/*
 
 ### macOS ###
 *.DS_Store
