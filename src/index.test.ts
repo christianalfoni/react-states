@@ -1,4 +1,4 @@
-import { COMMANDS, match, transition } from '.';
+import { match, transition } from '.';
 
 type State = { state: 'FOO' } | { state: 'BAR' };
 type Action = { type: 'SWITCH' };
@@ -81,34 +81,5 @@ describe('react-states', () => {
         FOO: () => 'foo',
       }),
     ).toBe('foo');
-  });
-  test('should handle commands', () => {
-    const state: State = {
-      state: 'FOO',
-    };
-    type Command = {
-      cmd: 'TEST';
-    };
-    const run = (state: State, action: Action) =>
-      transition<State, Action, Command>(state, action, {
-        FOO: {
-          SWITCH: ({ state }) => [
-            state,
-            {
-              cmd: 'TEST',
-            },
-          ],
-        },
-        BAR: {},
-      });
-
-    const newState = run(state, {
-      type: 'SWITCH',
-    });
-
-    expect(newState.state).toBe(state.state);
-    expect((newState as any)[COMMANDS].TEST).toEqual({
-      cmd: 'TEST',
-    });
   });
 });
