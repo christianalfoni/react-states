@@ -8,15 +8,17 @@
 npm install react-states
 ```
 
-## Explaining explicit states
+## Introduction to react-states
 
-[![react-states](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://www.youtube.com/watch?v=ul_3ABrpj64)
+[![react-states](https://img.youtube.com/vi/4M--Kp41CjI/0.jpg)](https://www.youtube.com/watch?v=4M--Kp41CjI)
 
 ## Examples
 
+https://youtu.be/4M--Kp41CjI
+
 - [Resizer in the Devtools](./src/devtools//Resizer.tsx)
-- [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
 - [ExcalidrawFirebase](https://github.com/codesandbox/excalidraw-firebase/tree/main/src)
+- [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
 
 ## Documentation
 
