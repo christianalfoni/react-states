@@ -14,8 +14,6 @@ npm install react-states
 
 ## Examples
 
-https://youtu.be/4M--Kp41CjI
-
 - [Resizer in the Devtools](./src/devtools//Resizer.tsx)
 - [ExcalidrawFirebase](https://github.com/codesandbox/excalidraw-firebase/tree/main/src)
 - [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
