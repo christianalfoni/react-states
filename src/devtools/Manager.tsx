@@ -1,4 +1,4 @@
-import { IAction, ICommand, IState } from '../';
+import { IAction, IState } from '../';
 
 export type DevtoolMessage =
   | {
@@ -32,10 +32,6 @@ export type HistoryItem =
   | {
       type: 'state';
       state: IState;
-    }
-  | {
-      type: 'command';
-      command: ICommand;
     }
   | {
       type: 'action';
@@ -118,22 +114,7 @@ export class Manager {
         };
         break;
       }
-      case 'command': {
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            history: [
-              {
-                type: 'command',
-                command: message.command,
-              },
-              ...this.states[id].history,
-            ],
-          },
-        };
-        break;
-      }
+
       case 'transitions': {
         this.states = {
           ...this.states,

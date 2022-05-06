@@ -1,4 +1,4 @@
-import { transition, PickCommand, $COMMAND } from '../../src';
+import { transition } from '../../src';
 
 type Todo = {
   title: string;
@@ -20,7 +20,6 @@ type State =
   | {
       state: 'LOADED';
       todos: Todo[];
-      [$COMMAND]?: PickCommand<Command, 'SAVE_TODO'>;
     }
   | {
       state: 'ERROR';
@@ -65,10 +64,6 @@ export const reducer = (state: State, action: Action) =>
       ADD_TODO: (state, { todo }): State => ({
         state: 'LOADED',
         todos: [todo].concat(state.todos),
-        [$COMMAND]: {
-          cmd: 'SAVE_TODO',
-          todo,
-        },
       }),
     },
     ERROR: {},

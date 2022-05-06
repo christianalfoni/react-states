@@ -1,119 +1,79 @@
-import * as React from "react";
-import { HistoryItem } from "./Manager";
-import { colors } from "./styles";
-import ValueInspector from "./ValueInspector";
+import * as React from 'react';
+import { HistoryItem } from './Manager';
+import { colors } from './styles';
+import ValueInspector from './ValueInspector';
 
-export const History = React.memo(
-  ({
-    history,
-    filterIgnored,
-  }: {
-    history: HistoryItem[];
-    filterIgnored: boolean;
-  }) => {
-    return (
-      <ul
-        style={{
-          listStyleType: "none",
-          padding: 0,
-          color: colors.text,
-          marginBottom: "0.5rem",
-          fontSize: "14px",
-        }}
-      >
-        {history.map((item, index) => {
-          if (item.type === "command") {
-            // @ts-ignore
-            return (
-              <li
-                key={index + item.command.cmd}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: "0.25rem",
-                    fontSize: "12px",
-                    color: colors.yellow,
-                  }}
-                >
-                  command
-                </span>
-                <span
-                  style={{
-                    marginRight: "0.25rem",
-                  }}
-                >
-                  {item.command.cmd}
-                </span>
-                <ValueInspector value={item.command} small />
-              </li>
-            );
-          }
-
-          if (item.type === "state") {
-            return (
-              <li
-                key={index}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                <span
-                  style={{
-                    marginRight: "0.25rem",
-                    fontSize: "12px",
-                    color: colors.orange,
-                  }}
-                >
-                  state
-                </span>
-                <span
-                  style={{
-                    marginRight: "0.25rem",
-                  }}
-                >
-                  {item.state.state}
-                </span>
-                <ValueInspector value={item.state} small />
-              </li>
-            );
-          }
-
-          if (item.ignored && filterIgnored) {
-            return null;
-          }
-
+export const History = React.memo(({ history, filterIgnored }: { history: HistoryItem[]; filterIgnored: boolean }) => {
+  return (
+    <ul
+      style={{
+        listStyleType: 'none',
+        padding: 0,
+        color: colors.text,
+        marginBottom: '0.5rem',
+        fontSize: '14px',
+      }}
+    >
+      {history.map((item, index) => {
+        if (item.type === 'state') {
           return (
             <li
               key={index}
               style={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: "0.25rem",
-                opacity: item.ignored ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '0.25rem',
               }}
             >
               <span
                 style={{
-                  marginRight: "0.25rem",
-                  fontSize: "12px",
-                  color: colors.green,
+                  marginRight: '0.25rem',
+                  fontSize: '12px',
+                  color: colors.orange,
                 }}
               >
-                action
+                state
               </span>
-              <span style={{ marginRight: "0.25rem" }}>{item.action.type}</span>
-              <ValueInspector value={item.action} small />
+              <span
+                style={{
+                  marginRight: '0.25rem',
+                }}
+              >
+                {item.state.state}
+              </span>
+              <ValueInspector value={item.state} small />
             </li>
           );
-        })}
-      </ul>
-    );
-  }
-);
+        }
+
+        if (item.ignored && filterIgnored) {
+          return null;
+        }
+
+        return (
+          <li
+            key={index}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '0.25rem',
+              opacity: item.ignored ? 0.5 : 1,
+            }}
+          >
+            <span
+              style={{
+                marginRight: '0.25rem',
+                fontSize: '12px',
+                color: colors.green,
+              }}
+            >
+              action
+            </span>
+            <span style={{ marginRight: '0.25rem' }}>{item.action.type}</span>
+            <ValueInspector value={item.action} small />
+          </li>
+        );
+      })}
+    </ul>
+  );
+});

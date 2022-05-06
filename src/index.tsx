@@ -1,46 +1,22 @@
 import React, { Dispatch } from 'react';
 import type { Manager } from './devtools/Manager';
 
-export const DEBUG_ACTION = Symbol('DEBUG_ACTION');
+export const $ACTION = Symbol('ACTION');
+export const $PREV_STATE = Symbol('PREV_STATE');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
-export const ENVIRONMENT_CMD = '$CALL_ENVIRONMENT';
-
-export const $COMMAND = Symbol('$COMMAND');
 
 const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 
 export interface IState {
   state: string;
-  [$COMMAND]?: ICommand;
+  [$ACTION]?: IAction;
 }
 
 export interface IAction {
   type: string;
 }
-
-export interface ICommand {
-  cmd: string;
-}
-
-type TStateCommands<S extends IState> = {
-  [K in S['state']]: S extends {
-    state: K;
-  }
-    ? S extends { [$COMMAND]?: ICommand }
-      ? Exclude<S[typeof $COMMAND], undefined>['cmd']
-      : never
-    : never;
-}[S['state']];
-
-type TStateActions<S extends IState> = {
-  [K in S['state']]: S extends { state: K }
-    ? {
-        [K in keyof S]: S[K] extends (...params: any[]) => infer A ? (A extends IAction ? A['type'] : never) : never;
-      }[keyof S]
-    : never;
-}[S['state']];
 
 type TMatch<S extends IState, R = any> = {
   [SS in S['state']]: (state: S & { state: SS }) => R;
@@ -58,8 +34,6 @@ export type PickState<S extends IState, T extends S['state'] = never> = [T] exte
 
 export type PickAction<A extends IAction, T extends A['type']> = A extends { type: T } ? A : never;
 
-export type PickCommand<C extends ICommand, T extends C['cmd']> = C extends { cmd: T } ? C : never;
-
 export type TTransition<S extends IState, A extends IAction, SS extends S['state'] = S['state']> = {
   [AA in A['type']]?: (state: S & { state: SS }, action: A extends { type: AA } ? A : never) => S;
 };
@@ -72,7 +46,7 @@ export function transition<S extends IState, A extends IAction>(
   state: S,
   action: A,
   transitions: TTransitions<S, A>,
-): S {
+): S & { [$ACTION]?: A } {
   let newState = state;
 
   // @ts-ignore
@@ -82,12 +56,14 @@ export function transition<S extends IState, A extends IAction>(
   if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
     newState = transitions[state.state][action.type](state, action);
-
+    newState[$ACTION] = action;
     // @ts-ignore
-    action[DEBUG_ACTION] && newState !== state && action[DEBUG_ACTION](debugId, false);
+    newState[$PREV_STATE] = state;
+    // @ts-ignore
+    action[$ACTION] && newState !== state && action[$ACTION](debugId, false);
   } else {
     // @ts-ignore
-    action[DEBUG_ACTION] && action[DEBUG_ACTION](debugId, true);
+    action[$ACTION] && action[$ACTION](debugId, true);
   }
 
   if (debugId) {
@@ -98,67 +74,85 @@ export function transition<S extends IState, A extends IAction>(
     newState[DEBUG_TRANSITIONS] = transitions;
   }
 
-  return newState;
+  return newState as any;
 }
 
-export function useCommandEffect<S extends IState, CC extends TStateCommands<S>>(
-  state: S,
-  cmd: CC,
-  effect: (
-    command: S extends { [$COMMAND]?: ICommand } ? Exclude<S[typeof $COMMAND], undefined> & { cmd: CC } : never,
-  ) => void,
-) {
-  // @ts-ignore
-  const command = state[$COMMAND]?.cmd === cmd ? state[$COMMAND] : undefined;
-
-  React.useEffect(() => {
-    if (command) {
-      // @ts-ignore
-      effect(command);
-
-      // @ts-ignore
-      if (state[DEBUG_COMMAND]) {
-        // @ts-ignore
-        state[DEBUG_COMMAND](command);
+/**
+ * @deprecated
+ * Use useTransitionEffect instead
+ */
+export const useStateEffect = useTransitionEffect;
+export function useTransitionEffect<
+  S extends IState,
+  SS extends
+    | S['state']
+    | S['state'][]
+    | {
+        from: S['state'];
+        action: Exclude<S[typeof $ACTION], undefined>['type'];
+        to: S['state'];
       }
-    }
-    // We always transition transient states, as they are always entered
-  }, [command]);
-}
-
-export function useStateEffect<S extends IState, SS extends S['state'] | S['state'][]>(
+>(
   state: S,
   current: SS,
   effect: (
-    state: SS extends S['state'][]
+    state: SS extends {
+      from: S['state'];
+      action: Exclude<S[typeof $ACTION], undefined>['type'];
+      to: S['state'];
+    }
+      ? S extends { state: SS['to'] }
+        ? S
+        : never
+      : SS extends S['state'][]
       ? S extends { state: SS[number] }
         ? S
         : never
       : S extends { state: SS }
       ? S
       : never,
+    action: SS extends {
+      from: S['state'];
+      action: Exclude<S[typeof $ACTION], undefined>['type'];
+      to: S['state'];
+    }
+      ? Exclude<S[typeof $ACTION], undefined> & { type: SS['action'] }
+      : Exclude<S[typeof $ACTION], undefined>,
   ) => void | (() => void),
 ) {
-  if (Array.isArray(current)) {
+  if (typeof current === 'string') {
+    React.useEffect(() => {
+      // @ts-ignore
+      if (state.state === current) {
+        // @ts-ignore
+        return effect(state, state[$ACTION]);
+      }
+      // We only run the effect when actually moving to a new state
+      // @ts-ignore
+    }, [state.state === current]);
+  } else if (Array.isArray(current)) {
     // @ts-ignore
     const shouldRun = current.includes(state.state);
 
     React.useEffect(() => {
       if (shouldRun) {
         // @ts-ignore
-        return effect(state);
+        return effect(state, state[$ACTION]);
       }
     }, [shouldRun]);
   } else {
     React.useEffect(() => {
-      // @ts-ignore
-      if (state.state === current) {
+      if (
         // @ts-ignore
-        return effect(state);
+        state[$PREV_STATE]?.state === current.from &&
+        state.state === current.to &&
+        state[$ACTION]?.type === current.action
+      ) {
+        // @ts-ignore
+        return effect(state, state[$ACTION]);
       }
-      // We only run the effect when actually moving to a new state
-      // @ts-ignore
-    }, [state.state === current]);
+      // We only run the effect when the condition is true
+    }, [state]);
   }
 }
 
@@ -193,7 +187,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S],
+  }[keyof S]
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -202,7 +196,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export const managerContext = React.createContext(null as unknown as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
@@ -229,7 +223,7 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   };
 
   reducer[1] = (action: any) => {
-    action[DEBUG_ACTION] = (id: string, isIgnored: boolean) => {
+    action[$ACTION] = (id: string, isIgnored: boolean) => {
       manager.onMessage(id, {
         type: 'dispatch',
         action,
