@@ -82,27 +82,21 @@ export function transition<S extends IState, A extends IAction>(
  * Use useTransitionEffect instead
  */
 export const useStateEffect = useTransitionEffect;
-export function useTransitionEffect<
-  S extends IState,
-  SS extends
-    | S['state']
-    | S['state'][]
-    | {
-        from: S['state'];
-        to: S['state'];
-      }
->(
+
+export function useTransitionEffect<S extends IState, FS extends S['state'], TS extends S['state']>(
+  state: S,
+  from: FS,
+  to: TS,
+  effect: (
+    state: S extends { state: TS } ? S : never,
+    action: Exclude<S[typeof $ACTION], undefined>,
+  ) => void | (() => void),
+): void;
+export function useTransitionEffect<S extends IState, SS extends S['state'] | S['state'][]>(
   state: S,
   current: SS,
   effect: (
-    state: SS extends {
-      from: S['state'];
-      to: S['state'];
-    }
-      ? S extends { state: SS['to'] }
-        ? S
-        : never
-      : SS extends S['state'][]
+    state: SS extends S['state'][]
       ? S extends { state: SS[number] }
         ? S
         : never
@@ -111,8 +105,26 @@ export function useTransitionEffect<
       : never,
     action: Exclude<S[typeof $ACTION], undefined>,
   ) => void | (() => void),
-) {
-  if (typeof current === 'string') {
+): void;
+export function useTransitionEffect() {
+  const state = arguments[0];
+  const current = arguments[1];
+  const next = arguments[2];
+  const effect = arguments[3] || arguments[2];
+
+  if (typeof current === 'string' && typeof next === 'string') {
+    React.useEffect(() => {
+      if (
+        // @ts-ignore
+        state[$PREV_STATE]?.state === current &&
+        state.state === next
+      ) {
+        // @ts-ignore
+        return effect(state, state[$ACTION]);
+      }
+      // We only run the effect when the condition is true
+    }, [state]);
+  } else if (typeof current === 'string') {
     React.useEffect(() => {
       // @ts-ignore
       if (state.state === current) {
@@ -132,18 +144,6 @@ export function useTransitionEffect<
         return effect(state, state[$ACTION]);
       }
     }, [shouldRun]);
-  } else {
-    React.useEffect(() => {
-      if (
-        // @ts-ignore
-        state[$PREV_STATE]?.state === current.from &&
-        state.state === current.to
-      ) {
-        // @ts-ignore
-        return effect(state, state[$ACTION]);
-      }
-      // We only run the effect when the condition is true
-    }, [state]);
   }
 }
 

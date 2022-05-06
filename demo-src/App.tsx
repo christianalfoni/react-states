@@ -21,18 +21,11 @@ const Test = () => {
     }, 500);
   });
 
-  useTransitionEffect(
-    state,
-    {
-      from: 'LOADED',
-      to: 'LOADED',
-    },
-    (_, action) => {
-      if (action.type === 'ADD_TODO') {
-        // Save somewhere
-      }
-    },
-  );
+  useTransitionEffect(state, 'LOADED', 'LOADED', (_, action) => {
+    if (action.type === 'ADD_TODO') {
+      // Save somewhere
+    }
+  });
 
   return match(state, {
     NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'FETCH_TODOS' })}>Fetch Todos</button>,

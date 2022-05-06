@@ -114,27 +114,11 @@ export const Resizer = ({
     };
   });
 
-  useTransitionEffect(
-    resizer,
-    {
-      from: 'RESIZING',
-      to: 'RESIZING',
-    },
-    ({ x }) => {
-      onResize(window.innerWidth - x);
-    },
-  );
+  useTransitionEffect(resizer, 'RESIZING', 'RESIZING', ({ x }) => {
+    onResize(window.innerWidth - x);
+  });
 
-  useTransitionEffect(
-    resizer,
-    {
-      from: 'DETECTING_RESIZE',
-      to: 'IDLE',
-    },
-    () => {
-      onClick();
-    },
-  );
+  useTransitionEffect(resizer, 'DETECTING_RESIZE', 'IDLE', () => onClick());
 
   const style: React.CSSProperties = {
     position: 'absolute',
