@@ -118,7 +118,6 @@ export const Resizer = ({
     resizer,
     {
       from: 'RESIZING',
-      action: 'MOUSE_MOVE',
       to: 'RESIZING',
     },
     ({ x }) => {
@@ -130,7 +129,6 @@ export const Resizer = ({
     resizer,
     {
       from: 'DETECTING_RESIZE',
-      action: 'MOUSE_UP_RESIZER',
       to: 'IDLE',
     },
     () => {

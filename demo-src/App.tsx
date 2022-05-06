@@ -25,11 +25,12 @@ const Test = () => {
     state,
     {
       from: 'LOADED',
-      action: 'ADD_TODO',
       to: 'LOADED',
     },
-    (_, { todo }) => {
-      // Save somewhere
+    (_, action) => {
+      if (action.type === 'ADD_TODO') {
+        // Save somewhere
+      }
     },
   );
 

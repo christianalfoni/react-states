@@ -89,7 +89,6 @@ export function useTransitionEffect<
     | S['state'][]
     | {
         from: S['state'];
-        action: Exclude<S[typeof $ACTION], undefined>['type'];
         to: S['state'];
       }
 >(
@@ -98,7 +97,6 @@ export function useTransitionEffect<
   effect: (
     state: SS extends {
       from: S['state'];
-      action: Exclude<S[typeof $ACTION], undefined>['type'];
       to: S['state'];
     }
       ? S extends { state: SS['to'] }
@@ -111,13 +109,7 @@ export function useTransitionEffect<
       : S extends { state: SS }
       ? S
       : never,
-    action: SS extends {
-      from: S['state'];
-      action: Exclude<S[typeof $ACTION], undefined>['type'];
-      to: S['state'];
-    }
-      ? Exclude<S[typeof $ACTION], undefined> & { type: SS['action'] }
-      : Exclude<S[typeof $ACTION], undefined>,
+    action: Exclude<S[typeof $ACTION], undefined>,
   ) => void | (() => void),
 ) {
   if (typeof current === 'string') {
@@ -145,8 +137,7 @@ export function useTransitionEffect<
       if (
         // @ts-ignore
         state[$PREV_STATE]?.state === current.from &&
-        state.state === current.to &&
-        state[$ACTION]?.type === current.action
+        state.state === current.to
       ) {
         // @ts-ignore
         return effect(state, state[$ACTION]);
