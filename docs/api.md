@@ -105,16 +105,16 @@ const DataComponent = () => {
 };
 ```
 
-#### useStateEffect
+#### useTransitionEffect
 
 ```tsx
-import { useStateEffect } from 'react-states';
+import { useTransitionEffect } from 'react-states';
 import { useData } from './useData';
 
 const DataComponent = () => {
   const [state, dispatch] = useData();
 
-  useStateEffect(state, 'NOT_LOADED', () => {
+  useTransitionEffect(state, 'NOT_LOADED', () => {
     fetch('/data')
       .then((response) => response.json())
       .then((data) =>
@@ -129,85 +129,6 @@ const DataComponent = () => {
           error: error.message,
         }),
       );
-  });
-
-  return <div />;
-};
-```
-
-#### useCommandEffect
-
-```tsx
-import { transition, $COMMAND } from 'react-states';
-
-type Command = {
-  cmd: 'SAVE_DATA';
-  data: string[];
-};
-
-type State =
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      [$COMMAND]?: Command;
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
-
-type Action =
-  | {
-      type: 'LOAD';
-    }
-  | {
-      type: 'LOAD_SUCCESS';
-      data: string[];
-    }
-  | {
-      type: 'LOAD_ERROR';
-      error: string;
-    }
-  | {
-      type: 'ADD_ITEM';
-    };
-
-const reducer = (state: State, action: Action) =>
-  transition(state, action, {
-    LOADING: {
-      LOAD_SUCCESS: (_, { data }): State => ({
-        state: 'LOADED',
-        data,
-      }),
-      LOAD_ERROR: (_, { error }): State => ({
-        state: 'ERROR',
-        error,
-      }),
-    },
-    LOADED: {
-      ADD_ITEM: ({ data }, { item }): State => {
-        const data = [item].concat(data);
-
-        return {
-          state: 'LOADED',
-          data,
-          [$COMMAND]: {
-            cmd: 'SAVE_DATA',
-            data,
-          },
-        };
-      },
-    },
-    ERROR: {},
-  });
-
-const DataComponent = () => {
-  const [state, dispatch] = useReducer(reducer, { state: 'LOADING' });
-
-  useCommandEffect(state, 'SAVE_DATA', ({ data }) => {
-    localStorage.setItem('data', JSON.stringify(data));
   });
 
   return <div />;
