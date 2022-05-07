@@ -21,10 +21,8 @@ const Test = () => {
     }, 500);
   });
 
-  useTransitionEffect(state, 'LOADED', 'LOADED', (_, action) => {
-    if (action.type === 'ADD_TODO') {
-      // Save somewhere
-    }
+  useTransitionEffect(state, 'LOADED', 'ADD_TODO', (_, action) => {
+    // Do something
   });
 
   return match(state, {

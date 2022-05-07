@@ -5,11 +5,6 @@ type Todo = {
   completed: boolean;
 };
 
-type Command = {
-  cmd: 'SAVE_TODO';
-  todo: Todo;
-};
-
 type State =
   | {
       state: 'NOT_LOADED';
