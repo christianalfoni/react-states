@@ -12,7 +12,7 @@ Expose the reducer and related effects as a hook.
 
 ```tsx
 import { useReducer } from 'react';
-import { transition, TTransitions, useStateEffect } from 'react-states';
+import { transition, TTransitions, useTransitionEffect } from 'react-states';
 
 type State =
   | {
@@ -50,7 +50,7 @@ export const useSwitcher = (initialState?: State) => {
 
   const [state] = switcherReducer;
 
-  useStateEffect(state, 'BAR', () => {
+  useTransitionEffect(state, 'BAR', () => {
     console.log('Switched to BAR');
   });
 
@@ -152,15 +152,6 @@ type State =
 Instead of defining your state, actions and commands with explicit types you can create state/action/command creators instead. This gives additional type safety by protecting against invalid spreading and gives explicit return types. It also allow action creators to be exposed through your state.
 
 ```ts
-const commands = {
-  COMMAND_A: (someValue: string) => ({
-    cmd: 'COMMAND_B' as const,
-    someValue,
-  }),
-};
-
-type Command = ReturnType<typeof commands[keyof typeof commands]>;
-
 const actions = {
   ACTION_A: (params: { foo: string; bar: string }) => ({
     type: 'ACTION_A' as const,
@@ -178,29 +169,6 @@ const states = {
   // invalid spreading
   STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
     state: 'STATE_A' as const,
-    foo,
-    bar,
-  }),
-
-  // Use second argument for commands
-  STATE_B: ({ foo, bar }: { foo: string; bar: string }, command?: Command) => ({
-    state: 'STATE_B' as const,
-    foo,
-    bar,
-    [$COMMAND]: command,
-  }),
-
-  // When always firing a command, include it directly
-  STATE_C: ({ foo, bar }: { foo: string; bar: string }) => ({
-    state: 'STATE_C' as const,
-    foo,
-    bar,
-    [$COMMAND]: COMMAND_A({ foo: 'foo', bar: 'bar' }),
-  }),
-
-  // Include actions by spreading all or use pick utility
-  STATE_D: ({ foo, bar }: { foo: string; bar: string }) => ({
-    state: 'STATE_D' as const,
     foo,
     bar,
   }),

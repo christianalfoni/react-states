@@ -1,6 +1,19 @@
 import * as React from 'react';
-import { transition, useCommandEffect, useStateEffect, PickCommand, match, $COMMAND } from '../';
+import { transition, useTransitionEffect, match } from '../';
 import { colors } from './styles';
+
+type State =
+  | {
+      state: 'IDLE';
+    }
+  | {
+      state: 'DETECTING_RESIZE';
+      initialX: number;
+    }
+  | {
+      state: 'RESIZING';
+      x: number;
+    };
 
 type Action =
   | {
@@ -19,54 +32,40 @@ type Action =
       x: number;
     };
 
-const $NOTIFY_CLICK = () => ({
-  cmd: 'NOTIFY_CLICK' as const,
-});
-
-const $NOTIFY_RESIZE = (x: number) => ({
-  cmd: 'NOTIFY_RESIZE' as const,
-  x,
-});
-
-type Command = ReturnType<typeof $NOTIFY_CLICK | typeof $NOTIFY_RESIZE>;
-
-const IDLE = (command?: PickCommand<Command, 'NOTIFY_CLICK'>) => ({
-  state: 'IDLE' as const,
-  [$COMMAND]: command,
-});
-
-const DETECTING_RESIZE = (initialX: number) => ({
-  state: 'DETECTING_RESIZE' as const,
-  initialX,
-});
-
-const RESIZING = (x: number) => ({
-  state: 'RESIZING' as const,
-  x,
-  [$COMMAND]: $NOTIFY_RESIZE(x),
-});
-
-type State = ReturnType<typeof IDLE | typeof DETECTING_RESIZE | typeof RESIZING>;
-
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     IDLE: {
-      MOUSE_DOWN: (_, { x }) => DETECTING_RESIZE(x),
+      MOUSE_DOWN: (_, { x }): State => ({
+        state: 'DETECTING_RESIZE',
+        initialX: x,
+      }),
     },
     DETECTING_RESIZE: {
-      MOUSE_MOVE: (mouseDownState, { x }) => {
+      MOUSE_MOVE: (mouseDownState, { x }): State => {
         if (Math.abs(x - mouseDownState.initialX) > 3) {
-          return RESIZING(x);
+          return {
+            state: 'RESIZING',
+            x,
+          };
         }
 
         return mouseDownState;
       },
-      MOUSE_UP: () => IDLE(),
-      MOUSE_UP_RESIZER: () => IDLE($NOTIFY_CLICK()),
+      MOUSE_UP: (): State => ({
+        state: 'IDLE',
+      }),
+      MOUSE_UP_RESIZER: (): State => ({
+        state: 'IDLE',
+      }),
     },
     RESIZING: {
-      MOUSE_MOVE: (_, { x }) => RESIZING(x),
-      MOUSE_UP: () => IDLE(),
+      MOUSE_MOVE: (_, { x }): State => ({
+        state: 'RESIZING',
+        x,
+      }),
+      MOUSE_UP: (): State => ({
+        state: 'IDLE',
+      }),
     },
   });
 
@@ -79,9 +78,13 @@ export const Resizer = ({
   onClick: () => void;
   isOpen: boolean;
 }) => {
-  const [resizer, dispatch] = React.useReducer(reducer, IDLE());
+  const [resizer, dispatch] = React.useReducer(reducer, {
+    state: 'IDLE',
+  });
 
-  useStateEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
+  // useTransitionEffect(state, 'IDLE', 'FOO', () => {})
+
+  useTransitionEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
       dispatch({
         type: 'MOUSE_MOVE',
@@ -104,13 +107,11 @@ export const Resizer = ({
     };
   });
 
-  useCommandEffect(resizer, 'NOTIFY_RESIZE', ({ x }) => {
+  useTransitionEffect(resizer, 'RESIZING', 'MOUSE_MOVE', ({ x }) => {
     onResize(window.innerWidth - x);
   });
 
-  useCommandEffect(resizer, 'NOTIFY_CLICK', () => {
-    onClick();
-  });
+  useTransitionEffect(resizer, 'IDLE', 'MOUSE_UP_RESIZER', () => onClick());
 
   const style: React.CSSProperties = {
     position: 'absolute',
