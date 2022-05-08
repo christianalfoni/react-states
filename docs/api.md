@@ -140,14 +140,20 @@ useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state) => {
   // Entering either states
   return () => {
     // Entering neither states
-  }
-})
+  };
+});
 ```
 
 ```ts
 useTransitionEffect(state, 'FOO', 'SWITCH', (state, action) => {
   // Entered state by action
-})
+});
+```
+
+```ts
+useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', (state, action) => {
+  // Entered either states by action
+});
 ```
 
 #### renderReducer
