@@ -82,14 +82,20 @@ export const useStateEffect = useTransitionEffect;
 
 export function useTransitionEffect<
   S extends IState,
-  SS extends S['state'],
-  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type']
 >(
   state: S,
   current: SS,
   action: AA,
   effect: (
-    state: S extends { state: SS } ? S : never,
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
     action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
   ) => void | (() => void),
 ): void;
@@ -116,6 +122,14 @@ export function useTransitionEffect() {
   if (typeof current === 'string' && typeof action === 'string') {
     React.useEffect(() => {
       if (state.state === current && state[$ACTION]?.type === action) {
+        // @ts-ignore
+        return effect(state, state[$ACTION]);
+      }
+      // We only run the effect when the condition is true
+    }, [state]);
+  } else if (Array.isArray(current) && typeof action === 'string') {
+    React.useEffect(() => {
+      if (current.includes(state.state) && state[$ACTION]?.type === action) {
         // @ts-ignore
         return effect(state, state[$ACTION]);
       }
@@ -175,7 +189,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S],
+  }[keyof S]
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -184,7 +198,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export const managerContext = React.createContext(null as unknown as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
