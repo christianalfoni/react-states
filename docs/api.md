@@ -135,6 +135,21 @@ const DataComponent = () => {
 };
 ```
 
+```ts
+useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state) => {
+  // Entering either states
+  return () => {
+    // Entering neither states
+  }
+})
+```
+
+```ts
+useTransitionEffect(state, 'FOO', 'SWITCH', (state, action) => {
+  // Entered state by action
+})
+```
+
 #### renderReducer
 
 ```tsx
