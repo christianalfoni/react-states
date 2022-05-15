@@ -156,6 +156,18 @@ useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', (state, action) => {
 });
 ```
 
+```ts
+useTransitionEffect(state, 'FOO', 'SWITCH', 'BAR', (state, action, prevState) => {
+  // Entered state by action from state
+});
+```
+
+```ts
+useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', 'BAZ', (state, action, prevState) => {
+  // Entered either state by action from state
+});
+```
+
 #### renderReducer
 
 ```tsx

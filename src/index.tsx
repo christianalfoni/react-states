@@ -1,7 +1,8 @@
-import React, { Dispatch } from 'react';
+import React from 'react';
 import type { Manager } from './devtools/Manager';
 
 export const $ACTION = Symbol('ACTION');
+export const $PREV_STATE = Symbol('PREV_STATE');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
@@ -57,6 +58,8 @@ export function transition<S extends IState, A extends IAction>(
     newState = transitions[state.state][action.type](state, action);
     newState[$ACTION] = action;
     // @ts-ignore
+    newState[$PREV_STATE] = state;
+    // @ts-ignore
     action[$ACTION] && newState !== state && action[$ACTION](debugId, false);
   } else {
     // @ts-ignore
@@ -80,6 +83,28 @@ export function transition<S extends IState, A extends IAction>(
  */
 export const useStateEffect = useTransitionEffect;
 
+export function useTransitionEffect<
+  S extends IState,
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
+  SP extends S['state'] | S['state'][]
+>(
+  state: S,
+  current: SS,
+  action: AA,
+  previous: SP,
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: S extends { state: SP } ? S : never,
+  ) => void | (() => void),
+): void;
 export function useTransitionEffect<
   S extends IState,
   SS extends S['state'] | S['state'][],
@@ -117,15 +142,30 @@ export function useTransitionEffect() {
   const state = arguments[0];
   const current = arguments[1];
   const action = arguments[2];
-  const effect = arguments[3] || arguments[2];
+  const prev = arguments[3];
+  const effect = arguments[4] || arguments[3] || arguments[2];
 
-  if (typeof current === 'string' && typeof action === 'string') {
+  if (typeof current === 'string' && typeof action === 'string' && typeof prev === 'string') {
+    React.useEffect(() => {
+      if (state.state === current && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
+        console.log('WTF?');
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, [state]);
+  } else if (Array.isArray(current) && typeof action === 'string' && typeof prev === 'string') {
+    React.useEffect(() => {
+      if (current.includes(state.state) && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, [state]);
+  } else if (typeof current === 'string' && typeof action === 'string') {
     React.useEffect(() => {
       if (state.state === current && state[$ACTION]?.type === action) {
         // @ts-ignore
         return effect(state, state[$ACTION]);
       }
-      // We only run the effect when the condition is true
     }, [state]);
   } else if (Array.isArray(current) && typeof action === 'string') {
     React.useEffect(() => {
@@ -133,7 +173,6 @@ export function useTransitionEffect() {
         // @ts-ignore
         return effect(state, state[$ACTION]);
       }
-      // We only run the effect when the condition is true
     }, [state]);
   } else if (typeof current === 'string') {
     React.useEffect(() => {
