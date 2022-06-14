@@ -136,7 +136,16 @@ const DataComponent = () => {
 ```
 
 ```ts
-useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state) => {
+useTransitionEffect(state, 'NOT_LOADED', (state, action?, prevState?) => {
+  // Entering state
+  return () => {
+    // Entering other state
+  };
+});
+```
+
+```ts
+useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state, action?, prevState?) => {
   // Entering either states
   return () => {
     // Entering neither states
@@ -145,14 +154,32 @@ useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state) => {
 ```
 
 ```ts
-useTransitionEffect(state, 'FOO', 'SWITCH', (state, action) => {
+useTransitionEffect(state, 'FOO', 'SWITCH', (state, action, prevState) => {
   // Entered state by action
 });
 ```
 
 ```ts
-useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', (state, action) => {
+useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', (state, action, prevState) => {
   // Entered either states by action
+});
+```
+
+```ts
+useTransitionEffect(state, 'FOO', 'SWITCH', 'BAR', (state, action, prevState) => {
+  // Entered state by action from state
+});
+```
+
+```ts
+useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', 'OTHER', (state, action, prevState) => {
+  // Entered either states by action from state
+});
+```
+
+```ts
+useTransitionEffect(state, (state, action?, prevState?) => {
+  // Any transition
 });
 ```
 

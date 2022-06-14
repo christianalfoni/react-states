@@ -23,7 +23,7 @@
     "lib",
     "demo-src",
     "vite.config.ts",
-    "src/index.test.ts",
+    "src/index.test.tsx",
     "src/result.test.ts"
   ]
 }

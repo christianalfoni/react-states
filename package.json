@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "6.2.6",
+  "version": "6.3.0",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "clean": "rimraf cjs test/*.ts test/*.js test/*.map devtools/*.ts devtools/*.js devtools/*.map index.d.ts index.test.d.ts result.d.ts result.js result.js.map",
     "typecheck": "tsc --noEmit",
     "format": "prettier '**/*.{md,js,jsx,json,ts,tsx}' --write",
-    "test": "jest --env=jsdom --coverage",
+    "test": "jest --env=jsdom",
     "test:watch": "jest --env=jsdom --watch --updateSnapshot",
     "prebuild": "npm run clean",
     "postbuild": "rimraf {lib,es}/**/__tests__ {lib,es}/**/*.{spec,test}.{js,d.ts,js.map}",
