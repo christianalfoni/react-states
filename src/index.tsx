@@ -2,6 +2,7 @@ import React, { Dispatch } from 'react';
 import type { Manager } from './devtools/Manager';
 
 export const $ACTION = Symbol('ACTION');
+export const $PREV_STATE = Symbol('PREV_STATE');
 export const DEBUG_TRANSITIONS = Symbol('DEBUG_TRANSITIONS');
 export const DEBUG_COMMAND = Symbol('DEBUG_COMMAND');
 export const DEBUG_ID = Symbol('DEBUG_ID');
@@ -11,6 +12,7 @@ const DEBUG_TRIGGER_TRANSITIONS = Symbol('DEBUG_TRIGGER_TRANSITIONS');
 export interface IState {
   state: string;
   [$ACTION]?: IAction;
+  [$PREV_STATE]?: IState;
 }
 
 export interface IAction {
@@ -45,7 +47,7 @@ export function transition<S extends IState, A extends IAction>(
   state: S,
   action: A,
   transitions: TTransitions<S, A>,
-): S & { [$ACTION]?: A } {
+): S & { [$ACTION]?: A; [$PREV_STATE]?: S } {
   let newState = state;
 
   // @ts-ignore
@@ -58,6 +60,7 @@ export function transition<S extends IState, A extends IAction>(
     newState[$ACTION] = action;
     // @ts-ignore
     action[$ACTION] && newState !== state && action[$ACTION](debugId, false);
+    newState[$PREV_STATE] = state;
   } else {
     // @ts-ignore
     action[$ACTION] && action[$ACTION](debugId, true);
@@ -83,7 +86,29 @@ export const useStateEffect = useTransitionEffect;
 export function useTransitionEffect<
   S extends IState,
   SS extends S['state'] | S['state'][],
-  AA extends Exclude<S[typeof $ACTION], undefined>['type']
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
+  SP extends S['state'],
+>(
+  state: S,
+  current: SS,
+  action: AA,
+  prev: SP,
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: S extends { state: SP } ? S : never,
+  ) => void,
+): void;
+export function useTransitionEffect<
+  S extends IState,
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
 >(
   state: S,
   current: SS,
@@ -97,7 +122,8 @@ export function useTransitionEffect<
       ? S
       : never,
     action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
-  ) => void | (() => void),
+    prevState: S,
+  ) => void,
 ): void;
 export function useTransitionEffect<S extends IState, SS extends S['state'] | S['state'][]>(
   state: S,
@@ -110,49 +136,84 @@ export function useTransitionEffect<S extends IState, SS extends S['state'] | S[
       : S extends { state: SS }
       ? S
       : never,
-    action: Exclude<S[typeof $ACTION], undefined>,
+    action?: Exclude<S[typeof $ACTION], undefined>,
+    prevState?: S,
   ) => void | (() => void),
+): void;
+export function useTransitionEffect<S extends IState>(
+  state: S,
+  effect: (state: S, action?: Exclude<S[typeof $ACTION], undefined>, prevState?: S) => void,
 ): void;
 export function useTransitionEffect() {
   const state = arguments[0];
+
+  if (typeof arguments[1] === 'function') {
+    return React.useEffect(() => arguments[1](state, state[$ACTION], state[$PREV_STATE]), [state]);
+  }
+
   const current = arguments[1];
   const action = arguments[2];
-  const effect = arguments[3] || arguments[2];
+  const prev = arguments[3];
+  const effect = arguments[4] || arguments[3] || arguments[2];
+
+  if (typeof current === 'string' && typeof action === 'string' && typeof prev === 'string') {
+    return React.useEffect(() => {
+      if (state.state === current && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
+        // @ts-ignore
+        effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, [state]);
+  }
+
+  if (Array.isArray(current) && typeof action === 'string' && typeof prev === 'string') {
+    return React.useEffect(() => {
+      if (current.includes(state.state) && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
+        // @ts-ignore
+        effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, [state]);
+  }
 
   if (typeof current === 'string' && typeof action === 'string') {
-    React.useEffect(() => {
+    return React.useEffect(() => {
       if (state.state === current && state[$ACTION]?.type === action) {
         // @ts-ignore
-        return effect(state, state[$ACTION]);
+        effect(state, state[$ACTION], state[$PREV_STATE]);
       }
       // We only run the effect when the condition is true
     }, [state]);
-  } else if (Array.isArray(current) && typeof action === 'string') {
-    React.useEffect(() => {
+  }
+
+  if (Array.isArray(current) && typeof action === 'string') {
+    return React.useEffect(() => {
       if (current.includes(state.state) && state[$ACTION]?.type === action) {
         // @ts-ignore
-        return effect(state, state[$ACTION]);
+        effect(state, state[$ACTION], state[$PREV_STATE]);
       }
       // We only run the effect when the condition is true
     }, [state]);
-  } else if (typeof current === 'string') {
-    React.useEffect(() => {
+  }
+
+  if (typeof current === 'string') {
+    return React.useEffect(() => {
       // @ts-ignore
       if (state.state === current) {
         // @ts-ignore
-        return effect(state, state[$ACTION]);
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
       }
       // We only run the effect when actually moving to a new state
       // @ts-ignore
     }, [state.state === current]);
-  } else if (Array.isArray(current)) {
+  }
+
+  if (Array.isArray(current)) {
     // @ts-ignore
     const shouldRun = current.includes(state.state);
 
-    React.useEffect(() => {
+    return React.useEffect(() => {
       if (shouldRun) {
         // @ts-ignore
-        return effect(state, state[$ACTION]);
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
       }
     }, [shouldRun]);
   }
@@ -189,7 +250,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S]
+  }[keyof S],
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -198,7 +259,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export const managerContext = React.createContext((null as unknown) as Manager);
+export const managerContext = React.createContext(null as unknown as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
