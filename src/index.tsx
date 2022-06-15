@@ -77,121 +77,35 @@ export function transition<S extends IState, A extends IAction>(
   return newState as any;
 }
 
-export function useActionEffect<
+export function useTransitionEffect<
   S extends IState,
-  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][]
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][],
+  SF extends S['state'] | S['state'][]
 >(
   state: S,
-  action: AA,
+  transition: SS,
   effect: (
-    state: S,
-    action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action?: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
       ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
       : Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: S,
-  ) => void | (() => void),
-  deps: unknown[] = [],
-): void {
-  const stateAction = state[$ACTION];
-
-  React.useEffect(() => {
-    // @ts-ignore
-    if (Array.isArray(stateAction) ? stateAction.includes(stateAction?.type) : stateAction?.type === action) {
-      // @ts-ignore
-      effect(state, state[$ACTION], state[$PREV_STATE]);
-    }
-    // @ts-ignore
-  }, deps.concat(state));
-}
-
-export function useEnterEffect<S extends IState, SS extends S['state'] | S['state'][]>(
-  state: S,
-  current: SS,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
+    prevState?: SF extends S['state'][]
+      ? S extends { state: SF[number] }
         ? S
         : never
-      : S extends { state: SS }
+      : S extends { state: SF }
       ? S
       : never,
-    action?: Exclude<S[typeof $ACTION], undefined>,
-    prevState?: S,
-  ) => void | (() => void),
-  deps: unknown[] = [],
-): void {
-  if (typeof current === 'string') {
-    return React.useEffect(() => {
-      // @ts-ignore
-      if (state.state === current) {
-        // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-      // We only run the effect when actually moving to a new state
-      // @ts-ignore
-    }, deps.concat(state.state === current));
-  }
-
-  if (Array.isArray(current)) {
-    // @ts-ignore
-    const shouldRun = current.includes(state.state);
-
-    return React.useEffect(() => {
-      if (shouldRun) {
-        // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-    }, deps.concat(shouldRun));
-  }
-}
-
-export function useLeaveEffect<S extends IState, SS extends S['state'] | S['state'][]>(
-  state: S,
-  current: SS,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
-    action: Exclude<S[typeof $ACTION], undefined>,
-    prevState: S,
   ) => void,
-  deps: unknown[] = [],
-): void {
-  if (typeof current === 'string') {
-    return React.useEffect(
-      () => () => {
-        // @ts-ignore
-        if (state.state === current) {
-          // @ts-ignore
-          return effect(state, state[$ACTION], state[$PREV_STATE]);
-        }
-      },
-      // We only run the effect when actually moving to a new state
-      // @ts-ignore
-      deps.concat(state.state === current),
-    );
-  }
-
-  if (Array.isArray(current)) {
-    // @ts-ignore
-    const shouldRun = current.includes(state.state);
-
-    return React.useEffect(
-      () => () => {
-        if (shouldRun) {
-          // @ts-ignore
-          return effect(state, state[$ACTION], state[$PREV_STATE]);
-        }
-      },
-      deps.concat(shouldRun),
-    );
-  }
-}
-
+  deps?: unknown[],
+): void;
 export function useTransitionEffect<
   S extends IState,
   SS extends S['state'] | S['state'][],
@@ -300,6 +214,35 @@ export function useTransitionEffect() {
   const state = arguments[0];
   const prevState = state[$PREV_STATE];
   const action = state[$ACTION];
+
+  if (typeof arguments[1] === 'string') {
+    const current = arguments[1];
+    const deps = arguments[3] || [];
+
+    return React.useEffect(() => {
+      // @ts-ignore
+      if (state.state === current) {
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+      // We only run the effect when actually moving to a new state
+      // @ts-ignore
+    }, deps.concat(state.state === current));
+  }
+
+  if (Array.isArray(arguments[1])) {
+    const current = arguments[1];
+    const deps = arguments[3] || [];
+    // @ts-ignore
+    const shouldRun = current.includes(state.state);
+
+    return React.useEffect(() => {
+      if (shouldRun) {
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, deps.concat(shouldRun));
+  }
 
   if (typeof arguments[1] === 'function') {
     const deps = arguments[2] || [];

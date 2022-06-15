@@ -82,8 +82,6 @@ export const Resizer = ({
     state: 'IDLE',
   });
 
-  // useTransitionEffect(state, 'IDLE', 'FOO', () => {})
-
   useTransitionEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
       dispatch({
@@ -107,11 +105,25 @@ export const Resizer = ({
     };
   });
 
-  useTransitionEffect(resizer, 'RESIZING', 'MOUSE_MOVE', ({ x }) => {
-    onResize(window.innerWidth - x);
-  });
+  useTransitionEffect(
+    resizer,
+    {
+      to: 'RESIZING',
+      action: 'MOUSE_MOVE',
+    },
+    ({ x }) => {
+      onResize(window.innerWidth - x);
+    },
+  );
 
-  useTransitionEffect(resizer, 'IDLE', 'MOUSE_UP_RESIZER', () => onClick());
+  useTransitionEffect(
+    resizer,
+    {
+      to: 'IDLE',
+      action: 'MOUSE_UP_RESIZER',
+    },
+    () => onClick(),
+  );
 
   const style: React.CSSProperties = {
     position: 'absolute',

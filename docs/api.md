@@ -105,34 +105,21 @@ const DataComponent = () => {
 };
 ```
 
-#### useEnterEffect
-
-```ts
-useEnterEffect(state, 'NOT_LOADED', (state, action?, prevState?) => {
-  // Entering state from other state, also initial state
-  return () => {
-    // Entering other state
-  };
-});
-```
-
-#### useLeaveEffect
-
-```ts
-useLeaveEffect(state, 'ERROR', (state, action, prevState) => {
-  // Leaving state to other state
-});
-```
-
-#### useActionEffect
-
-```ts
-useActionEffect(state, 'ADD_ITEM', (state, action, prevState) => {
-  // When action causes a transition
-});
-```
-
 #### useTransitionEffect
+
+```ts
+useTransitionEffect(
+  state,
+  'FOO', // ['FOO', 'BAR']
+  (state, action?, prevState?) => {
+    // When entering either state(s), also initial state
+
+    return () => {
+      // When leaving either state(s)
+    };
+  },
+);
+```
 
 ```ts
 useTransitionEffect(
