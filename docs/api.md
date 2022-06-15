@@ -105,81 +105,53 @@ const DataComponent = () => {
 };
 ```
 
-#### useTransitionEffect
-
-```tsx
-import { useTransitionEffect } from 'react-states';
-import { useData } from './useData';
-
-const DataComponent = () => {
-  const [state, dispatch] = useData();
-
-  useTransitionEffect(state, 'NOT_LOADED', () => {
-    fetch('/data')
-      .then((response) => response.json())
-      .then((data) =>
-        dispatch({
-          type: 'LOAD_SUCCESS',
-          data,
-        }),
-      )
-      .catch((error) =>
-        dispatch({
-          type: 'LOAD_ERROR',
-          error: error.message,
-        }),
-      );
-  });
-
-  return <div />;
-};
-```
+#### useEnterEffect
 
 ```ts
-useTransitionEffect(state, 'NOT_LOADED', (state, action?, prevState?) => {
-  // Entering state
+useEnterEffect(state, 'NOT_LOADED', (state, action?, prevState?) => {
+  // Entering state from other state, also initial state
   return () => {
     // Entering other state
   };
 });
 ```
 
+#### useLeaveEffect
+
 ```ts
-useTransitionEffect(state, ['EDITING', 'VALIDATING'], (state, action?, prevState?) => {
-  // Entering either states
-  return () => {
-    // Entering neither states
-  };
+useLeaveEffect(state, 'ERROR', (state, action, prevState) => {
+  // Leaving state to other state
 });
 ```
 
+#### useActionEffect
+
 ```ts
-useTransitionEffect(state, 'FOO', 'SWITCH', (state, action, prevState) => {
-  // Entered state by action
+useActionEffect(state, 'ADD_ITEM', (state, action, prevState) => {
+  // When action causes a transition
 });
 ```
 
+#### useTransitionEffect
+
 ```ts
-useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', (state, action, prevState) => {
-  // Entered either states by action
-});
+useTransitionEffect(
+  state,
+  {
+    // OPTIONAL: Entering states(s), also from same state(s), not initial
+    to: 'FOO', // ["FOO", "BAR"],
+    // OPTIONAL: Leaving states(s), also from same state(s)
+    from: 'FOO', // ["FOO", "BAR"],
+    // OPTIONAL: Contrain by action(s) causing the transition
+    action: 'SWITCH', // ["SWITCH", "OTHER_ACTION"]
+  },
+  (state, action?, prevState?) => {},
+);
 ```
 
 ```ts
-useTransitionEffect(state, 'FOO', 'SWITCH', 'BAR', (state, action, prevState) => {
-  // Entered state by action from state
-});
-```
-
-```ts
-useTransitionEffect(state, ['FOO', 'BAR'], 'SWITCH', 'OTHER', (state, action, prevState) => {
-  // Entered either states by action from state
-});
-```
-
-```ts
-useTransitionEffect(state, (state, action?, prevState?) => {
-  // Any transition
+useTransitionEffect(state, (state, action, prevState) => {
+  // Any transition, not initial
 });
 ```
 

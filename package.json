@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "6.4.0",
+  "version": "7.0.0",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -76,7 +76,7 @@
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.13.0",
     "tslint-plugin-prettier": "^2.0.0",
-    "typescript": "^4.6.3",
+    "typescript": "^4.7.3",
     "vite": "^2.0.5"
   }
 }

@@ -77,17 +77,316 @@ export function transition<S extends IState, A extends IAction>(
   return newState as any;
 }
 
-/**
- * @deprecated
- * Use useTransitionEffect instead
- */
-export const useStateEffect = useTransitionEffect;
+export function useActionEffect<
+  S extends IState,
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][]
+>(
+  state: S,
+  action: AA,
+  effect: (
+    state: S,
+    action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
+      ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: S,
+  ) => void | (() => void),
+  deps: unknown[] = [],
+): void {
+  const stateAction = state[$ACTION];
+
+  React.useEffect(() => {
+    // @ts-ignore
+    if (Array.isArray(stateAction) ? stateAction.includes(stateAction?.type) : stateAction?.type === action) {
+      // @ts-ignore
+      effect(state, state[$ACTION], state[$PREV_STATE]);
+    }
+    // @ts-ignore
+  }, deps.concat(state));
+}
+
+export function useEnterEffect<S extends IState, SS extends S['state'] | S['state'][]>(
+  state: S,
+  current: SS,
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action?: Exclude<S[typeof $ACTION], undefined>,
+    prevState?: S,
+  ) => void | (() => void),
+  deps: unknown[] = [],
+): void {
+  if (typeof current === 'string') {
+    return React.useEffect(() => {
+      // @ts-ignore
+      if (state.state === current) {
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+      // We only run the effect when actually moving to a new state
+      // @ts-ignore
+    }, deps.concat(state.state === current));
+  }
+
+  if (Array.isArray(current)) {
+    // @ts-ignore
+    const shouldRun = current.includes(state.state);
+
+    return React.useEffect(() => {
+      if (shouldRun) {
+        // @ts-ignore
+        return effect(state, state[$ACTION], state[$PREV_STATE]);
+      }
+    }, deps.concat(shouldRun));
+  }
+}
+
+export function useLeaveEffect<S extends IState, SS extends S['state'] | S['state'][]>(
+  state: S,
+  current: SS,
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: Exclude<S[typeof $ACTION], undefined>,
+    prevState: S,
+  ) => void,
+  deps: unknown[] = [],
+): void {
+  if (typeof current === 'string') {
+    return React.useEffect(
+      () => () => {
+        // @ts-ignore
+        if (state.state === current) {
+          // @ts-ignore
+          return effect(state, state[$ACTION], state[$PREV_STATE]);
+        }
+      },
+      // We only run the effect when actually moving to a new state
+      // @ts-ignore
+      deps.concat(state.state === current),
+    );
+  }
+
+  if (Array.isArray(current)) {
+    // @ts-ignore
+    const shouldRun = current.includes(state.state);
+
+    return React.useEffect(
+      () => () => {
+        if (shouldRun) {
+          // @ts-ignore
+          return effect(state, state[$ACTION], state[$PREV_STATE]);
+        }
+      },
+      deps.concat(shouldRun),
+    );
+  }
+}
 
 export function useTransitionEffect<
   S extends IState,
   SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][],
+  SF extends S['state'] | S['state'][]
+>(
+  state: S,
+  transition: {
+    to: SS;
+    action?: AA;
+    from?: SF;
+  },
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
+      ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: SF extends S['state'][]
+      ? S extends { state: SF[number] }
+        ? S
+        : never
+      : S extends { state: SF }
+      ? S
+      : never,
+  ) => void,
+  deps?: unknown[],
+): void;
+export function useTransitionEffect<
+  S extends IState,
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][],
+  SF extends S['state'] | S['state'][]
+>(
+  state: S,
+  transition: {
+    to?: SS;
+    action: AA;
+    from?: SF;
+  },
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
+      ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: SF extends S['state'][]
+      ? S extends { state: SF[number] }
+        ? S
+        : never
+      : S extends { state: SF }
+      ? S
+      : never,
+  ) => void,
+  deps?: unknown[],
+): void;
+export function useTransitionEffect<
+  S extends IState,
+  SS extends S['state'] | S['state'][],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type'] | Exclude<S[typeof $ACTION], undefined>['type'][],
+  SF extends S['state'] | S['state'][]
+>(
+  state: S,
+  transition: {
+    to?: SS;
+    action?: AA;
+    from: SF;
+  },
+  effect: (
+    state: SS extends S['state'][]
+      ? S extends { state: SS[number] }
+        ? S
+        : never
+      : S extends { state: SS }
+      ? S
+      : never,
+    action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
+      ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
+    prevState: SF extends S['state'][]
+      ? S extends { state: SF[number] }
+        ? S
+        : never
+      : S extends { state: SF }
+      ? S
+      : never,
+  ) => void,
+  deps?: unknown[],
+): void;
+export function useTransitionEffect<S extends IState>(
+  state: S,
+  effect: (state: S, action?: Exclude<S[typeof $ACTION], undefined>, prevState?: S) => void,
+  deps?: unknown[],
+): void;
+export function useTransitionEffect() {
+  const state = arguments[0];
+  const prevState = state[$PREV_STATE];
+  const action = state[$ACTION];
+
+  if (typeof arguments[1] === 'function') {
+    const deps = arguments[2] || [];
+    const effect = arguments[1];
+
+    return React.useEffect(() => {
+      prevState && effect(state, action, prevState);
+    }, deps.concat(state));
+  }
+
+  const transition = arguments[1];
+  const effect = arguments[2];
+  const deps = arguments[3] || [];
+
+  React.useEffect(() => {
+    if (transition.to) {
+      if (typeof transition.to === 'string' && state.state !== transition.to) {
+        return;
+      }
+
+      if (Array.isArray(transition.to) && !transition.to.includes(prevState?.state)) {
+        return;
+      }
+
+      if (transition.from) {
+        if (typeof transition.from === 'string' && prevState?.state !== transition.from) {
+          return;
+        }
+
+        if (Array.isArray(transition.from) && !transition.from.includes(prevState?.state)) {
+          return;
+        }
+      }
+
+      if (transition.action) {
+        if (typeof transition.action === 'string' && action?.type === transition.action) {
+          prevState && effect(state, action, prevState);
+        } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
+          prevState && effect(state, action, prevState);
+        }
+        return;
+      }
+
+      prevState && effect(state, action, prevState);
+
+      return;
+    }
+
+    if (transition.from) {
+      if (typeof transition.from === 'string' && prevState?.state !== transition.from) {
+        return;
+      }
+
+      if (Array.isArray(transition.from) && !transition.from.includes(prevState?.state)) {
+        return;
+      }
+
+      if (transition.action) {
+        if (typeof transition.action === 'string' && action?.type === transition.action) {
+          prevState && effect(state, action, prevState);
+        } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
+          prevState && effect(state, action, prevState);
+        }
+        return;
+      }
+
+      prevState && effect(state, action, prevState);
+
+      return;
+    }
+
+    if (transition.action) {
+      if (typeof transition.action === 'string' && action?.type === transition.action) {
+        prevState && effect(state, action, prevState);
+      } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
+        prevState && effect(state, action, prevState);
+      }
+    }
+  }, deps.concat(state));
+}
+
+/*
+export function useTransitionEffect<
+  S extends IState,
+  SS extends S['state'] | S['state'][],
   AA extends Exclude<S[typeof $ACTION], undefined>['type'],
-  SP extends S['state'],
+  SP extends S['state']
 >(
   state: S,
   current: SS,
@@ -104,11 +403,12 @@ export function useTransitionEffect<
     action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
     prevState: S extends { state: SP } ? S : never,
   ) => void,
+  deps?: unknown[],
 ): void;
 export function useTransitionEffect<
   S extends IState,
   SS extends S['state'] | S['state'][],
-  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
+  AA extends Exclude<S[typeof $ACTION], undefined>['type']
 >(
   state: S,
   current: SS,
@@ -124,6 +424,7 @@ export function useTransitionEffect<
     action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
     prevState: S,
   ) => void,
+  deps?: unknown[],
 ): void;
 export function useTransitionEffect<S extends IState, SS extends S['state'] | S['state'][]>(
   state: S,
@@ -139,16 +440,19 @@ export function useTransitionEffect<S extends IState, SS extends S['state'] | S[
     action?: Exclude<S[typeof $ACTION], undefined>,
     prevState?: S,
   ) => void | (() => void),
+  deps?: unknown[],
 ): void;
 export function useTransitionEffect<S extends IState>(
   state: S,
   effect: (state: S, action?: Exclude<S[typeof $ACTION], undefined>, prevState?: S) => void,
+  deps?: unknown[],
 ): void;
 export function useTransitionEffect() {
   const state = arguments[0];
+  const deps = Array.isArray(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : [];
 
   if (typeof arguments[1] === 'function') {
-    return React.useEffect(() => arguments[1](state, state[$ACTION], state[$PREV_STATE]), [state]);
+    return React.useEffect(() => arguments[1](state, state[$ACTION], state[$PREV_STATE]), [state].concat(deps));
   }
 
   const current = arguments[1];
@@ -162,7 +466,7 @@ export function useTransitionEffect() {
         // @ts-ignore
         effect(state, state[$ACTION], state[$PREV_STATE]);
       }
-    }, [state]);
+    }, [state].concat(deps));
   }
 
   if (Array.isArray(current) && typeof action === 'string' && typeof prev === 'string') {
@@ -171,7 +475,7 @@ export function useTransitionEffect() {
         // @ts-ignore
         effect(state, state[$ACTION], state[$PREV_STATE]);
       }
-    }, [state]);
+    }, [state].concat(deps));
   }
 
   if (typeof current === 'string' && typeof action === 'string') {
@@ -181,7 +485,7 @@ export function useTransitionEffect() {
         effect(state, state[$ACTION], state[$PREV_STATE]);
       }
       // We only run the effect when the condition is true
-    }, [state]);
+    }, [state].concat(deps));
   }
 
   if (Array.isArray(current) && typeof action === 'string') {
@@ -191,7 +495,7 @@ export function useTransitionEffect() {
         effect(state, state[$ACTION], state[$PREV_STATE]);
       }
       // We only run the effect when the condition is true
-    }, [state]);
+    }, [state].concat(deps));
   }
 
   if (typeof current === 'string') {
@@ -203,7 +507,7 @@ export function useTransitionEffect() {
       }
       // We only run the effect when actually moving to a new state
       // @ts-ignore
-    }, [state.state === current]);
+    }, [state.state === current].concat(deps));
   }
 
   if (Array.isArray(current)) {
@@ -215,9 +519,10 @@ export function useTransitionEffect() {
         // @ts-ignore
         return effect(state, state[$ACTION], state[$PREV_STATE]);
       }
-    }, [shouldRun]);
+    }, [shouldRun].concat(deps));
   }
 }
+*/
 
 export function match<S extends IState, T extends TMatch<S>>(
   state: S,
@@ -250,7 +555,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S],
+  }[keyof S]
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
@@ -259,7 +564,7 @@ export function matchProp() {
   return prop in state ? state : undefined;
 }
 
-export const managerContext = React.createContext(null as unknown as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
