@@ -111,7 +111,7 @@ const DataComponent = () => {
 useTransitionEffect(
   state,
   'FOO', // ['FOO', 'BAR']
-  (state, action?, prevState?) => {
+  ({ to, action, from }) => {
     // When entering either state(s), also initial state
 
     return () => {
@@ -132,12 +132,12 @@ useTransitionEffect(
     // OPTIONAL: Contrain by action(s) causing the transition
     action: 'SWITCH', // ["SWITCH", "OTHER_ACTION"]
   },
-  (state, action?, prevState?) => {},
+  ({ to, action, from }) => {},
 );
 ```
 
 ```ts
-useTransitionEffect(state, (state, action, prevState) => {
+useTransitionEffect(state, ({ to, action, from }) => {
   // Any transition, not initial
 });
 ```

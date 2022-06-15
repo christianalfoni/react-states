@@ -272,7 +272,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'OTHER' });
 
-          useTransitionEffect(r[0], { to: 'FOO', from: 'BAR', action: 'SWITCH' }, (current, action, prev) => {
+          useTransitionEffect(r[0], { to: 'FOO', from: 'BAR', action: 'SWITCH' }, () => {
             hasRunEffect = true;
           });
 
@@ -304,8 +304,8 @@ describe('TRANSITIONS', () => {
           () => {
             const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransitionEffect(r[0], (state, action, prev) => {
-              args = [state, action, prev];
+            useTransitionEffect(r[0], ({ to, action, from }) => {
+              args = [to, action, from];
             });
 
             return r;
@@ -376,7 +376,7 @@ describe('TRANSITIONS', () => {
           () => {
             const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransitionEffect(r[0], (state, action, prev) => {
+            useTransitionEffect(r[0], () => {
               runEffectCount++;
             });
 

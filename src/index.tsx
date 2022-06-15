@@ -85,25 +85,19 @@ export function useTransitionEffect<
 >(
   state: S,
   transition: SS,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
+  effect: (transition: {
+    to: SS extends S['state'][] ? (S extends { state: SS[number] } ? S : never) : S extends { state: SS } ? S : never;
     action?: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
       ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
-      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState?: SF extends S['state'][]
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA };
+    from?: SF extends S['state'][]
       ? S extends { state: SF[number] }
         ? S
         : never
       : S extends { state: SF }
       ? S
-      : never,
-  ) => void,
+      : never;
+  }) => void,
   deps?: unknown[],
 ): void;
 export function useTransitionEffect<
@@ -118,25 +112,13 @@ export function useTransitionEffect<
     action?: AA;
     from?: SF;
   },
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
+  effect: (transition: {
+    to: SS extends S['state'][] ? (S extends { state: SS[number] } ? S : never) : S extends { state: SS } ? S : never;
     action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
       ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
-      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: SF extends S['state'][]
-      ? S extends { state: SF[number] }
-        ? S
-        : never
-      : S extends { state: SF }
-      ? S
-      : never,
-  ) => void,
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA };
+    from: SF extends S['state'][] ? (S extends { state: SF[number] } ? S : never) : S extends { state: SF } ? S : never;
+  }) => void,
   deps?: unknown[],
 ): void;
 export function useTransitionEffect<
@@ -151,25 +133,13 @@ export function useTransitionEffect<
     action: AA;
     from?: SF;
   },
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
+  effect: (transition: {
+    to: SS extends S['state'][] ? (S extends { state: SS[number] } ? S : never) : S extends { state: SS } ? S : never;
     action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
       ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
-      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: SF extends S['state'][]
-      ? S extends { state: SF[number] }
-        ? S
-        : never
-      : S extends { state: SF }
-      ? S
-      : never,
-  ) => void,
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA };
+    from: SF extends S['state'][] ? (S extends { state: SF[number] } ? S : never) : S extends { state: SF } ? S : never;
+  }) => void,
   deps?: unknown[],
 ): void;
 export function useTransitionEffect<
@@ -184,46 +154,36 @@ export function useTransitionEffect<
     action?: AA;
     from: SF;
   },
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
+  effect: (transition: {
+    to: SS extends S['state'][] ? (S extends { state: SS[number] } ? S : never) : S extends { state: SS } ? S : never;
     action: AA extends Exclude<S[typeof $ACTION], undefined>['type'][]
       ? Exclude<S[typeof $ACTION], undefined> & { type: AA[number] }
-      : Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: SF extends S['state'][]
-      ? S extends { state: SF[number] }
-        ? S
-        : never
-      : S extends { state: SF }
-      ? S
-      : never,
-  ) => void,
+      : Exclude<S[typeof $ACTION], undefined> & { type: AA };
+    from: SF extends S['state'][] ? (S extends { state: SF[number] } ? S : never) : S extends { state: SF } ? S : never;
+  }) => void,
   deps?: unknown[],
 ): void;
 export function useTransitionEffect<S extends IState>(
   state: S,
-  effect: (state: S, action?: Exclude<S[typeof $ACTION], undefined>, prevState?: S) => void,
+  effect: (transition: { to: S; action?: Exclude<S[typeof $ACTION], undefined>; from?: S }) => void,
   deps?: unknown[],
 ): void;
 export function useTransitionEffect() {
   const state = arguments[0];
   const prevState = state[$PREV_STATE];
   const action = state[$ACTION];
+  const effectPayload = { to: state, action: action, from: prevState };
 
   if (typeof arguments[1] === 'string') {
     const current = arguments[1];
+    const effect = arguments[2];
     const deps = arguments[3] || [];
 
     return React.useEffect(() => {
       // @ts-ignore
       if (state.state === current) {
         // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
+        return effect(effectPayload);
       }
       // We only run the effect when actually moving to a new state
       // @ts-ignore
@@ -232,6 +192,7 @@ export function useTransitionEffect() {
 
   if (Array.isArray(arguments[1])) {
     const current = arguments[1];
+    const effect = arguments[2];
     const deps = arguments[3] || [];
     // @ts-ignore
     const shouldRun = current.includes(state.state);
@@ -239,7 +200,7 @@ export function useTransitionEffect() {
     return React.useEffect(() => {
       if (shouldRun) {
         // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
+        return effect(effectPayload);
       }
     }, deps.concat(shouldRun));
   }
@@ -249,7 +210,7 @@ export function useTransitionEffect() {
     const effect = arguments[1];
 
     return React.useEffect(() => {
-      prevState && effect(state, action, prevState);
+      prevState && effect(effectPayload);
     }, deps.concat(state));
   }
 
@@ -279,14 +240,14 @@ export function useTransitionEffect() {
 
       if (transition.action) {
         if (typeof transition.action === 'string' && action?.type === transition.action) {
-          prevState && effect(state, action, prevState);
+          prevState && effect(effectPayload);
         } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
-          prevState && effect(state, action, prevState);
+          prevState && effect(effectPayload);
         }
         return;
       }
 
-      prevState && effect(state, action, prevState);
+      prevState && effect(effectPayload);
 
       return;
     }
@@ -302,170 +263,27 @@ export function useTransitionEffect() {
 
       if (transition.action) {
         if (typeof transition.action === 'string' && action?.type === transition.action) {
-          prevState && effect(state, action, prevState);
+          prevState && effect(effectPayload);
         } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
-          prevState && effect(state, action, prevState);
+          prevState && effect(effectPayload);
         }
         return;
       }
 
-      prevState && effect(state, action, prevState);
+      prevState && effect(effectPayload);
 
       return;
     }
 
     if (transition.action) {
       if (typeof transition.action === 'string' && action?.type === transition.action) {
-        prevState && effect(state, action, prevState);
+        prevState && effect(effectPayload);
       } else if (Array.isArray(transition.action) && transition.action.includes(action?.type)) {
-        prevState && effect(state, action, prevState);
+        prevState && effect(effectPayload);
       }
     }
   }, deps.concat(state));
 }
-
-/*
-export function useTransitionEffect<
-  S extends IState,
-  SS extends S['state'] | S['state'][],
-  AA extends Exclude<S[typeof $ACTION], undefined>['type'],
-  SP extends S['state']
->(
-  state: S,
-  current: SS,
-  action: AA,
-  prev: SP,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
-    action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: S extends { state: SP } ? S : never,
-  ) => void,
-  deps?: unknown[],
-): void;
-export function useTransitionEffect<
-  S extends IState,
-  SS extends S['state'] | S['state'][],
-  AA extends Exclude<S[typeof $ACTION], undefined>['type']
->(
-  state: S,
-  current: SS,
-  action: AA,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
-    action: Exclude<S[typeof $ACTION], undefined> & { type: AA },
-    prevState: S,
-  ) => void,
-  deps?: unknown[],
-): void;
-export function useTransitionEffect<S extends IState, SS extends S['state'] | S['state'][]>(
-  state: S,
-  current: SS,
-  effect: (
-    state: SS extends S['state'][]
-      ? S extends { state: SS[number] }
-        ? S
-        : never
-      : S extends { state: SS }
-      ? S
-      : never,
-    action?: Exclude<S[typeof $ACTION], undefined>,
-    prevState?: S,
-  ) => void | (() => void),
-  deps?: unknown[],
-): void;
-export function useTransitionEffect<S extends IState>(
-  state: S,
-  effect: (state: S, action?: Exclude<S[typeof $ACTION], undefined>, prevState?: S) => void,
-  deps?: unknown[],
-): void;
-export function useTransitionEffect() {
-  const state = arguments[0];
-  const deps = Array.isArray(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : [];
-
-  if (typeof arguments[1] === 'function') {
-    return React.useEffect(() => arguments[1](state, state[$ACTION], state[$PREV_STATE]), [state].concat(deps));
-  }
-
-  const current = arguments[1];
-  const action = arguments[2];
-  const prev = arguments[3];
-  const effect = arguments[4] || arguments[3] || arguments[2];
-
-  if (typeof current === 'string' && typeof action === 'string' && typeof prev === 'string') {
-    return React.useEffect(() => {
-      if (state.state === current && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
-        // @ts-ignore
-        effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-    }, [state].concat(deps));
-  }
-
-  if (Array.isArray(current) && typeof action === 'string' && typeof prev === 'string') {
-    return React.useEffect(() => {
-      if (current.includes(state.state) && state[$ACTION]?.type === action && state[$PREV_STATE]?.state === prev) {
-        // @ts-ignore
-        effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-    }, [state].concat(deps));
-  }
-
-  if (typeof current === 'string' && typeof action === 'string') {
-    return React.useEffect(() => {
-      if (state.state === current && state[$ACTION]?.type === action) {
-        // @ts-ignore
-        effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-      // We only run the effect when the condition is true
-    }, [state].concat(deps));
-  }
-
-  if (Array.isArray(current) && typeof action === 'string') {
-    return React.useEffect(() => {
-      if (current.includes(state.state) && state[$ACTION]?.type === action) {
-        // @ts-ignore
-        effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-      // We only run the effect when the condition is true
-    }, [state].concat(deps));
-  }
-
-  if (typeof current === 'string') {
-    return React.useEffect(() => {
-      // @ts-ignore
-      if (state.state === current) {
-        // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-      // We only run the effect when actually moving to a new state
-      // @ts-ignore
-    }, [state.state === current].concat(deps));
-  }
-
-  if (Array.isArray(current)) {
-    // @ts-ignore
-    const shouldRun = current.includes(state.state);
-
-    return React.useEffect(() => {
-      if (shouldRun) {
-        // @ts-ignore
-        return effect(state, state[$ACTION], state[$PREV_STATE]);
-      }
-    }, [shouldRun].concat(deps));
-  }
-}
-*/
 
 export function match<S extends IState, T extends TMatch<S>>(
   state: S,

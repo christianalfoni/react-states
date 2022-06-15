@@ -111,7 +111,7 @@ export const Resizer = ({
       to: 'RESIZING',
       action: 'MOUSE_MOVE',
     },
-    ({ x }) => {
+    ({ action: { x } }) => {
       onResize(window.innerWidth - x);
     },
   );
