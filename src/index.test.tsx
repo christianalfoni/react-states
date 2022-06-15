@@ -1,6 +1,15 @@
 import { act } from '@testing-library/react';
 import React, { useReducer } from 'react';
-import { $ACTION, $PREV_STATE, match, transition, useTransitionEffect } from '.';
+import {
+  $ACTION,
+  $PREV_STATE,
+  match,
+  transition,
+  useTransitionEffect,
+  useEnterEffect,
+  useLeaveEffect,
+  useActionEffect,
+} from '.';
 import { renderReducer } from './test';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
@@ -94,14 +103,34 @@ test('should have fallback match', () => {
   ).toBe('bar');
 });
 describe('TRANSITIONS', () => {
-  describe('ENTER', () => {
+  describe('useActionEffect', () => {
+    test('should when action runs', () => {
+      let hasRunActionEffect = false;
+      const [, dispatch] = renderReducer(
+        () => {
+          const r = useReducer(reducer, { state: 'FOO' });
+
+          useActionEffect(r[0], 'SWITCH', () => {
+            hasRunActionEffect = true;
+          });
+
+          return r;
+        },
+        (ReducerHook) => <ReducerHook />,
+      );
+      expect(hasRunActionEffect).toBe(false);
+      act(() => dispatch({ type: 'SWITCH' }));
+      expect(hasRunActionEffect).toBe(true);
+    });
+  });
+  describe('useEnterEffect', () => {
     test('should run on initial state', () => {
       let hasRunEnteredEffect = false;
       const [] = renderReducer(
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnterEffect(r[0], 'FOO', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -111,13 +140,39 @@ describe('TRANSITIONS', () => {
       );
       expect(hasRunEnteredEffect).toBe(true);
     });
+    test('should run when prop updates', () => {
+      let runEnteredEffectCount = 0;
+      const [, dispatch] = renderReducer(
+        () => {
+          const r = useReducer(reducer, { state: 'FOO' });
+
+          useEnterEffect(
+            r[0],
+            'FOO',
+            () => {
+              runEnteredEffectCount++;
+            },
+            [runEnteredEffectCount],
+          );
+
+          return r;
+        },
+        (ReducerHook) => <ReducerHook />,
+      );
+      expect(runEnteredEffectCount).toBe(1);
+      act(() => {
+        dispatch({ type: 'SWITCH_SAME' });
+      });
+      expect(runEnteredEffectCount).toBe(2);
+    });
+
     test('should run when entering new state', () => {
       let hasRunEnteredEffect = false;
       const [, dispatch] = renderReducer(
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'BAR', () => {
+          useEnterEffect(r[0], 'BAR', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -137,7 +192,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnterEffect(r[0], 'FOO', () => {
             runEnteredEffectCount++;
           });
 
@@ -157,7 +212,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => () => {
+          useEnterEffect(r[0], 'FOO', () => () => {
             hasRunDisposer = true;
           });
 
@@ -177,7 +232,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => {
             hasRunEnterEffect = true;
           });
 
@@ -193,7 +248,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => {
             runEnterEffectCount++;
           });
 
@@ -215,7 +270,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => () => {
             runDisposeCount++;
           });
 
@@ -238,14 +293,15 @@ describe('TRANSITIONS', () => {
       expect(runDisposeCount).toBe(1);
     });
   });
-  describe('ENTER BY ACTION', () => {
-    test('should run when entering state by action', () => {
+
+  describe('useLeaveEffect', () => {
+    test('should run when leaving state', () => {
       let hasRunEffect = false;
       const [, dispatch] = renderReducer(
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', 'SWITCH', () => {
+          useLeaveEffect(r[0], 'FOO', () => {
             hasRunEffect = true;
           });
 
@@ -253,12 +309,6 @@ describe('TRANSITIONS', () => {
         },
         (ReducerHook) => <ReducerHook />,
       );
-      expect(hasRunEffect).toBe(false);
-      act(() => {
-        dispatch({
-          type: 'SWITCH',
-        });
-      });
       expect(hasRunEffect).toBe(false);
       act(() => {
         dispatch({
@@ -267,13 +317,13 @@ describe('TRANSITIONS', () => {
       });
       expect(hasRunEffect).toBe(true);
     });
-    test('should run when entering either states by action', () => {
+    test('should run when leaving either states by action', () => {
       let hasRunEffect = false;
       const [, dispatch] = renderReducer(
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], 'SWITCH', () => {
+          useLeaveEffect(r[0], ['FOO', 'BAR'], () => {
             hasRunEffect = true;
           });
 
@@ -284,20 +334,21 @@ describe('TRANSITIONS', () => {
       expect(hasRunEffect).toBe(false);
       act(() => {
         dispatch({
-          type: 'SWITCH',
+          type: 'SWITCH_OTHER',
         });
       });
       expect(hasRunEffect).toBe(true);
     });
   });
-  describe('ENTER BY ACTION FROM STATE', () => {
+
+  describe('useTransitionEffect', () => {
     test('should run when entering state by action from state', () => {
       let hasRunEffect = false;
       const [, dispatch] = renderReducer(
         () => {
           const r = useReducer(reducer, { state: 'OTHER' });
 
-          useTransitionEffect(r[0], 'FOO', 'SWITCH', 'BAR', () => {
+          useTransitionEffect(r[0], { to: 'FOO', from: 'BAR', action: 'SWITCH' }, (current, action, prev) => {
             hasRunEffect = true;
           });
 
@@ -321,6 +372,7 @@ describe('TRANSITIONS', () => {
       });
       expect(hasRunEffect).toBe(true);
     });
+
     describe('ANY', () => {
       test('should give correct args', () => {
         let args: any[] = [];
@@ -336,13 +388,7 @@ describe('TRANSITIONS', () => {
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(args).toEqual([
-          {
-            state: 'FOO',
-          },
-          undefined,
-          undefined,
-        ]);
+        expect(args).toEqual([]);
         act(() => {
           dispatch({
             type: 'SWITCH',
@@ -365,6 +411,40 @@ describe('TRANSITIONS', () => {
             state: 'FOO',
           },
         ]);
+        act(() => {
+          dispatch({
+            type: 'SWITCH',
+          });
+        });
+        expect(args).toEqual([
+          {
+            state: 'FOO',
+            [$ACTION]: {
+              type: 'SWITCH',
+            },
+            [$PREV_STATE]: {
+              state: 'BAR',
+              [$ACTION]: {
+                type: 'SWITCH',
+              },
+              [$PREV_STATE]: {
+                state: 'FOO',
+              },
+            },
+          },
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'BAR',
+            [$ACTION]: {
+              type: 'SWITCH',
+            },
+            [$PREV_STATE]: {
+              state: 'FOO',
+            },
+          },
+        ]);
       });
       test('should run on any transition', () => {
         let runEffectCount = 0;
@@ -380,19 +460,19 @@ describe('TRANSITIONS', () => {
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(runEffectCount).toBe(1);
+        expect(runEffectCount).toBe(0);
         act(() => {
           dispatch({
             type: 'SWITCH',
           });
         });
-        expect(runEffectCount).toBe(2);
+        expect(runEffectCount).toBe(1);
         act(() => {
           dispatch({
             type: 'SWITCH_SAME',
           });
         });
-        expect(runEffectCount).toBe(3);
+        expect(runEffectCount).toBe(2);
       });
     });
   });
