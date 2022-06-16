@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { transition, useTransitionEffect, match, PickState } from '../';
+import { transition, useTransitionEffect, match, PickState, useEnterEffect } from '../';
 import { colors } from './styles';
 
 type State =
@@ -82,7 +82,7 @@ export const Resizer = ({
     state: 'IDLE',
   });
 
-  useTransitionEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
+  useEnterEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
       dispatch({
         type: 'MOUSE_MOVE',

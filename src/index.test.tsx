@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import React, { useReducer } from 'react';
-import { $ACTION, $PREV_STATE, match, PickState, transition, useTransitionEffect } from '.';
+import { $ACTION, $PREV_STATE, match, PickState, transition, useEnterEffect, useTransitionEffect } from '.';
 import { renderReducer } from './test';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
@@ -101,7 +101,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnterEffect(r[0], 'FOO', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -117,7 +117,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(
+          useEnterEffect(
             r[0],
             'FOO',
             () => {
@@ -143,7 +143,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'BAR', () => {
+          useEnterEffect(r[0], 'BAR', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -163,7 +163,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnterEffect(r[0], 'FOO', () => {
             runEnteredEffectCount++;
           });
 
@@ -183,7 +183,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => () => {
+          useEnterEffect(r[0], 'FOO', () => () => {
             hasRunDisposer = true;
           });
 
@@ -203,7 +203,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => {
             hasRunEnterEffect = true;
           });
 
@@ -219,7 +219,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => {
             runEnterEffectCount++;
           });
 
@@ -241,7 +241,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => () => {
+          useEnterEffect(r[0], ['FOO', 'BAR'], () => () => {
             runDisposeCount++;
           });
 
@@ -313,11 +313,11 @@ describe('TRANSITIONS', () => {
           (ReducerHook) => <ReducerHook />,
         );
         expect(args).toEqual([
-          undefined,
-          undefined,
           {
             state: 'FOO',
           },
+          undefined,
+          undefined,
         ]);
         act(() => {
           dispatch({
@@ -325,13 +325,6 @@ describe('TRANSITIONS', () => {
           });
         });
         expect(args).toEqual([
-          {
-            state: 'FOO',
-          },
-          {
-            type: 'SWITCH',
-          },
-
           {
             state: 'BAR',
             [$ACTION]: {
@@ -341,6 +334,12 @@ describe('TRANSITIONS', () => {
               state: 'FOO',
             },
           },
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'FOO',
+          },
         ]);
         act(() => {
           dispatch({
@@ -349,12 +348,6 @@ describe('TRANSITIONS', () => {
         });
         expect(args).toEqual([
           {
-            state: 'BAR',
-          },
-          {
-            type: 'SWITCH',
-          },
-          {
             state: 'FOO',
             [$ACTION]: {
               type: 'SWITCH',
@@ -362,6 +355,12 @@ describe('TRANSITIONS', () => {
             [$PREV_STATE]: {
               state: 'BAR',
             },
+          },
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'BAR',
           },
         ]);
       });

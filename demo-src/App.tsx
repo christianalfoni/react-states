@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { match, useDevtools, useTransitionEffect } from '../src';
+import { match, useDevtools, useEnterEffect, useTransitionEffect } from '../src';
 import { reducer } from './reducers/todos';
 
 const Test = () => {
@@ -12,7 +12,7 @@ const Test = () => {
 
   const [state, dispatch] = todosReducer;
 
-  useTransitionEffect(state, 'LOADING', () => {
+  useEnterEffect(state, 'LOADING', () => {
     setTimeout(() => {
       dispatch({
         type: 'FETCH_TODOS_SUCCESS',
