@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import React, { useReducer } from 'react';
-import { $ACTION, $PREV_STATE, match, transition, useTransitionEffect } from '.';
+import { $ACTION, $PREV_STATE, match, PickState, transition, useTransitionEffect } from '.';
 import { renderReducer } from './test';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
@@ -9,19 +9,19 @@ type Action = { type: 'SWITCH' } | { type: 'SWITCH_SAME' } | { type: 'NOOP' } | 
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     FOO: {
-      SWITCH: (): State => ({ state: 'BAR' }),
-      SWITCH_SAME: (): State => ({ state: 'FOO' }),
-      NOOP: (state): State => state,
-      SWITCH_OTHER: (): State => ({ state: 'OTHER' }),
+      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
+      SWITCH_SAME: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
+      NOOP: (state): PickState<State, 'FOO'> => state,
+      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
     },
     BAR: {
-      SWITCH: (): State => ({ state: 'FOO' }),
-      SWITCH_SAME: (): State => ({ state: 'BAR' }),
-      NOOP: (state): State => state,
-      SWITCH_OTHER: (): State => ({ state: 'OTHER' }),
+      SWITCH: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
+      SWITCH_SAME: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
+      NOOP: (state): PickState<State, 'BAR'> => state,
+      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
     },
     OTHER: {
-      SWITCH: (): State => ({ state: 'BAR' }),
+      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
     },
   });
 
@@ -272,7 +272,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'OTHER' });
 
-          useTransitionEffect(r[0], { to: 'FOO', from: 'BAR', action: 'SWITCH' }, () => {
+          useTransitionEffect(r[0], 'BAR => SWITCH => FOO', () => {
             hasRunEffect = true;
           });
 
@@ -304,8 +304,8 @@ describe('TRANSITIONS', () => {
           () => {
             const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransitionEffect(r[0], ({ to, action, from }) => {
-              args = [to, action, from];
+            useTransitionEffect(r[0], (prev, action, current) => {
+              args = [prev, action, current];
             });
 
             return r;
