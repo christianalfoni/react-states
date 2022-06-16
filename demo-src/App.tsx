@@ -21,7 +21,7 @@ const Test = () => {
     }, 500);
   });
 
-  useTransitionEffect(state, { action: 'ADD_TODO' }, () => {
+  useTransitionEffect(state, 'LOADED => ADD_TODO => LOADED', () => {
     // Do something
   });
 

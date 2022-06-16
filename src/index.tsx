@@ -78,6 +78,10 @@ export function transition<S extends IState, A extends IAction, T extends TTrans
     action[$ACTION] && newState !== state && action[$ACTION](debugId, false);
     // @ts-ignore
     newState[$PREV_STATE] = state;
+    // @ts-ignore
+    delete state[$PREV_STATE];
+    // @ts-ignore
+    delete state[$ACTION];
   } else {
     // @ts-ignore
     action[$ACTION] && action[$ACTION](debugId, true);
@@ -97,17 +101,20 @@ export function transition<S extends IState, A extends IAction, T extends TTrans
 export function useTransitionEffect<S extends IState, T extends S[typeof $TRANSITIONS] | S[typeof $TRANSITIONS][]>(
   state: S,
   transition: T,
-  effect: T extends `${infer SP} => ${infer A} => ${infer SC}` | `${infer SP} => ${infer A} => ${infer SC}`[]
-    ? (
-        prev: S & { state: SP },
-        action: Exclude<S[typeof $ACTION], undefined> & { type: A },
-        current: S & { state: SC },
-      ) => void | (() => void)
-    : T extends string
-    ? (current: S & { state: T }) => void | (() => void)
-    : T extends string[]
-    ? (current: S & { state: T[number] }) => void | (() => void)
-    : never,
+  effect: (
+    ...args: T extends `${infer SP} => ${infer A} => ${infer SC}` | `${infer SP} => ${infer A} => ${infer SC}`[]
+      ? [
+          prev: S & { state: SP },
+          action: Exclude<S[typeof $ACTION], undefined> & { type: A },
+          current: S & { state: SC },
+        ]
+      : T extends string
+      ? [current: S & { state: T }]
+      : T extends string[]
+      ? [current: S & { state: T[number] }]
+      : never
+  ) => void | (() => void),
+
   deps?: unknown[],
 ): void;
 export function useTransitionEffect<S extends IState>(
@@ -119,13 +126,13 @@ export function useTransitionEffect<S extends IState>(
   ) => void | (() => void),
   deps?: unknown[],
 ): void;
-export function useTransitionEffect(...params: any[]) {
-  const state = params[0];
-  const transitions = params[1];
-  const cb = params[2] || params[1];
-  const deps = Array.isArray(params[params.length - 1]) ? params[params.length - 1] : [];
+export function useTransitionEffect() {
+  const state = arguments[0];
+  const transitions = arguments[1];
+  const cb = arguments[2] || arguments[1];
+  const deps = Array.isArray(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : [];
 
-  if (typeof state === 'function') {
+  if (typeof transitions === 'function') {
     return React.useEffect(() => cb(state[$PREV_STATE], state[$ACTION], state), deps.concat(state));
   }
 
@@ -134,25 +141,24 @@ export function useTransitionEffect(...params: any[]) {
   const prevState = state[$PREV_STATE];
   const action = state[$ACTION];
   const transition = `${prevState?.state} => ${action?.type} => ${currentState.state}`;
-  const hasTransitioned = Boolean(
-    // Transitioned into
-    (transitionsList.includes(currentState.state as string) &&
-      prevState &&
-      !transitionsList.includes(prevState?.state as string)) ||
-      (transitionsList.includes(prevState?.state as string) && !transitionsList.includes(currentState.state as string)),
-  );
+  const isTransition = transitionsList.includes(transition);
 
-  console.log(hasTransitioned, currentState, prevState);
+  if (isTransition) {
+    return React.useEffect(() => {
+      if (isTransition) {
+        return cb(prevState, action, currentState);
+      }
+    }, deps.concat(state));
+  }
 
-  React.useEffect(() => {
+  const isSameTransition =
+    transitionsList.includes(currentState.state as string) && transitionsList.includes(currentState.state as string);
+
+  return React.useEffect(() => {
     if (transitionsList.includes(currentState.state as string)) {
       return cb(currentState);
     }
-
-    if (transitionsList.includes()) {
-      return cb(prevState, action, currentState);
-    }
-  }, deps.concat(hasTransitioned));
+  }, deps.concat(isSameTransition));
 }
 
 export function match<S extends IState, T extends TMatch<S>>(

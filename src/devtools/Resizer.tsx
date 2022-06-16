@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { transition, useTransitionEffect, match } from '../';
+import { transition, useTransitionEffect, match, PickState } from '../';
 import { colors } from './styles';
 
 type State =
@@ -35,35 +35,35 @@ type Action =
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     IDLE: {
-      MOUSE_DOWN: (_, { x }): State => ({
+      MOUSE_DOWN: (_, { x }): PickState<State, 'DETECTING_RESIZE'> => ({
         state: 'DETECTING_RESIZE',
         initialX: x,
       }),
     },
     DETECTING_RESIZE: {
-      MOUSE_MOVE: (mouseDownState, { x }): State => {
-        if (Math.abs(x - mouseDownState.initialX) > 3) {
+      MOUSE_MOVE: (current, { x }): PickState<State, 'RESIZING' | 'DETECTING_RESIZE'> => {
+        if (Math.abs(x - current.initialX) > 3) {
           return {
             state: 'RESIZING',
             x,
           };
         }
 
-        return mouseDownState;
+        return current;
       },
-      MOUSE_UP: (): State => ({
+      MOUSE_UP: (): PickState<State, 'IDLE'> => ({
         state: 'IDLE',
       }),
-      MOUSE_UP_RESIZER: (): State => ({
+      MOUSE_UP_RESIZER: (): PickState<State, 'IDLE'> => ({
         state: 'IDLE',
       }),
     },
     RESIZING: {
-      MOUSE_MOVE: (_, { x }): State => ({
+      MOUSE_MOVE: (_, { x }): PickState<State, 'RESIZING'> => ({
         state: 'RESIZING',
         x,
       }),
-      MOUSE_UP: (): State => ({
+      MOUSE_UP: (): PickState<State, 'IDLE'> => ({
         state: 'IDLE',
       }),
     },
@@ -107,23 +107,13 @@ export const Resizer = ({
 
   useTransitionEffect(
     resizer,
-    {
-      to: 'RESIZING',
-      action: 'MOUSE_MOVE',
-    },
-    ({ action: { x } }) => {
+    ['DETECTING_RESIZE => MOUSE_MOVE => DETECTING_RESIZE', 'RESIZING => MOUSE_MOVE => RESIZING'],
+    (_, { x }) => {
       onResize(window.innerWidth - x);
     },
   );
 
-  useTransitionEffect(
-    resizer,
-    {
-      to: 'IDLE',
-      action: 'MOUSE_UP_RESIZER',
-    },
-    () => onClick(),
-  );
+  useTransitionEffect(resizer, 'DETECTING_RESIZE => MOUSE_UP_RESIZER => IDLE', () => onClick());
 
   const style: React.CSSProperties = {
     position: 'absolute',

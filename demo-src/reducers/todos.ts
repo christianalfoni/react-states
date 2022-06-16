@@ -1,4 +1,4 @@
-import { transition } from '../../src';
+import { PickState, transition } from '../../src';
 
 type Todo = {
   title: string;
@@ -41,22 +41,22 @@ type Action =
 export const reducer = (state: State, action: Action) =>
   transition(state, action, {
     NOT_LOADED: {
-      FETCH_TODOS: (): State => ({
+      FETCH_TODOS: (): PickState<State, 'LOADING'> => ({
         state: 'LOADING',
       }),
     },
     LOADING: {
-      FETCH_TODOS_SUCCESS: (_, { todos }): State => ({
+      FETCH_TODOS_SUCCESS: (_, { todos }): PickState<State, 'LOADED'> => ({
         state: 'LOADED',
         todos,
       }),
-      FETCH_TODOS_ERROR: (_, { error }): State => ({
+      FETCH_TODOS_ERROR: (_, { error }): PickState<State, 'ERROR'> => ({
         state: 'ERROR',
         error,
       }),
     },
     LOADED: {
-      ADD_TODO: (state, { todo }): State => ({
+      ADD_TODO: (state, { todo }): PickState<State, 'LOADED'> => ({
         state: 'LOADED',
         todos: [todo].concat(state.todos),
       }),

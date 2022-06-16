@@ -312,25 +312,9 @@ describe('TRANSITIONS', () => {
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(args).toEqual([]);
-        act(() => {
-          dispatch({
-            type: 'SWITCH',
-          });
-        });
         expect(args).toEqual([
-          {
-            state: 'BAR',
-            [$ACTION]: {
-              type: 'SWITCH',
-            },
-            [$PREV_STATE]: {
-              state: 'FOO',
-            },
-          },
-          {
-            type: 'SWITCH',
-          },
+          undefined,
+          undefined,
           {
             state: 'FOO',
           },
@@ -343,22 +327,11 @@ describe('TRANSITIONS', () => {
         expect(args).toEqual([
           {
             state: 'FOO',
-            [$ACTION]: {
-              type: 'SWITCH',
-            },
-            [$PREV_STATE]: {
-              state: 'BAR',
-              [$ACTION]: {
-                type: 'SWITCH',
-              },
-              [$PREV_STATE]: {
-                state: 'FOO',
-              },
-            },
           },
           {
             type: 'SWITCH',
           },
+
           {
             state: 'BAR',
             [$ACTION]: {
@@ -366,6 +339,28 @@ describe('TRANSITIONS', () => {
             },
             [$PREV_STATE]: {
               state: 'FOO',
+            },
+          },
+        ]);
+        act(() => {
+          dispatch({
+            type: 'SWITCH',
+          });
+        });
+        expect(args).toEqual([
+          {
+            state: 'BAR',
+          },
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'FOO',
+            [$ACTION]: {
+              type: 'SWITCH',
+            },
+            [$PREV_STATE]: {
+              state: 'BAR',
             },
           },
         ]);
@@ -384,19 +379,19 @@ describe('TRANSITIONS', () => {
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(runEffectCount).toBe(0);
+        expect(runEffectCount).toBe(1);
         act(() => {
           dispatch({
             type: 'SWITCH',
           });
         });
-        expect(runEffectCount).toBe(1);
+        expect(runEffectCount).toBe(2);
         act(() => {
           dispatch({
             type: 'SWITCH_SAME',
           });
         });
-        expect(runEffectCount).toBe(2);
+        expect(runEffectCount).toBe(3);
       });
     });
   });
