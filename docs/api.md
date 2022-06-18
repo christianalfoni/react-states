@@ -37,11 +37,11 @@ type Action =
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     NOT_LOADED: {
-      LOAD: (): State => ({ state: 'LOADING' }),
+      LOAD: () => ({ state: 'LOADING' }),
     },
     LOADING: {
-      LOAD_SUCCESS: (_, { data }): State => ({ state: 'LOADED', data }),
-      LOAD_ERROR: (_, { error }): State => ({ state: 'ERROR', error }),
+      LOAD_SUCCESS: (_, { data }) => ({ state: 'LOADED', data }),
+      LOAD_ERROR: (_, { error }) => ({ state: 'ERROR', error }),
     },
     LOADED: {},
     ERRORL: {},
@@ -105,40 +105,32 @@ const DataComponent = () => {
 };
 ```
 
-#### useTransitionEffect
+#### useEnter
 
 ```ts
-useTransitionEffect(
+useEnter(
   state,
   'FOO', // ['FOO', 'BAR']
-  ({ to, action, from }) => {
+  (current) => {
     // When entering either state(s), also initial state
 
     return () => {
-      // When leaving either state(s)
+      // When leaving to other state
     };
   },
 );
 ```
 
+#### useTransition
+
 ```ts
-useTransitionEffect(
-  state,
-  {
-    // OPTIONAL: Entering states(s), also from same state(s), not initial
-    to: 'FOO', // ["FOO", "BAR"],
-    // OPTIONAL: Leaving states(s), also from same state(s)
-    from: 'FOO', // ["FOO", "BAR"],
-    // OPTIONAL: Contrain by action(s) causing the transition
-    action: 'SWITCH', // ["SWITCH", "OTHER_ACTION"]
-  },
-  ({ to, action, from }) => {},
-);
+// Inferred actual possible transitions
+useTransition(state, 'FOO => SWITCH => BAR', (current, action, prev) => {});
 ```
 
 ```ts
-useTransitionEffect(state, ({ to, action, from }) => {
-  // Any transition, not initial
+useTransition(state, (current, action, prev) => {
+  // Any transition
 });
 ```
 
@@ -165,20 +157,6 @@ it('should do something', () => {
   });
 
   expect(state.state).toBe('LOADING');
-
-  expect(environment.dataLoader.load).toBeCalled();
-
-  act(() => {
-    environment.emitter.emit({
-      type: 'DATA:LOAD_SUCCESS',
-      items: ['foo', 'bar'],
-    });
-  });
-
-  expect(state).toEqual({
-    state: 'LOADED',
-    items: ['foo', 'bar'],
-  });
 });
 ```
 
@@ -203,12 +181,12 @@ type Action = {
 
 const transitions: TTransitions<State, Action> = {
   FOO: {
-    SWITCH: (state, action): State => ({
+    SWITCH: (state, action) => ({
       state: 'BAR',
     }),
   },
   BAR: {
-    SWITCH: (state, action): State => ({
+    SWITCH: (state, action) => ({
       state: 'FOO',
     }),
   },
@@ -235,7 +213,7 @@ type Action = {
 };
 
 const fooTransitions: TTransition<State, Action, 'FOO'> = {
-  SWITCH: (state, action): State => ({
+  SWITCH: (state, action) => ({
     state: 'FOO',
   }),
 };
@@ -243,7 +221,7 @@ const fooTransitions: TTransition<State, Action, 'FOO'> = {
 const transitions: TTransitions<State, Action> = {
   FOO: fooTransitions,
   BAR: {
-    SWITCH: (state, action): State => ({
+    SWITCH: (state, action) => ({
       state: 'FOO',
     }),
   },
@@ -254,7 +232,7 @@ const reducer = (state: State, action: Action) => transition(state, action, tran
 const transitions: TTransitions<State, Action> = {
   FOO: fooTransitions,
   BAR: {
-    SWITCH: (): State => ({
+    SWITCH: () => ({
       state: 'FOO',
     }),
   },

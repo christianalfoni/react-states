@@ -96,7 +96,7 @@ export function transition<S extends IState, A extends IAction, T extends TTrans
   return newState as any;
 }
 
-export function useEnterEffect<S extends IState, SS extends S['state'] | S['state'][]>(
+export function useEnter<S extends IState, SS extends S['state'] | S['state'][]>(
   state: S,
   states: SS,
   effect: (
@@ -112,7 +112,7 @@ export function useEnterEffect<S extends IState, SS extends S['state'] | S['stat
   return React.useEffect(() => isMatch && effect(currentState), deps.concat(isMatch));
 }
 
-export function useTransitionEffect<S extends IState, T extends S[typeof $TRANSITIONS] | S[typeof $TRANSITIONS][]>(
+export function useTransition<S extends IState, T extends S[typeof $TRANSITIONS] | S[typeof $TRANSITIONS][]>(
   state: S,
   transition: T,
   effect: T extends `${infer SP} => ${infer A} => ${infer SC}` | `${infer SP} => ${infer A} => ${infer SC}`[]
@@ -125,7 +125,7 @@ export function useTransitionEffect<S extends IState, T extends S[typeof $TRANSI
 
   deps?: unknown[],
 ): void;
-export function useTransitionEffect<S extends IState>(
+export function useTransition<S extends IState>(
   state: S,
   effect: (
     current: S,
@@ -134,7 +134,7 @@ export function useTransitionEffect<S extends IState>(
   ) => void | (() => void),
   deps?: unknown[],
 ): void;
-export function useTransitionEffect() {
+export function useTransition() {
   const state = arguments[0];
   const transitions = arguments[1];
   const cb = arguments[2] || arguments[1];

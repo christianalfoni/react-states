@@ -1,155 +1,34 @@
 # Patterns
 
+- [Exact State](#Exact-State)
+- [Creators](#Creators)
 - [Hook](#Hook)
 - [Lift Transitions](#lift-transitions)
 - [BaseState](#BaseState)
-- [Creators](#Creators)
 - [Environment Interface](#Environment-Interface)
 
-## Hook
+## Exact State
 
-Expose the reducer and related effects as a hook.
+To ensure exact return type from handlers, use `PickState`. This ensures adding invalid properties are flagged and transition inference works as expected.
 
-```tsx
-import { useReducer } from 'react';
-import { transition, TTransitions, useTransitionEffect } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
+```ts
 const transitions: TTransitions<State, Action> = {
   FOO: {
-    SWITCH: () => ({
+    SWITCH: (): PickState<State, 'BAR'> => ({
       state: 'BAR',
     }),
   },
   BAR: {
-    SWITCH: () => ({
+    SWITCH: (): PickState<State, 'FOO'> => ({
       state: 'FOO',
     }),
   },
 };
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-
-// Allow setting initialState for more reusability and also
-// improved testability
-export const useSwitcher = (initialState?: State) => {
-  const switcherReducer = useReducer(reducer, initialState || FOO());
-
-  useDevtools('Switcher', switcherReducer);
-
-  const [state] = switcherReducer;
-
-  useTransitionEffect(state, 'BAR', () => {
-    console.log('Switched to BAR');
-  });
-
-  return switcherReducer;
-};
-```
-
-### Lift Transitions
-
-```ts
-import { transition, TTransitions, TTransition, ReturnTypes, PickState, IState, pick } from 'react-states';
-
-type Action =
-  | {
-      type: 'GO_TO_FOO';
-    }
-  | {
-      type: 'GO_TO_BAR';
-    }
-  | {
-      type: 'GO_TO_BAZ';
-    };
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    }
-  | {
-      state: 'BAZ';
-    };
-
-// A single transition to be used in any state
-const GO_TO_FOO = (state: State) => FOO();
-
-// Multiple transitions to be used in any state
-const baseTransitions: TTransition<State, Action> = {
-  GO_TO_FOO: (): State => ({
-    state: 'FOO',
-  }),
-  GO_TO_BAR: (): State => ({
-    state: 'BAR',
-  }),
-};
-
-// Multiple transitions to be used in specific states
-const fooBarTransitions: TTransition<State, Action, 'FOO' | 'BAR'> = {
-  GO_TO_FOO: (): State => ({
-    state: 'FOO',
-  }),
-  GO_TO_BAR: (): State => ({
-    state: 'BAR',
-  }),
-};
-
-// All transitions
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    ...baseTransitions,
-    ...fooBarTransitions,
-    GO_TO_FOO,
-  },
-  BAR: {
-    ...baseTransitions,
-    ...fooBarTransitions,
-    GO_TO_FOO,
-  },
-  BAZ: {
-    ...baseTransitions,
-    GO_TO_FOO,
-  },
-};
-```
-
-### BaseState
-
-When you work with complex state it can be a good idea to define all possible values across states and then rather pick which one is being used in either state. This improves reusability and reduces duplication.
-
-```ts
-type BaseState = {
-  foo: string;
-  bar: number;
-  baz: boolean;
-};
-
-type State =
-  | ({
-      state: 'FOO';
-    } & Pick<BaseSTate, 'foo' | 'bar'>)
-  | ({
-      state: 'BAR';
-    } & Pick<BaseState, 'foo' | 'baz'>);
 ```
 
 ## Creators
 
-Instead of defining your state, actions and commands with explicit types you can create state/action/command creators instead. This gives additional type safety by protecting against invalid spreading and gives explicit return types. It also allow action creators to be exposed through your state.
+Instead of defining your state and actions with explicit types you can create state/action creators instead. This gives additional type safety by protecting against invalid spreading and gives explicit return types. It also allow action creators to be exposed through your state.
 
 ```ts
 const actions = {
@@ -206,72 +85,143 @@ const [state, dispatch] = useReducer(reducer);
 dispatch(state.ACTION_A({ foo: 'foo', bar: 'bar' }));
 ```
 
-# Environment Interface
+## Hook
+
+Expose the reducer and related effects as a hook.
 
 ```tsx
-import * as React from 'react';
-import { createEmitter } from 'react-states';
+import { useReducer } from 'react';
+import { transition, TTransitions, useEnter } from 'react-states';
 
-export type EnvironmentEvent =
+type State =
   | {
-      type: 'DATA-FETCHER:FETCH_SUCCESS';
-      data: any[];
+      state: 'FOO';
     }
   | {
-      type: 'DATA-FETCHER:FETCH_ERROR';
-      error: string;
+      state: 'BAR';
     };
 
-export type Environment = {
-  dataFetcher: {
-    fetch(): void;
-  };
+type Action = {
+  type: 'SWITCH';
 };
 
-const context = React.createContext({} as Environment);
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    SWITCH: () => ({
+      state: 'BAR',
+    }),
+  },
+  BAR: {
+    SWITCH: () => ({
+      state: 'FOO',
+    }),
+  },
+};
 
-export const useEnvironment = () => React.useContext(context);
+const reducer = (state: State, action: Action) => transition(state, action, transitions);
 
-export const EnvironmentProvider: React.FC<{ environment: Environment }> = ({ children, environment }) => (
-  <context.Provider value={environment}>{children}</context.Provider>
-);
+// Allow setting initialState for more reusability and also
+// improved testability
+export const useSwitcher = (initialState?: State) => {
+  const switcherReducer = useReducer(reducer, initialState || FOO());
 
-export const createEnvironment = (constr: (emit: TEmit<EnvironmentEvent>) => Environment) => {
-  const emitter = createEmitter<EnvironmentEvent>();
-  return {
-    ...emitter,
-    ...constr(emitter.emit),
-  };
+  useDevtools('Switcher', switcherReducer);
+
+  const [state] = switcherReducer;
+
+  useEnter(state, 'BAR', () => {
+    console.log('Switched to BAR');
+  });
+
+  return switcherReducer;
 };
 ```
+
+### Lift Transitions
 
 ```ts
-import { createEnvironment } from '../environment-interface';
+import { transition, TTransitions, TTransition, ReturnTypes, PickState, IState, pick } from 'react-states';
 
-export const environment = createEnvironment((emit) => ({
-  dataFetcher: {
-    fetch: () => {
-      emit({ type: 'DATA-FETCHER:FETCH_SUCCESS' });
-    },
+type Action =
+  | {
+      type: 'GO_TO_FOO';
+    }
+  | {
+      type: 'GO_TO_BAR';
+    }
+  | {
+      type: 'GO_TO_BAZ';
+    };
+
+type State =
+  | {
+      state: 'FOO';
+    }
+  | {
+      state: 'BAR';
+    }
+  | {
+      state: 'BAZ';
+    };
+
+// A single transition to be used in any state
+const GO_TO_FOO = (state: State) => FOO();
+
+// Multiple transitions to be used in any state
+const baseTransitions: TTransition<State, Action> = {
+  GO_TO_FOO: () => ({
+    state: 'FOO',
+  }),
+  GO_TO_BAR: () => ({
+    state: 'BAR',
+  }),
+};
+
+// Multiple transitions to be used in specific states
+const fooBarTransitions: TTransition<State, Action, 'FOO' | 'BAR'> = {
+  GO_TO_FOO: () => ({
+    state: 'FOO',
+  }),
+  GO_TO_BAR: () => ({
+    state: 'BAR',
+  }),
+};
+
+// All transitions
+const transitions: TTransitions<State, Action> = {
+  FOO: {
+    ...baseTransitions,
+    ...fooBarTransitions,
+    GO_TO_FOO,
   },
-}));
+  BAR: {
+    ...baseTransitions,
+    ...fooBarTransitions,
+    GO_TO_FOO,
+  },
+  BAZ: {
+    ...baseTransitions,
+    GO_TO_FOO,
+  },
+};
 ```
 
-```tsx
-import { EnvironmentProvider, useEnvironment } from '../environment-interface';
-import { environment } from '../environments/browser';
+### BaseState
 
-const MyComponent = () => {
-  const { dataFetcher } = useEnvironment();
+When you work with complex state it can be a good idea to define all possible values across states and then rather pick which one is being used in either state. This improves reusability and reduces duplication.
 
-  return <div />;
+```ts
+type BaseState = {
+  foo: string;
+  bar: number;
+  baz: boolean;
 };
 
-const App = () => {
-  return (
-    <EnvironmentProvider environment={environment}>
-      <MyComponent />
-    </EnvironmentProvider>
-  );
-};
+type State =
+  | ({
+      state: 'FOO';
+    } & Pick<BaseState, 'foo' | 'bar'>)
+  | ({
+      state: 'BAR';
+    } & Pick<BaseState, 'foo' | 'baz'>);
 ```

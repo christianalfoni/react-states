@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { transition, useTransitionEffect, match, PickState, useEnterEffect } from '../';
+import { transition, useTransition, match, PickState, useEnter } from '../';
 import { colors } from './styles';
 
 type State =
@@ -82,7 +82,7 @@ export const Resizer = ({
     state: 'IDLE',
   });
 
-  useEnterEffect(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
+  useEnter(resizer, ['DETECTING_RESIZE', 'RESIZING'], () => {
     const onMouseMove = (event: MouseEvent) => {
       dispatch({
         type: 'MOUSE_MOVE',
@@ -105,7 +105,7 @@ export const Resizer = ({
     };
   });
 
-  useTransitionEffect(
+  useTransition(
     resizer,
     ['DETECTING_RESIZE => MOUSE_MOVE => DETECTING_RESIZE', 'RESIZING => MOUSE_MOVE => RESIZING'],
     (_, { x }) => {
@@ -113,7 +113,7 @@ export const Resizer = ({
     },
   );
 
-  useTransitionEffect(resizer, 'DETECTING_RESIZE => MOUSE_UP_RESIZER => IDLE', () => onClick());
+  useTransition(resizer, 'DETECTING_RESIZE => MOUSE_UP_RESIZER => IDLE', () => onClick());
 
   const style: React.CSSProperties = {
     position: 'absolute',
