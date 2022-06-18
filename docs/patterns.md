@@ -9,7 +9,7 @@
 
 ## Exact State
 
-To ensure exact return type from handlers, use `PickState`. This ensures adding invalid properties are flagged and transition inference works as expected.
+To ensure exact return type from handlers, use `PickState`. Now TypeScript yells if you add invalid properties to the returned state. Avoid using the generic `State` type, as that breaks transition inference.
 
 ```ts
 const transitions: TTransitions<State, Action> = {
