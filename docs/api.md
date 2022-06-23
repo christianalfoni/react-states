@@ -1,47 +1,64 @@
 # API
 
+## createStates
+
+```ts
+import { createStates, CreateUnion } from 'react-states';
+
+const states = createStates({
+  NOT_LOADED: () => ({}),
+  LOADING: () => ({}),
+  LOADED: (data: string[]) => ({ data }),
+  ERROR: (error: string) => ({ error }),
+});
+
+type State = CreateUnion<typeof states>;
+```
+
+## createActions
+
+```ts
+import { createActions, CreateUnion } from 'react-states';
+
+const actions = createActions({
+  LOAD: () => ({}),
+  LOAD_SUCCESS: (data: string[]) => ({ data }),
+  LOAD_ERROR: (error: string) => ({ error }),
+});
+
+type Action = CreateUnion<typeof actions>;
+```
+
 ## Transition
 
 ```ts
-import { transition } from 'react-states';
+import { createStates, createActions, transition, CreateUnion } from 'react-states';
 
-type State =
-  | {
-      state: 'NOT_LOADED';
-    }
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      data: string[];
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
+const states = createStates({
+  NOT_LOADED: () => ({}),
+  LOADING: () => ({}),
+  LOADED: (data: string[]) => ({ data }),
+  ERROR: (error: string) => ({ error }),
+});
 
-type Action =
-  | {
-      type: 'LOAD';
-    }
-  | {
-      type: 'LOAD_SUCCESS';
-      data: string[];
-    }
-  | {
-      type: 'LOAD_ERROR';
-      error: string;
-    };
+type State = CreateUnion<typeof states>;
+
+const actions = createActions({
+  LOAD: () => ({}),
+  LOAD_SUCCESS: (data: string[]) => ({ data }),
+  LOAD_ERROR: (error: string) => ({ error }),
+});
+
+type Action = CreateUnion<typeof actions>;
 
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     NOT_LOADED: {
-      LOAD: () => ({ state: 'LOADING' }),
+      LOAD: () => states.LOADING(),
     },
     LOADING: {
-      LOAD_SUCCESS: (_, { data }) => ({ state: 'LOADED', data }),
-      LOAD_ERROR: (_, { error }) => ({ state: 'ERROR', error }),
+      LOAD_SUCCESS: (_, { data }) => states.LOADED(data),
+      LOAD_ERROR: (_, { error }) => states.ERROR(error),
     },
     LOADED: {},
     ERRORL: {},

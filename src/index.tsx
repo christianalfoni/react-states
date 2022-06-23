@@ -16,6 +16,38 @@ export interface IState {
   [$TRANSITIONS]?: TReadableTransition<any>;
 }
 
+export const createStates = <T extends Record<string, () => Record<string, unknown>>>(
+  states: T,
+): {
+  [U in keyof T]: (...params: Parameters<T[U]>) => ReturnType<T[U]> & { state: U };
+} => {
+  const statesWithState = {} as any;
+
+  for (let state in states) {
+    // @ts-ignore
+    statesWithState[state] = (...params: unknown[]) => ({ ...states[state](...params), state });
+  }
+
+  return statesWithState;
+};
+
+export const createActions = <T extends Record<string, () => Record<string, unknown>>>(
+  actions: T,
+): {
+  [U in keyof T]: (...params: Parameters<T[U]>) => ReturnType<T[U]> & { type: U };
+} => {
+  const actionsWithType = {} as any;
+
+  for (let type in actions) {
+    // @ts-ignore
+    actionsWithType[type] = (...params: unknown[]) => ({ ...actions[type](...params), type });
+  }
+
+  return actionsWithType;
+};
+
+export type CreateUnion<T extends Record<string, (...params: unknown[]) => any>> = ReturnType<T[keyof T]>;
+
 export interface IAction {
   type: string;
 }
@@ -260,28 +292,4 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
   }, [id, manager, state]);
 
   return reducer;
-};
-
-export type TEmit<T extends IAction> = (event: T) => void;
-
-export type TSubscribe<T extends IAction> = (listener: (event: T) => void) => void;
-
-export const createEmitter = <T extends IAction>(): {
-  emit: TEmit<T>;
-  subscribe: TSubscribe<T>;
-} => {
-  const listeners: TEmit<T>[] = [];
-
-  return {
-    emit(event) {
-      listeners.forEach((listener) => listener(event));
-    },
-    subscribe(listener) {
-      listeners.push(listener);
-
-      return () => {
-        listeners.splice(listeners.indexOf(listener), 1);
-      };
-    },
-  };
 };
