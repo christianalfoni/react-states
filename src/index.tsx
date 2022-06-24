@@ -16,7 +16,7 @@ export interface IState {
   [$TRANSITIONS]?: TReadableTransition<any>;
 }
 
-export const createStates = <T extends Record<string, (...params: unknown[]) => Record<string, unknown>>>(
+export const createStates = <T extends Record<string, (...params: any[]) => Record<string, unknown>>>(
   states: T,
 ): {
   [U in keyof T]: (...params: Parameters<T[U]>) => ReturnType<T[U]> & { state: U };
@@ -25,13 +25,13 @@ export const createStates = <T extends Record<string, (...params: unknown[]) => 
 
   for (let state in states) {
     // @ts-ignore
-    statesWithState[state] = (...params: unknown[]) => ({ ...states[state](...params), state });
+    statesWithState[state] = (...params: any[]) => ({ ...states[state](...params), state });
   }
 
   return statesWithState;
 };
 
-export const createActions = <T extends Record<string, (...params: unknown[]) => Record<string, unknown>>>(
+export const createActions = <T extends Record<string, (...params: any[]) => Record<string, unknown>>>(
   actions: T,
 ): {
   [U in keyof T]: (...params: Parameters<T[U]>) => ReturnType<T[U]> & { type: U };
