@@ -51,8 +51,8 @@ const actions = createActions({
 
 type Action = CreateUnion<typeof actions>;
 
-const reducer = (state: State, action: Action) =>
-  transition(state, action, {
+const reducer = (prevState: State, action: Action) =>
+  transition(prevState, action, {
     NOT_LOADED: {
       LOAD: () => states.LOADING(),
     },
@@ -179,83 +179,6 @@ it('should do something', () => {
 
 ### Utility Types
 
-#### TTransitions
-
-```ts
-import { transition, TTransitions } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: (state, action) => ({
-      state: 'BAR',
-    }),
-  },
-  BAR: {
-    SWITCH: (state, action) => ({
-      state: 'FOO',
-    }),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-```
-
-#### TTransition
-
-```ts
-import { transition, TTransitions, TTransition } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-const fooTransitions: TTransition<State, Action, 'FOO'> = {
-  SWITCH: (state, action) => ({
-    state: 'FOO',
-  }),
-};
-
-const transitions: TTransitions<State, Action> = {
-  FOO: fooTransitions,
-  BAR: {
-    SWITCH: (state, action) => ({
-      state: 'FOO',
-    }),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-
-const transitions: TTransitions<State, Action> = {
-  FOO: fooTransitions,
-  BAR: {
-    SWITCH: () => ({
-      state: 'FOO',
-    }),
-  },
-};
-```
-
 #### PickState
 
 ```ts
@@ -266,6 +189,13 @@ type ABState = PickState<State, 'A' | 'B'>;
 
 ```ts
 type ABAction = PickAction<Action, 'A' | 'B'>;
+```
+
+#### CreateUnion
+
+```ts
+type State = CreateUnion<typeof states>;
+type Action = CreateUnion<typeof actions>;
 ```
 
 ### Devtools
