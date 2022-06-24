@@ -46,7 +46,7 @@ export const createActions = <T extends Record<string, (...params: any[]) => Rec
   return actionsWithType;
 };
 
-export type CreateUnion<T extends Record<string, (...params: unknown[]) => any>> = ReturnType<T[keyof T]>;
+export type CreateUnion<T extends Record<string, (...params: any[]) => any>> = ReturnType<T[keyof T]>;
 
 export interface IAction {
   type: string;
