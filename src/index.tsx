@@ -1,4 +1,4 @@
-import React, { Dispatch, useReducer } from 'react';
+import React, { Dispatch, useMemo, useReducer } from 'react';
 import type { Manager } from './devtools/Manager';
 
 export const $ACTION = Symbol('ACTION');
@@ -33,20 +33,33 @@ export const createStates = <T extends Record<string, (...params: any[]) => Reco
 
 export const createActions = <T extends Record<string, (...params: any[]) => Record<string, unknown>>>(
   actions: T,
-): {
-  [U in keyof T]: (...params: Parameters<T[U]>) => ReturnType<T[U]> & { type: U };
-} => {
+): ((
+  dispatch: Dispatch<
+    {
+      [U in keyof T]: ReturnType<T[U]> & { type: U };
+    }[keyof T]
+  >,
+) => {
+  [U in keyof T]: (...params: Parameters<T[U]>) => void;
+}) => {
   const actionsWithType = {} as any;
 
-  for (let type in actions) {
-    // @ts-ignore
-    actionsWithType[type] = (...params: unknown[]) => ({ ...actions[type](...params), type });
-  }
+  return (dispatch) =>
+    useMemo(() => {
+      for (let type in actions) {
+        // @ts-ignore
+        actionsWithType[type] = (...params: unknown[]) => dispatch({ ...actions[type](...params), type });
+      }
 
-  return actionsWithType;
+      return actionsWithType;
+    }, [actionsWithType]);
 };
 
-export type CreateUnion<T extends Record<string, (...params: any[]) => any>> = ReturnType<T[keyof T]>;
+export type StatesUnion<T extends Record<string, (...params: any[]) => any>> = ReturnType<T[keyof T]>;
+
+export type ActionsUnion<T extends (dispatch: Dispatch<any>) => any> = Parameters<T>[0] extends Dispatch<infer A>
+  ? A
+  : never;
 
 export interface IAction {
   type: string;
