@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { match, useDevtools, useEnter, useTransition } from '../src';
-import { reducer } from './reducers/todos';
+import { actions, reducer } from './reducers/todos';
 
 const Test = () => {
   const todosReducer = React.useReducer(reducer, {
@@ -11,33 +11,26 @@ const Test = () => {
   useDevtools('Todos', todosReducer);
 
   const [state, dispatch] = todosReducer;
+  const { addTodo, fetchTodos, fetchTodosSuccess } = actions(dispatch);
 
   useEnter(state, 'LOADING', () => {
-    setTimeout(() => {
-      dispatch({
-        type: 'FETCH_TODOS_SUCCESS',
-        todos: [],
-      });
-    }, 500);
+    setTimeout(() => fetchTodosSuccess([]), 500);
   });
 
-  useTransition(state, 'LOADED => ADD_TODO => LOADED', () => {
+  useTransition(state, 'LOADED => addTodo => LOADED', () => {
     // Do something
   });
 
   return match(state, {
-    NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'FETCH_TODOS' })}>Fetch Todos</button>,
+    NOT_LOADED: ({}) => <button onClick={() => fetchTodos()}>Fetch Todos</button>,
     LOADING: () => <h2>Loading...</h2>,
     LOADED: ({ todos }) => (
       <div>
         <button
           onClick={() => {
-            dispatch({
-              type: 'ADD_TODO',
-              todo: {
-                completed: false,
-                title: 'New_' + Date.now(),
-              },
+            addTodo({
+              completed: false,
+              title: 'New_' + Date.now(),
             });
           }}
         >
