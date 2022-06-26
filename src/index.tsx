@@ -42,17 +42,17 @@ export const createActions = <T extends Record<string, (...params: any[]) => Rec
 ) => {
   [U in keyof T]: (...params: Parameters<T[U]>) => void;
 }) => {
-  const actionsWithType = {} as any;
-
   return (dispatch) =>
     useMemo(() => {
+      const actionsWithType = {} as any;
+
       for (let type in actions) {
         // @ts-ignore
         actionsWithType[type] = (...params: unknown[]) => dispatch({ ...actions[type](...params), type });
       }
 
       return actionsWithType;
-    }, [actionsWithType]);
+    }, [dispatch]);
 };
 
 export type StatesUnion<T extends Record<string, (...params: any[]) => any>> = ReturnType<T[keyof T]>;

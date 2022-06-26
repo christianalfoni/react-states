@@ -70,16 +70,16 @@ import { transition } from 'react-states';
 const reducer = (prevState: State, action: Action) =>
   transition(prevState, action, {
     NOT_LOADED: {
-      fetch: () => ({
+      FETCH: () => ({
         state: 'LOADING',
       }),
     },
     LOADING: {
-      loadSuccess: (_, { data }) => ({
+      FETCH_SUCCESS: (_, { data }) => ({
         state: 'LOADED',
         data,
       }),
-      loadError: (_, { error }) => ({
+      FETCH_ERROR: (_, { error }) => ({
         state: 'ERROR',
         error,
       }),
