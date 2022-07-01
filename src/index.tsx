@@ -1,4 +1,4 @@
-import React, { Dispatch, useMemo, useReducer } from 'react';
+import React, { Dispatch, useMemo } from 'react';
 import type { Manager } from './devtools/Manager';
 
 export const $ACTION = Symbol('ACTION');
@@ -94,7 +94,8 @@ type TReadableTransition<T extends TTransitions<any, any>> = {
     [A in keyof T[S]]: S extends string
       ? A extends string
         ? T[S][A] extends (...args: any[]) => IState
-          ? `${S} => ${A} => ${ReturnType<T[S][A]>['state']}`
+          ? // @ts-ignore
+            `${S} => ${A} => ${ReturnType<T[S][A]>['state']}`
           : never
         : never
       : never;
@@ -149,6 +150,7 @@ export function useEnter<S extends IState, SS extends S['state'] | S['state'][]>
   ) => void | (() => void),
   deps: unknown[] = [],
 ) {
+  // @ts-ignore
   const statesList: string[] = Array.isArray(states) ? states : [states];
   const currentState = state;
   const isMatch = statesList.includes(state.state);
