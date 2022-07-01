@@ -3,7 +3,7 @@
 ## createStates
 
 ```ts
-import { createStates, CreateUnion } from 'react-states';
+import { value createStates, value CreateUnion } from 'react-states';
 
 const states = createStates({
   NOT_LOADED: () => ({}),
@@ -13,12 +13,15 @@ const states = createStates({
 });
 
 type State = CreateUnion<typeof states>;
+
+// Consume
+states.LOADING();
 ```
 
 ## createActions
 
 ```ts
-import { createActions, CreateUnion } from 'react-states';
+import { value createActions, value CreateUnion } from 'react-states';
 
 const actions = createActions({
   LOAD: () => ({}),
@@ -27,12 +30,16 @@ const actions = createActions({
 });
 
 type Action = CreateUnion<typeof actions>;
+
+// Consume
+const [state, dispatch] = useReducer(reducer);
+const { LOAD, LOAD_SUCCESS, LOAD_ERROR } = actions(dispatch);
 ```
 
 ## Transition
 
 ```ts
-import { createStates, createActions, transition, CreateUnion } from 'react-states';
+import { value createStates, value createActions, value transition, value CreateUnion } from 'react-states';
 
 const states = createStates({
   NOT_LOADED: () => ({}),
@@ -70,8 +77,8 @@ const reducer = (prevState: State, action: Action) =>
 #### match
 
 ```tsx
-import { match } from 'react-states';
-import { useData } from './useData';
+import { value match } from 'react-states';
+import { value useData } from './useData';
 
 const DataComponent = () => {
   const [state, dispatch] = useData();
@@ -104,8 +111,8 @@ const DataComponent = () => {
 #### matchProp
 
 ```tsx
-import { matchProp } from 'react-states';
-import { useData } from './useData';
+import { value matchProp } from 'react-states';
+import { value useData } from './useData';
 
 const DataComponent = () => {
   const [state, dispatch] = useData();
@@ -154,9 +161,9 @@ useTransition(state, (current, action, prev) => {
 #### renderReducer
 
 ```tsx
-import { act } from '@testing-library/react';
-import { renderReducer } from 'react-states/test';
-import { createEnvironment } from './environments/test';
+import { value act } from '@testing-library/react';
+import { value renderReducer } from 'react-states/test';
+import { value createEnvironment } from './environments/test';
 
 it('should do something', () => {
   const environment = createEnvironment();
@@ -203,7 +210,7 @@ type Action = CreateUnion<typeof actions>;
 #### DevtoolsProvider
 
 ```tsx
-import { DevtoolsProvider } from 'react-states/devtools';
+import { value DevtoolsProvider } from 'react-states/devtools';
 
 export const AppWrapper: React.FC = () => {
   return (
@@ -217,8 +224,8 @@ export const AppWrapper: React.FC = () => {
 #### useDevtools
 
 ```tsx
-import { useReducer } from 'react';
-import { useDevtools } from 'react-states/devtools';
+import { value useReducer } from 'react';
+import { value useDevtools } from 'react-states/devtools';
 
 export const SomeComponent: React.FC = () => {
   const dataReducer = useData();
