@@ -3,7 +3,7 @@
 ## createStates
 
 ```ts
-import { value createStates, value CreateUnion } from 'react-states';
+import { createStates, CreateUnion } from 'react-states';
 
 const states = createStates({
   NOT_LOADED: () => ({}),
@@ -21,7 +21,7 @@ states.LOADING();
 ## createActions
 
 ```ts
-import { value createActions, value CreateUnion } from 'react-states';
+import { createActions, CreateUnion } from 'react-states';
 
 const actions = createActions({
   LOAD: () => ({}),
@@ -39,7 +39,7 @@ const { LOAD, LOAD_SUCCESS, LOAD_ERROR } = actions(dispatch);
 ## Transition
 
 ```ts
-import { value createStates, value createActions, value transition, value CreateUnion } from 'react-states';
+import { createStates, createActions, transition, CreateUnion } from 'react-states';
 
 const states = createStates({
   NOT_LOADED: () => ({}),
@@ -77,8 +77,8 @@ const reducer = (prevState: State, action: Action) =>
 #### match
 
 ```tsx
-import { value match } from 'react-states';
-import { value useData } from './useData';
+import { match } from 'react-states';
+import { useData } from './useData';
 
 const DataComponent = () => {
   const [state, dispatch] = useData();
@@ -111,8 +111,8 @@ const DataComponent = () => {
 #### matchProp
 
 ```tsx
-import { value matchProp } from 'react-states';
-import { value useData } from './useData';
+import { matchProp } from 'react-states';
+import { useData } from './useData';
 
 const DataComponent = () => {
   const [state, dispatch] = useData();
@@ -161,9 +161,9 @@ useTransition(state, (current, action, prev) => {
 #### renderReducer
 
 ```tsx
-import { value act } from '@testing-library/react';
-import { value renderReducer } from 'react-states/test';
-import { value createEnvironment } from './environments/test';
+import { act } from '@testing-library/react';
+import { renderReducer } from 'react-states/test';
+import { createEnvironment } from './environments/test';
 
 it('should do something', () => {
   const environment = createEnvironment();
@@ -210,7 +210,7 @@ type Action = CreateUnion<typeof actions>;
 #### DevtoolsProvider
 
 ```tsx
-import { value DevtoolsProvider } from 'react-states/devtools';
+import { DevtoolsProvider } from 'react-states/devtools';
 
 export const AppWrapper: React.FC = () => {
   return (
@@ -224,8 +224,8 @@ export const AppWrapper: React.FC = () => {
 #### useDevtools
 
 ```tsx
-import { value useReducer } from 'react';
-import { value useDevtools } from 'react-states/devtools';
+import { useReducer } from 'react';
+import { useDevtools } from 'react-states/devtools';
 
 export const SomeComponent: React.FC = () => {
   const dataReducer = useData();
