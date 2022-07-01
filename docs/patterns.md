@@ -3,8 +3,6 @@
 - [Hook](#Hook)
 - [Lift Transitions](#lift-transitions)
 - [BaseState](#BaseState)
-- [Creators](#Creators)
-- [Environment Interface](#Environment-Interface)
 
 ## Hook
 
@@ -12,7 +10,7 @@ Expose the reducer and related effects as a hook.
 
 ```tsx
 import { useReducer } from 'react';
-import { transition, TTransitions, useTransitionEffect } from 'react-states';
+import { transition, TTransitions, useEnter } from 'react-states';
 
 type State =
   | {
@@ -50,7 +48,7 @@ export const useSwitcher = (initialState?: State) => {
 
   const [state] = switcherReducer;
 
-  useTransitionEffect(state, 'BAR', () => {
+  useEnter(state, 'BAR', () => {
     console.log('Switched to BAR');
   });
 
@@ -90,20 +88,20 @@ const GO_TO_FOO = (state: State) => FOO();
 
 // Multiple transitions to be used in any state
 const baseTransitions: TTransition<State, Action> = {
-  GO_TO_FOO: (): State => ({
+  GO_TO_FOO: () => ({
     state: 'FOO',
   }),
-  GO_TO_BAR: (): State => ({
+  GO_TO_BAR: () => ({
     state: 'BAR',
   }),
 };
 
 // Multiple transitions to be used in specific states
 const fooBarTransitions: TTransition<State, Action, 'FOO' | 'BAR'> = {
-  GO_TO_FOO: (): State => ({
+  GO_TO_FOO: () => ({
     state: 'FOO',
   }),
-  GO_TO_BAR: (): State => ({
+  GO_TO_BAR: () => ({
     state: 'BAR',
   }),
 };
@@ -141,137 +139,8 @@ type BaseState = {
 type State =
   | ({
       state: 'FOO';
-    } & Pick<BaseSTate, 'foo' | 'bar'>)
+    } & Pick<BaseState, 'foo' | 'bar'>)
   | ({
       state: 'BAR';
     } & Pick<BaseState, 'foo' | 'baz'>);
-```
-
-## Creators
-
-Instead of defining your state, actions and commands with explicit types you can create state/action/command creators instead. This gives additional type safety by protecting against invalid spreading and gives explicit return types. It also allow action creators to be exposed through your state.
-
-```ts
-const actions = {
-  ACTION_A: (params: { foo: string; bar: string }) => ({
-    type: 'ACTION_A' as const,
-  }),
-  ACTION_B: (params: { foo: string; bar: string }) => ({
-    type: 'ACTION_B' as const,
-  }),
-};
-
-type Action = ReturnType<typeof actions[keyof typeof actions]>;
-
-const states = {
-  // First argument is state related values and should always be
-  // destructured. This protects against TypeScript not protecting
-  // invalid spreading
-  STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
-    state: 'STATE_A' as const,
-    foo,
-    bar,
-  }),
-};
-
-type State = ReturnType<typeof states[keyof typeof states]>;
-```
-
-You can include action creators with the state to emphasize what actions are available in what states.
-
-```ts
-const actions = {
-  ACTION_A: (params: { foo: string; bar: string }) => ({
-    type: 'ACTION_A' as const,
-  }),
-};
-
-type Action = ReturnType<typeof actions[keyof typeof actions]>;
-
-const states = {
-  STATE_A: ({ foo, bar }: { foo: string; bar: string }) => ({
-    state: 'STATE_A' as const,
-    foo,
-    bar,
-    ACITON_A: actions.ACTION_A,
-  }),
-};
-
-type State = ReturnType<typeof states[keyof typeof states]>;
-```
-
-```tsx
-const [state, dispatch] = useReducer(reducer);
-
-dispatch(state.ACTION_A({ foo: 'foo', bar: 'bar' }));
-```
-
-# Environment Interface
-
-```tsx
-import * as React from 'react';
-import { createEmitter } from 'react-states';
-
-export type EnvironmentEvent =
-  | {
-      type: 'DATA-FETCHER:FETCH_SUCCESS';
-      data: any[];
-    }
-  | {
-      type: 'DATA-FETCHER:FETCH_ERROR';
-      error: string;
-    };
-
-export type Environment = {
-  dataFetcher: {
-    fetch(): void;
-  };
-};
-
-const context = React.createContext({} as Environment);
-
-export const useEnvironment = () => React.useContext(context);
-
-export const EnvironmentProvider: React.FC<{ environment: Environment }> = ({ children, environment }) => (
-  <context.Provider value={environment}>{children}</context.Provider>
-);
-
-export const createEnvironment = (constr: (emit: TEmit<EnvironmentEvent>) => Environment) => {
-  const emitter = createEmitter<EnvironmentEvent>();
-  return {
-    ...emitter,
-    ...constr(emitter.emit),
-  };
-};
-```
-
-```ts
-import { createEnvironment } from '../environment-interface';
-
-export const environment = createEnvironment((emit) => ({
-  dataFetcher: {
-    fetch: () => {
-      emit({ type: 'DATA-FETCHER:FETCH_SUCCESS' });
-    },
-  },
-}));
-```
-
-```tsx
-import { EnvironmentProvider, useEnvironment } from '../environment-interface';
-import { environment } from '../environments/browser';
-
-const MyComponent = () => {
-  const { dataFetcher } = useEnvironment();
-
-  return <div />;
-};
-
-const App = () => {
-  return (
-    <EnvironmentProvider environment={environment}>
-      <MyComponent />
-    </EnvironmentProvider>
-  );
-};
 ```

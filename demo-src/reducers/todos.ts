@@ -1,65 +1,39 @@
-import { transition } from '../../src';
+import { createStates, createActions, StatesUnion, ActionsUnion, transition } from '../../src';
 
 type Todo = {
   title: string;
   completed: boolean;
 };
 
-type State =
-  | {
-      state: 'NOT_LOADED';
-    }
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      todos: Todo[];
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
+export const states = createStates({
+  NOT_LOADED: () => ({}),
+  LOADING: () => ({}),
+  LOADED: (todos: Todo[]) => ({ todos }),
+  ERROR: (error: string) => ({ error }),
+});
 
-type Action =
-  | {
-      type: 'ADD_TODO';
-      todo: Todo;
-    }
-  | {
-      type: 'FETCH_TODOS';
-    }
-  | {
-      type: 'FETCH_TODOS_SUCCESS';
-      todos: Todo[];
-    }
-  | {
-      type: 'FETCH_TODOS_ERROR';
-      error: string;
-    };
+type State = StatesUnion<typeof states>;
+
+export const actions = createActions({
+  addTodo: (todo: Todo) => ({ todo }),
+  fetchTodos: () => ({}),
+  fetchTodosSuccess: (todos: Todo[]) => ({ todos }),
+  fetchTodosError: (error: string) => ({ error }),
+});
+
+type Action = ActionsUnion<typeof actions>;
 
 export const reducer = (state: State, action: Action) =>
   transition(state, action, {
     NOT_LOADED: {
-      FETCH_TODOS: (): State => ({
-        state: 'LOADING',
-      }),
+      fetchTodos: () => states.LOADING(),
     },
     LOADING: {
-      FETCH_TODOS_SUCCESS: (_, { todos }): State => ({
-        state: 'LOADED',
-        todos,
-      }),
-      FETCH_TODOS_ERROR: (_, { error }): State => ({
-        state: 'ERROR',
-        error,
-      }),
+      fetchTodosSuccess: (_, { todos }) => states.LOADED(todos),
+      fetchTodosError: (_, { error }) => states.ERROR(error),
     },
     LOADED: {
-      ADD_TODO: (state, { todo }): State => ({
-        state: 'LOADED',
-        todos: [todo].concat(state.todos),
-      }),
+      addTodo: (state, { todo }) => states.LOADED([todo].concat(state.todos)),
     },
     ERROR: {},
   });

@@ -25,7 +25,68 @@ npm install react-states
 
 ## Values
 
-- Simple utility functions and types
-- Enhanced type safety
 - "It is just a reducer"
-- No side effects expressed in reducer
+- Simple utilities
+- Enhanced type safety
+- Reducer does not express side effects
+
+## Learn by example
+
+Instead of expressing your state implicitly:
+
+```ts
+type State = {
+  isLoading: boolean;
+  error: string | null;
+  data: string[];
+};
+```
+
+You can do so explicitly:
+
+```ts
+type State =
+  | {
+      state: 'NOT_LOADED';
+    }
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      data: string[];
+    }
+  | {
+      state: 'ERROR';
+      error: string;
+    };
+```
+
+With explicit states you can guard what actions are valid in what states using `transition`:
+
+```ts
+import { transition } from 'react-states';
+
+const reducer = (prevState: State, action: Action) =>
+  transition(prevState, action, {
+    NOT_LOADED: {
+      FETCH: () => ({
+        state: 'LOADING',
+      }),
+    },
+    LOADING: {
+      FETCH_SUCCESS: (_, { data }) => ({
+        state: 'LOADED',
+        data,
+      }),
+      FETCH_ERROR: (_, { error }) => ({
+        state: 'ERROR',
+        error,
+      }),
+    },
+    LOADED: {},
+    ERROR: {},
+  });
+```
+
+With additional utilities like `createStates`, `createActions` and `match` you will increase safety and reduce boilerplate in your code.

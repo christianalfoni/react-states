@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import React, { useReducer } from 'react';
-import { $ACTION, $PREV_STATE, match, transition, useTransitionEffect } from '.';
+import { $ACTION, $PREV_STATE, match, PickState, transition, useEnter, useTransition } from '.';
 import { renderReducer } from './test';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
@@ -9,19 +9,19 @@ type Action = { type: 'SWITCH' } | { type: 'SWITCH_SAME' } | { type: 'NOOP' } | 
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     FOO: {
-      SWITCH: (): State => ({ state: 'BAR' }),
-      SWITCH_SAME: (): State => ({ state: 'FOO' }),
-      NOOP: (state): State => state,
-      SWITCH_OTHER: (): State => ({ state: 'OTHER' }),
+      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
+      SWITCH_SAME: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
+      NOOP: (state): PickState<State, 'FOO'> => state,
+      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
     },
     BAR: {
-      SWITCH: (): State => ({ state: 'FOO' }),
-      SWITCH_SAME: (): State => ({ state: 'BAR' }),
-      NOOP: (state): State => state,
-      SWITCH_OTHER: (): State => ({ state: 'OTHER' }),
+      SWITCH: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
+      SWITCH_SAME: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
+      NOOP: (state): PickState<State, 'BAR'> => state,
+      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
     },
     OTHER: {
-      SWITCH: (): State => ({ state: 'BAR' }),
+      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
     },
   });
 
@@ -101,7 +101,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnter(r[0], 'FOO', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -117,7 +117,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(
+          useEnter(
             r[0],
             'FOO',
             () => {
@@ -143,7 +143,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'BAR', () => {
+          useEnter(r[0], 'BAR', () => {
             hasRunEnteredEffect = true;
           });
 
@@ -163,7 +163,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => {
+          useEnter(r[0], 'FOO', () => {
             runEnteredEffectCount++;
           });
 
@@ -183,7 +183,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionEffect(r[0], 'FOO', () => () => {
+          useEnter(r[0], 'FOO', () => () => {
             hasRunDisposer = true;
           });
 
@@ -203,7 +203,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnter(r[0], ['FOO', 'BAR'], () => {
             hasRunEnterEffect = true;
           });
 
@@ -219,7 +219,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => {
+          useEnter(r[0], ['FOO', 'BAR'], () => {
             runEnterEffectCount++;
           });
 
@@ -241,7 +241,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'BAR' });
 
-          useTransitionEffect(r[0], ['FOO', 'BAR'], () => () => {
+          useEnter(r[0], ['FOO', 'BAR'], () => () => {
             runDisposeCount++;
           });
 
@@ -272,7 +272,7 @@ describe('TRANSITIONS', () => {
         () => {
           const r = useReducer(reducer, { state: 'OTHER' });
 
-          useTransitionEffect(r[0], { to: 'FOO', from: 'BAR', action: 'SWITCH' }, () => {
+          useTransition(r[0], 'BAR => SWITCH => FOO', () => {
             hasRunEffect = true;
           });
 
@@ -304,15 +304,21 @@ describe('TRANSITIONS', () => {
           () => {
             const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransitionEffect(r[0], ({ to, action, from }) => {
-              args = [to, action, from];
+            useTransition(r[0], (prev, action, current) => {
+              args = [prev, action, current];
             });
 
             return r;
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(args).toEqual([]);
+        expect(args).toEqual([
+          {
+            state: 'FOO',
+          },
+          undefined,
+          undefined,
+        ]);
         act(() => {
           dispatch({
             type: 'SWITCH',
@@ -348,12 +354,6 @@ describe('TRANSITIONS', () => {
             },
             [$PREV_STATE]: {
               state: 'BAR',
-              [$ACTION]: {
-                type: 'SWITCH',
-              },
-              [$PREV_STATE]: {
-                state: 'FOO',
-              },
             },
           },
           {
@@ -361,12 +361,6 @@ describe('TRANSITIONS', () => {
           },
           {
             state: 'BAR',
-            [$ACTION]: {
-              type: 'SWITCH',
-            },
-            [$PREV_STATE]: {
-              state: 'FOO',
-            },
           },
         ]);
       });
@@ -376,7 +370,7 @@ describe('TRANSITIONS', () => {
           () => {
             const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransitionEffect(r[0], () => {
+            useTransition(r[0], () => {
               runEffectCount++;
             });
 
@@ -384,19 +378,19 @@ describe('TRANSITIONS', () => {
           },
           (ReducerHook) => <ReducerHook />,
         );
-        expect(runEffectCount).toBe(0);
+        expect(runEffectCount).toBe(1);
         act(() => {
           dispatch({
             type: 'SWITCH',
           });
         });
-        expect(runEffectCount).toBe(1);
+        expect(runEffectCount).toBe(2);
         act(() => {
           dispatch({
             type: 'SWITCH_SAME',
           });
         });
-        expect(runEffectCount).toBe(2);
+        expect(runEffectCount).toBe(3);
       });
     });
   });

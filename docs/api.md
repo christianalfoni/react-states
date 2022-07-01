@@ -1,47 +1,64 @@
 # API
 
+## createStates
+
+```ts
+import { createStates, CreateUnion } from 'react-states';
+
+const states = createStates({
+  NOT_LOADED: () => ({}),
+  LOADING: () => ({}),
+  LOADED: (data: string[]) => ({ data }),
+  ERROR: (error: string) => ({ error }),
+});
+
+type State = CreateUnion<typeof states>;
+```
+
+## createActions
+
+```ts
+import { createActions, CreateUnion } from 'react-states';
+
+const actions = createActions({
+  LOAD: () => ({}),
+  LOAD_SUCCESS: (data: string[]) => ({ data }),
+  LOAD_ERROR: (error: string) => ({ error }),
+});
+
+type Action = CreateUnion<typeof actions>;
+```
+
 ## Transition
 
 ```ts
-import { transition } from 'react-states';
+import { createStates, createActions, transition, CreateUnion } from 'react-states';
 
-type State =
-  | {
-      state: 'NOT_LOADED';
-    }
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      data: string[];
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
+const states = createStates({
+  NOT_LOADED: () => ({}),
+  LOADING: () => ({}),
+  LOADED: (data: string[]) => ({ data }),
+  ERROR: (error: string) => ({ error }),
+});
 
-type Action =
-  | {
-      type: 'LOAD';
-    }
-  | {
-      type: 'LOAD_SUCCESS';
-      data: string[];
-    }
-  | {
-      type: 'LOAD_ERROR';
-      error: string;
-    };
+type State = CreateUnion<typeof states>;
 
-const reducer = (state: State, action: Action) =>
-  transition(state, action, {
+const actions = createActions({
+  LOAD: () => ({}),
+  LOAD_SUCCESS: (data: string[]) => ({ data }),
+  LOAD_ERROR: (error: string) => ({ error }),
+});
+
+type Action = CreateUnion<typeof actions>;
+
+const reducer = (prevState: State, action: Action) =>
+  transition(prevState, action, {
     NOT_LOADED: {
-      LOAD: (): State => ({ state: 'LOADING' }),
+      LOAD: () => states.LOADING(),
     },
     LOADING: {
-      LOAD_SUCCESS: (_, { data }): State => ({ state: 'LOADED', data }),
-      LOAD_ERROR: (_, { error }): State => ({ state: 'ERROR', error }),
+      LOAD_SUCCESS: (_, { data }) => states.LOADED(data),
+      LOAD_ERROR: (_, { error }) => states.ERROR(error),
     },
     LOADED: {},
     ERRORL: {},
@@ -105,40 +122,32 @@ const DataComponent = () => {
 };
 ```
 
-#### useTransitionEffect
+#### useEnter
 
 ```ts
-useTransitionEffect(
+useEnter(
   state,
   'FOO', // ['FOO', 'BAR']
-  ({ to, action, from }) => {
+  (current) => {
     // When entering either state(s), also initial state
 
     return () => {
-      // When leaving either state(s)
+      // When leaving to other state
     };
   },
 );
 ```
 
+#### useTransition
+
 ```ts
-useTransitionEffect(
-  state,
-  {
-    // OPTIONAL: Entering states(s), also from same state(s), not initial
-    to: 'FOO', // ["FOO", "BAR"],
-    // OPTIONAL: Leaving states(s), also from same state(s)
-    from: 'FOO', // ["FOO", "BAR"],
-    // OPTIONAL: Contrain by action(s) causing the transition
-    action: 'SWITCH', // ["SWITCH", "OTHER_ACTION"]
-  },
-  ({ to, action, from }) => {},
-);
+// Inferred actual possible transitions
+useTransition(state, 'FOO => SWITCH => BAR', (current, action, prev) => {});
 ```
 
 ```ts
-useTransitionEffect(state, ({ to, action, from }) => {
-  // Any transition, not initial
+useTransition(state, (current, action, prev) => {
+  // Any transition
 });
 ```
 
@@ -165,120 +174,10 @@ it('should do something', () => {
   });
 
   expect(state.state).toBe('LOADING');
-
-  expect(environment.dataLoader.load).toBeCalled();
-
-  act(() => {
-    environment.emitter.emit({
-      type: 'DATA:LOAD_SUCCESS',
-      items: ['foo', 'bar'],
-    });
-  });
-
-  expect(state).toEqual({
-    state: 'LOADED',
-    items: ['foo', 'bar'],
-  });
 });
 ```
 
-#### createEmitter
-
-```ts
-import { createEmitter } from 'react-states';
-
-type SomeEvent =
-  | {
-      type: 'A';
-    }
-  | {
-      type: 'B';
-    };
-
-const emitter = createEmitter<SomeEvent>();
-
-emitter.emit({ type: 'A' });
-const dispose = emitter.subscribe((event) => {});
-```
-
 ### Utility Types
-
-#### TTransitions
-
-```ts
-import { transition, TTransitions } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: (state, action): State => ({
-      state: 'BAR',
-    }),
-  },
-  BAR: {
-    SWITCH: (state, action): State => ({
-      state: 'FOO',
-    }),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-```
-
-#### TTransition
-
-```ts
-import { transition, TTransitions, TTransition } from 'react-states';
-
-type State =
-  | {
-      state: 'FOO';
-    }
-  | {
-      state: 'BAR';
-    };
-
-type Action = {
-  type: 'SWITCH';
-};
-
-const fooTransitions: TTransition<State, Action, 'FOO'> = {
-  SWITCH: (state, action): State => ({
-    state: 'FOO',
-  }),
-};
-
-const transitions: TTransitions<State, Action> = {
-  FOO: fooTransitions,
-  BAR: {
-    SWITCH: (state, action): State => ({
-      state: 'FOO',
-    }),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
-
-const transitions: TTransitions<State, Action> = {
-  FOO: fooTransitions,
-  BAR: {
-    SWITCH: (): State => ({
-      state: 'FOO',
-    }),
-  },
-};
-```
 
 #### PickState
 
@@ -292,10 +191,11 @@ type ABState = PickState<State, 'A' | 'B'>;
 type ABAction = PickAction<Action, 'A' | 'B'>;
 ```
 
-#### PickCommand
+#### CreateUnion
 
 ```ts
-type ABCommand = PickCommand<Command, 'A' | 'B'>;
+type State = CreateUnion<typeof states>;
+type Action = CreateUnion<typeof actions>;
 ```
 
 ### Devtools
