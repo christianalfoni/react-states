@@ -10,7 +10,7 @@ Expose the reducer and related effects as a hook.
 
 ```tsx
 import { useReducer } from 'react';
-import { transition, TTransitions, useEnter } from 'react-states';
+import { transition, useEnterState } from 'react-states';
 
 type State =
   | {
@@ -24,20 +24,19 @@ type Action = {
   type: 'SWITCH';
 };
 
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    SWITCH: () => ({
-      state: 'BAR',
-    }),
-  },
-  BAR: {
-    SWITCH: () => ({
-      state: 'FOO',
-    }),
-  },
-};
-
-const reducer = (state: State, action: Action) => transition(state, action, transitions);
+const reducer = (prevState: State, action: Action) =>
+  transition(prevState, action, {
+    FOO: {
+      SWITCH: () => ({
+        state: 'BAR',
+      }),
+    },
+    BAR: {
+      SWITCH: () => ({
+        state: 'FOO',
+      }),
+    },
+  });
 
 // Allow setting initialState for more reusability and also
 // improved testability
@@ -48,7 +47,7 @@ export const useSwitcher = (initialState?: State) => {
 
   const [state] = switcherReducer;
 
-  useEnter(state, 'BAR', () => {
+  useEnterState(state, 'BAR', () => {
     console.log('Switched to BAR');
   });
 
@@ -59,18 +58,7 @@ export const useSwitcher = (initialState?: State) => {
 ### Lift Transitions
 
 ```ts
-import { transition, TTransitions, TTransition, ReturnTypes, PickState, IState, pick } from 'react-states';
-
-type Action =
-  | {
-      type: 'GO_TO_FOO';
-    }
-  | {
-      type: 'GO_TO_BAR';
-    }
-  | {
-      type: 'GO_TO_BAZ';
-    };
+import { transition, TTransitions, TTransition, PickState, IState, pick } from 'react-states';
 
 type State =
   | {
@@ -83,8 +71,21 @@ type State =
       state: 'BAZ';
     };
 
+type Action =
+  | {
+      type: 'GO_TO_FOO';
+    }
+  | {
+      type: 'GO_TO_BAR';
+    }
+  | {
+      type: 'GO_TO_BAZ';
+    };
+
 // A single transition to be used in any state
-const GO_TO_FOO = (state: State) => FOO();
+const GO_TO_FOO = (state: State): PickState<State, 'FOO'> => {
+  state: 'FOO';
+};
 
 // Multiple transitions to be used in any state
 const baseTransitions: TTransition<State, Action> = {

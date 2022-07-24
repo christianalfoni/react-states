@@ -1,7 +1,8 @@
 import * as React from 'react';
 
-import { match, useDevtools, useEnter, useTransition } from '../src';
-import { actions, reducer } from './reducers/todos';
+import { match, useEnterState, useTransitionState } from '../src';
+import { useDevtools } from '../src/devtools';
+import { reducer } from './reducers/todos';
 
 const Test = () => {
   const todosReducer = React.useReducer(reducer, {
@@ -11,26 +12,28 @@ const Test = () => {
   useDevtools('Todos', todosReducer);
 
   const [state, dispatch] = todosReducer;
-  const { addTodo, fetchTodos, fetchTodosSuccess } = actions(dispatch);
 
-  useEnter(state, 'LOADING', () => {
-    setTimeout(() => fetchTodosSuccess([]), 500);
+  useEnterState(state, 'LOADING', () => {
+    setTimeout(() => dispatch({ type: 'fetchTodosSuccess', todos: [] }), 500);
   });
 
-  useTransition(state, 'LOADED => addTodo => LOADED', () => {
+  useTransitionState(state, 'LOADED => addTodo => LOADED', () => {
     // Do something
   });
 
   return match(state, {
-    NOT_LOADED: ({}) => <button onClick={() => fetchTodos()}>Fetch Todos</button>,
+    NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'fetchTodos' })}>Fetch Todos</button>,
     LOADING: () => <h2>Loading...</h2>,
     LOADED: ({ todos }) => (
       <div>
         <button
           onClick={() => {
-            addTodo({
-              completed: false,
-              title: 'New_' + Date.now(),
+            dispatch({
+              type: 'addTodo',
+              todo: {
+                completed: false,
+                title: 'New_' + Date.now(),
+              },
             });
           }}
         >

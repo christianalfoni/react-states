@@ -89,4 +89,4 @@ const reducer = (prevState: State, action: Action) =>
   });
 ```
 
-With additional utilities like `createStates`, `createActions` and `match` you will increase safety and reduce boilerplate in your code.
+With additional utilities like `match` you will increase safety and reduce boilerplate in your code.

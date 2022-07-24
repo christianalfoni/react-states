@@ -5,8 +5,72 @@ import { managerContext } from '../';
 import { Manager } from './Manager';
 import { StatesItem } from './StatesItem';
 import { colors } from './styles';
+import { $ACTION, DEBUG_TRIGGER_TRANSITIONS, DEBUG_ID, DEBUG_COMMAND, DEBUG_TRANSITIONS } from '../constants';
 
 export const useDevtoolsManager = () => React.useContext(managerContext);
+
+// We have to type as any as States<any, any> throws error not matching
+// the explicit context
+export const useDevtools = (id: string, reducer: [any, any]) => {
+  const manager = React.useContext(managerContext);
+
+  // We allow using the hook without having the wrapping devtool
+  if (!manager) {
+    return reducer;
+  }
+
+  const [state, dispatch] = reducer;
+
+  React.useEffect(() => () => manager.dispose(id), [id, manager]);
+
+  // @ts-ignore
+  reducer[0][DEBUG_ID] = id;
+  // @ts-ignore
+  reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
+    manager.onMessage(id, {
+      type: 'command',
+      command,
+    });
+  };
+
+  reducer[1] = (action: any) => {
+    action[$ACTION] = (id: string, isIgnored: boolean) => {
+      manager.onMessage(id, {
+        type: 'dispatch',
+        action,
+        ignored: isIgnored,
+      });
+    };
+
+    dispatch(action);
+
+    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
+      manager.onMessage(id, {
+        type: 'transitions',
+        // @ts-ignore
+        transitions: state[DEBUG_TRANSITIONS],
+      });
+      return;
+    }
+  };
+
+  React.useEffect(() => {
+    manager.onMessage(id, {
+      type: 'state',
+      state,
+      // @ts-ignore
+      transitions: state[DEBUG_TRANSITIONS],
+      triggerTransitions: () => {
+        // We dispatch to ensure the transition is run
+        reducer[1]({
+          type: DEBUG_TRIGGER_TRANSITIONS,
+        });
+      },
+    });
+  }, [id, manager, state]);
+
+  return reducer;
+};
 
 export const DevtoolsProvider = ({ children, show = true }: { children: React.ReactNode; show?: boolean }) => {
   return (

@@ -3,12 +3,9 @@
 # Generated stuff
 .code
 devtools
-index.js
-index.d.ts
-index.js.map
-result.d.ts
-result.js
-result.js.map
+*.js
+*.d.ts
+*.js.map
 cjs
 test
 !src/*

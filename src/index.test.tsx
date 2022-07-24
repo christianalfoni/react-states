@@ -1,7 +1,7 @@
-import { act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react-hooks';
 import React, { useReducer } from 'react';
-import { $ACTION, $PREV_STATE, match, PickState, transition, useEnter, useTransition } from '.';
-import { renderReducer } from './test';
+import { match, transition, useEnterState, useTransitionState } from '.';
+import { $ACTION, $PREV_STATE } from './constants';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
 type Action = { type: 'SWITCH' } | { type: 'SWITCH_SAME' } | { type: 'NOOP' } | { type: 'SWITCH_OTHER' };
@@ -9,19 +9,19 @@ type Action = { type: 'SWITCH' } | { type: 'SWITCH_SAME' } | { type: 'NOOP' } | 
 const reducer = (state: State, action: Action) =>
   transition(state, action, {
     FOO: {
-      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
-      SWITCH_SAME: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
-      NOOP: (state): PickState<State, 'FOO'> => state,
-      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
+      SWITCH: () => ({ state: 'BAR' }),
+      SWITCH_SAME: () => ({ state: 'FOO' }),
+      NOOP: (state) => state,
+      SWITCH_OTHER: () => ({ state: 'OTHER' }),
     },
     BAR: {
-      SWITCH: (): PickState<State, 'FOO'> => ({ state: 'FOO' }),
-      SWITCH_SAME: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
-      NOOP: (state): PickState<State, 'BAR'> => state,
-      SWITCH_OTHER: (): PickState<State, 'OTHER'> => ({ state: 'OTHER' }),
+      SWITCH: () => ({ state: 'FOO' }),
+      SWITCH_SAME: () => ({ state: 'BAR' }),
+      NOOP: (state) => state,
+      SWITCH_OTHER: () => ({ state: 'OTHER' }),
     },
     OTHER: {
-      SWITCH: (): PickState<State, 'BAR'> => ({ state: 'BAR' }),
+      SWITCH: () => ({ state: 'BAR' }),
     },
   });
 
@@ -30,10 +30,10 @@ test('should transition states', () => {
     state: 'FOO',
   };
 
-  const run = (state: State, action: Action) =>
-    transition(state, action, {
+  const run = (prevState: State, action: Action) =>
+    transition(prevState, action, {
       FOO: {
-        SWITCH: (): State => ({ state: 'BAR' }),
+        SWITCH: () => ({ state: 'BAR' }),
       },
       BAR: {},
       OTHER: {},
@@ -48,8 +48,8 @@ test('should ignore invalid transitions', () => {
   const state: State = {
     state: 'FOO',
   };
-  const run = (state: State, action: Action) =>
-    transition(state, action, {
+  const run = (prevState: State, action: Action) =>
+    transition(prevState, action, {
       FOO: {},
       BAR: {},
       OTHER: {},
@@ -97,139 +97,118 @@ describe('TRANSITIONS', () => {
   describe('useEnterEffect', () => {
     test('should run on initial state', () => {
       let hasRunEnteredEffect = false;
-      const [] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'FOO' });
+      renderHook(() => {
+        const r = useReducer(reducer, { state: 'FOO' });
 
-          useEnter(r[0], 'FOO', () => {
-            hasRunEnteredEffect = true;
-          });
+        useEnterState(r[0], 'FOO', () => {
+          hasRunEnteredEffect = true;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(hasRunEnteredEffect).toBe(true);
     });
     test('should run when prop updates', () => {
       let runEnteredEffectCount = 0;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'FOO' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'FOO' });
 
-          useEnter(
-            r[0],
-            'FOO',
-            () => {
-              runEnteredEffectCount++;
-            },
-            [runEnteredEffectCount],
-          );
+        useEnterState(
+          r[0],
+          'FOO',
+          () => {
+            runEnteredEffectCount++;
+          },
+          [runEnteredEffectCount],
+        );
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(runEnteredEffectCount).toBe(1);
       act(() => {
-        dispatch({ type: 'SWITCH_SAME' });
+        result.current[1]({ type: 'SWITCH_SAME' });
       });
       expect(runEnteredEffectCount).toBe(2);
     });
 
     test('should run when entering new state', () => {
       let hasRunEnteredEffect = false;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'FOO' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'FOO' });
 
-          useEnter(r[0], 'BAR', () => {
-            hasRunEnteredEffect = true;
-          });
+        useEnterState(r[0], 'BAR', () => {
+          hasRunEnteredEffect = true;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(hasRunEnteredEffect).toBe(false);
       act(() => {
-        dispatch({ type: 'SWITCH' });
+        result.current[1]({ type: 'SWITCH' });
       });
       expect(hasRunEnteredEffect).toBe(true);
     });
     test('should not run when entering the same state', () => {
       let runEnteredEffectCount = 0;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'FOO' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'FOO' });
 
-          useEnter(r[0], 'FOO', () => {
-            runEnteredEffectCount++;
-          });
+        useEnterState(r[0], 'FOO', () => {
+          runEnteredEffectCount++;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(runEnteredEffectCount).toBe(1);
       act(() => {
-        dispatch({ type: 'SWITCH_SAME' });
+        result.current[1]({ type: 'SWITCH_SAME' });
       });
       expect(runEnteredEffectCount).toBe(1);
     });
     test('should run disposer when exiting state', () => {
       let hasRunDisposer = false;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'FOO' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'FOO' });
 
-          useEnter(r[0], 'FOO', () => () => {
-            hasRunDisposer = true;
-          });
+        useEnterState(r[0], 'FOO', () => () => {
+          hasRunDisposer = true;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(hasRunDisposer).toBe(false);
       act(() => {
-        dispatch({ type: 'SWITCH' });
+        result.current[1]({ type: 'SWITCH' });
       });
       expect(hasRunDisposer).toBe(true);
     });
     test('should run entering either states', () => {
       let hasRunEnterEffect = false;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'BAR' });
+      renderHook(() => {
+        const r = useReducer(reducer, { state: 'BAR' });
 
-          useEnter(r[0], ['FOO', 'BAR'], () => {
-            hasRunEnterEffect = true;
-          });
+        useEnterState(r[0], ['FOO', 'BAR'], () => {
+          hasRunEnterEffect = true;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(hasRunEnterEffect).toBe(true);
     });
     test('should not run enter associated state', () => {
       let runEnterEffectCount = 0;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'BAR' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'BAR' });
 
-          useEnter(r[0], ['FOO', 'BAR'], () => {
-            runEnterEffectCount++;
-          });
+        useEnterState(r[0], ['FOO', 'BAR'], () => {
+          runEnterEffectCount++;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(runEnterEffectCount).toBe(1);
       act(() => {
-        dispatch({
+        result.current[1]({
           type: 'SWITCH',
         });
       });
@@ -237,27 +216,24 @@ describe('TRANSITIONS', () => {
     });
     test('should disposer entering other than associated state', () => {
       let runDisposeCount = 0;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'BAR' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'BAR' });
 
-          useEnter(r[0], ['FOO', 'BAR'], () => () => {
-            runDisposeCount++;
-          });
+        useEnterState(r[0], ['FOO', 'BAR'], () => () => {
+          runDisposeCount++;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(runDisposeCount).toBe(0);
       act(() => {
-        dispatch({
+        result.current[1]({
           type: 'SWITCH',
         });
       });
       expect(runDisposeCount).toBe(0);
       act(() => {
-        dispatch({
+        result.current[1]({
           type: 'SWITCH_OTHER',
         });
       });
@@ -268,29 +244,26 @@ describe('TRANSITIONS', () => {
   describe('useTransitionEffect', () => {
     test('should run when entering state by action from state', () => {
       let hasRunEffect = false;
-      const [, dispatch] = renderReducer(
-        () => {
-          const r = useReducer(reducer, { state: 'OTHER' });
+      const { result } = renderHook(() => {
+        const r = useReducer(reducer, { state: 'OTHER' });
 
-          useTransition(r[0], 'BAR => SWITCH => FOO', () => {
-            hasRunEffect = true;
-          });
+        useTransitionState(r[0], 'BAR => SWITCH => FOO', () => {
+          hasRunEffect = true;
+        });
 
-          return r;
-        },
-        (ReducerHook) => <ReducerHook />,
-      );
+        return r;
+      });
       expect(hasRunEffect).toBe(false);
       act(() => {
         // Switching from OTHER to BAR first
-        dispatch({
+        result.current[1]({
           type: 'SWITCH',
         });
       });
       expect(hasRunEffect).toBe(false);
       act(() => {
         // Now to FOO from BAR
-        dispatch({
+        result.current[1]({
           type: 'SWITCH',
         });
       });
@@ -300,18 +273,15 @@ describe('TRANSITIONS', () => {
     describe('ANY', () => {
       test('should give correct args', () => {
         let args: any[] = [];
-        const [, dispatch] = renderReducer(
-          () => {
-            const r = useReducer(reducer, { state: 'FOO' });
+        const { result } = renderHook(() => {
+          const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransition(r[0], (prev, action, current) => {
-              args = [prev, action, current];
-            });
+          useTransitionState(r[0], (prev, action, current) => {
+            args = [prev, action, current];
+          });
 
-            return r;
-          },
-          (ReducerHook) => <ReducerHook />,
-        );
+          return r;
+        });
         expect(args).toEqual([
           {
             state: 'FOO',
@@ -320,7 +290,7 @@ describe('TRANSITIONS', () => {
           undefined,
         ]);
         act(() => {
-          dispatch({
+          result.current[1]({
             type: 'SWITCH',
           });
         });
@@ -342,7 +312,7 @@ describe('TRANSITIONS', () => {
           },
         ]);
         act(() => {
-          dispatch({
+          result.current[1]({
             type: 'SWITCH',
           });
         });
@@ -366,27 +336,24 @@ describe('TRANSITIONS', () => {
       });
       test('should run on any transition', () => {
         let runEffectCount = 0;
-        const [, dispatch] = renderReducer(
-          () => {
-            const r = useReducer(reducer, { state: 'FOO' });
+        const { result } = renderHook(() => {
+          const r = useReducer(reducer, { state: 'FOO' });
 
-            useTransition(r[0], () => {
-              runEffectCount++;
-            });
+          useTransitionState(r[0], () => {
+            runEffectCount++;
+          });
 
-            return r;
-          },
-          (ReducerHook) => <ReducerHook />,
-        );
+          return r;
+        });
         expect(runEffectCount).toBe(1);
         act(() => {
-          dispatch({
+          result.current[1]({
             type: 'SWITCH',
           });
         });
         expect(runEffectCount).toBe(2);
         act(() => {
-          dispatch({
+          result.current[1]({
             type: 'SWITCH_SAME',
           });
         });

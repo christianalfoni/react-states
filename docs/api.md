@@ -1,38 +1,9 @@
 # API
 
-## createStates
-
-```ts
-import { createStates, CreateUnion } from 'react-states';
-
-const states = createStates({
-  NOT_LOADED: () => ({}),
-  LOADING: () => ({}),
-  LOADED: (data: string[]) => ({ data }),
-  ERROR: (error: string) => ({ error }),
-});
-
-type State = CreateUnion<typeof states>;
-```
-
-## createActions
-
-```ts
-import { createActions, CreateUnion } from 'react-states';
-
-const actions = createActions({
-  LOAD: () => ({}),
-  LOAD_SUCCESS: (data: string[]) => ({ data }),
-  LOAD_ERROR: (error: string) => ({ error }),
-});
-
-type Action = CreateUnion<typeof actions>;
-```
-
 ## Transition
 
 ```ts
-import { createStates, createActions, transition, CreateUnion } from 'react-states';
+import { transition } from 'react-states';
 
 const states = createStates({
   NOT_LOADED: () => ({}),
@@ -41,24 +12,51 @@ const states = createStates({
   ERROR: (error: string) => ({ error }),
 });
 
-type State = CreateUnion<typeof states>;
+type State =
+  | {
+      state: 'NOT_LOADED';
+    }
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      data: string[];
+    }
+  | {
+      state: 'ERROR';
+      error: string;
+    };
 
-const actions = createActions({
-  LOAD: () => ({}),
-  LOAD_SUCCESS: (data: string[]) => ({ data }),
-  LOAD_ERROR: (error: string) => ({ error }),
-});
-
-type Action = CreateUnion<typeof actions>;
+type Action =
+  | {
+      type: 'LOAD';
+    }
+  | {
+      type: 'LOAD_SUCCESS';
+      data: string[];
+    }
+  | {
+      type: 'LOAD_ERROR';
+      error: string;
+    };
 
 const reducer = (prevState: State, action: Action) =>
   transition(prevState, action, {
     NOT_LOADED: {
-      LOAD: () => states.LOADING(),
+      LOAD: () => ({
+        state: 'LOADING',
+      }),
     },
     LOADING: {
-      LOAD_SUCCESS: (_, { data }) => states.LOADED(data),
-      LOAD_ERROR: (_, { error }) => states.ERROR(error),
+      LOAD_SUCCESS: (_, { data }) => ({
+        state: 'LOADED',
+        data,
+      }),
+      LOAD_ERROR: (_, { error }) => ({
+        state: 'ERROR',
+        error,
+      }),
     },
     LOADED: {},
     ERRORL: {},
@@ -122,10 +120,10 @@ const DataComponent = () => {
 };
 ```
 
-#### useEnter
+#### useEnterState
 
 ```ts
-useEnter(
+useEnterState(
   state,
   'FOO', // ['FOO', 'BAR']
   (current) => {
@@ -138,15 +136,15 @@ useEnter(
 );
 ```
 
-#### useTransition
+#### useTransitionState
 
 ```ts
 // Inferred actual possible transitions
-useTransition(state, 'FOO => SWITCH => BAR', (current, action, prev) => {});
+useTransitionState(state, 'FOO => SWITCH => BAR', (current, action, prev) => {});
 ```
 
 ```ts
-useTransition(state, (current, action, prev) => {
+useTransitionState(state, (current, action, prev) => {
   // Any transition
 });
 ```
@@ -154,7 +152,7 @@ useTransition(state, (current, action, prev) => {
 #### renderReducer
 
 ```tsx
-import { act } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { renderReducer } from 'react-states/test';
 import { createEnvironment } from './environments/test';
 
@@ -162,11 +160,12 @@ it('should do something', () => {
   const environment = createEnvironment();
   const [state, dispatch] = renderReducer(
     () => useData(),
-    (UseData) => (
-      <EnvironmentProvider environment={environment}>
-        <UseData />
-      </EnvironmentProvider>
-    ),
+    (UseData) =>
+      render(
+        <EnvironmentProvider environment={environment}>
+          <UseData />
+        </EnvironmentProvider>,
+      ),
   );
 
   act(() => {
@@ -189,13 +188,6 @@ type ABState = PickState<State, 'A' | 'B'>;
 
 ```ts
 type ABAction = PickAction<Action, 'A' | 'B'>;
-```
-
-#### CreateUnion
-
-```ts
-type State = CreateUnion<typeof states>;
-type Action = CreateUnion<typeof actions>;
 ```
 
 ### Devtools
