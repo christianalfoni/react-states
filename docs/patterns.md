@@ -41,7 +41,12 @@ const reducer = (prevState: State, action: Action) =>
 // Allow setting initialState for more reusability and also
 // improved testability
 export const useSwitcher = (initialState?: State) => {
-  const switcherReducer = useReducer(reducer, initialState || FOO());
+  const switcherReducer = useReducer(
+    reducer,
+    initialState || {
+      state: 'FOO',
+    },
+  );
 
   useDevtools('Switcher', switcherReducer);
 
