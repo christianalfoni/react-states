@@ -1,5 +1,5 @@
-import { $ACTION, $PREV_STATE, $TRANSITIONS, DEBUG_ID, DEBUG_TRANSITIONS } from './constants';
-import { IAction, IState, TMatch, TPartialMatch, TReadableTransition, TTransitions } from './types';
+import { $ACTION, $PREV_STATE, DEBUG_ID, DEBUG_TRANSITIONS, $TRANSITIONS } from './constants';
+import { IAction, IState, TMatch, TPartialMatch, TTransitions } from './types';
 
 export function transition<S extends IState, A extends IAction, T extends TTransitions<S, A>>(
   state: S,
@@ -8,7 +8,11 @@ export function transition<S extends IState, A extends IAction, T extends TTrans
 ): S & {
   [$ACTION]?: A;
   [$PREV_STATE]?: S;
-  [$TRANSITIONS]?: TReadableTransition<T>;
+  [$TRANSITIONS]?: {
+    [SS in keyof T]: {
+      [AA in keyof T[SS]]: T[SS][AA] extends (...args: any) => IState ? ReturnType<T[SS][AA]>['state'] : never;
+    };
+  };
 } {
   let newState = state;
 

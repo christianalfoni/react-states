@@ -22,13 +22,13 @@ npm install react-states
 
 - [API](./docs/api.md)
 - [Patterns](./docs/patterns.md)
+- [Tools](./docs/tools.md)
 
 ## Values
 
 - "It is just a reducer"
-- Simple utilities
-- Enhanced type safety
-- Reducer does not express side effects
+- Simple utilities for safer and more readable code
+- Predictable execution of side effects
 
 ## Learn by example
 

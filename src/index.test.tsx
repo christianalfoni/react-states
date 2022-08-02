@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-hooks';
 import React, { useReducer } from 'react';
-import { match, transition, useEnterState, useTransitionState } from '.';
+import { match, transition, useStateTransition } from '.';
 import { $ACTION, $PREV_STATE } from './constants';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
@@ -100,7 +100,7 @@ describe('TRANSITIONS', () => {
       renderHook(() => {
         const r = useReducer(reducer, { state: 'FOO' });
 
-        useEnterState(r[0], 'FOO', () => {
+        useStateTransition(r[0], 'FOO', () => {
           hasRunEnteredEffect = true;
         });
 
@@ -113,7 +113,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'FOO' });
 
-        useEnterState(
+        useStateTransition(
           r[0],
           'FOO',
           () => {
@@ -136,7 +136,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'FOO' });
 
-        useEnterState(r[0], 'BAR', () => {
+        useStateTransition(r[0], 'BAR', () => {
           hasRunEnteredEffect = true;
         });
 
@@ -153,7 +153,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'FOO' });
 
-        useEnterState(r[0], 'FOO', () => {
+        useStateTransition(r[0], 'FOO', () => {
           runEnteredEffectCount++;
         });
 
@@ -170,7 +170,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'FOO' });
 
-        useEnterState(r[0], 'FOO', () => () => {
+        useStateTransition(r[0], 'FOO', () => () => {
           hasRunDisposer = true;
         });
 
@@ -187,7 +187,7 @@ describe('TRANSITIONS', () => {
       renderHook(() => {
         const r = useReducer(reducer, { state: 'BAR' });
 
-        useEnterState(r[0], ['FOO', 'BAR'], () => {
+        useStateTransition(r[0], ['FOO', 'BAR'], () => {
           hasRunEnterEffect = true;
         });
 
@@ -200,7 +200,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'BAR' });
 
-        useEnterState(r[0], ['FOO', 'BAR'], () => {
+        useStateTransition(r[0], ['FOO', 'BAR'], () => {
           runEnterEffectCount++;
         });
 
@@ -219,7 +219,7 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'BAR' });
 
-        useEnterState(r[0], ['FOO', 'BAR'], () => () => {
+        useStateTransition(r[0], ['FOO', 'BAR'], () => () => {
           runDisposeCount++;
         });
 
@@ -247,9 +247,17 @@ describe('TRANSITIONS', () => {
       const { result } = renderHook(() => {
         const r = useReducer(reducer, { state: 'OTHER' });
 
-        useTransitionState(r[0], 'BAR => SWITCH => FOO', () => {
-          hasRunEffect = true;
-        });
+        useStateTransition(
+          r[0],
+          {
+            BAR: {
+              SWITCH: 'FOO',
+            },
+          },
+          () => {
+            hasRunEffect = true;
+          },
+        );
 
         return r;
       });
@@ -276,7 +284,7 @@ describe('TRANSITIONS', () => {
         const { result } = renderHook(() => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionState(r[0], (prev, action, current) => {
+          useStateTransition(r[0], (prev, action, current) => {
             args = [prev, action, current];
           });
 
@@ -339,7 +347,7 @@ describe('TRANSITIONS', () => {
         const { result } = renderHook(() => {
           const r = useReducer(reducer, { state: 'FOO' });
 
-          useTransitionState(r[0], () => {
+          useStateTransition(r[0], () => {
             runEffectCount++;
           });
 

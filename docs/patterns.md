@@ -10,7 +10,7 @@ Expose the reducer and related effects as a hook.
 
 ```tsx
 import { useReducer } from 'react';
-import { transition, useEnterState } from 'react-states';
+import { transition, useStateTransition } from 'react-states';
 
 type State =
   | {
@@ -52,7 +52,7 @@ export const useSwitcher = (initialState?: State) => {
 
   const [state] = switcherReducer;
 
-  useEnterState(state, 'BAR', () => {
+  useStateTransition(state, 'BAR', () => {
     console.log('Switched to BAR');
   });
 
@@ -63,7 +63,7 @@ export const useSwitcher = (initialState?: State) => {
 ### Lift Transitions
 
 ```ts
-import { transition, TTransitions, TTransition, PickState, IState, pick } from 'react-states';
+import { PickState, PickAction } from 'react-states';
 
 type State =
   | {
@@ -71,64 +71,16 @@ type State =
     }
   | {
       state: 'BAR';
-    }
-  | {
-      state: 'BAZ';
     };
 
-type Action =
-  | {
-      type: 'GO_TO_FOO';
-    }
-  | {
-      type: 'GO_TO_BAR';
-    }
-  | {
-      type: 'GO_TO_BAZ';
-    };
-
-// A single transition to be used in any state
-const GO_TO_FOO = (state: State): PickState<State, 'FOO'> => {
-  state: 'FOO';
+type Action = {
+  type: 'SWITCH';
 };
 
-// Multiple transitions to be used in any state
-const baseTransitions: TTransition<State, Action> = {
-  GO_TO_FOO: () => ({
-    state: 'FOO',
-  }),
-  GO_TO_BAR: () => ({
-    state: 'BAR',
-  }),
-};
-
-// Multiple transitions to be used in specific states
-const fooBarTransitions: TTransition<State, Action, 'FOO' | 'BAR'> = {
-  GO_TO_FOO: () => ({
-    state: 'FOO',
-  }),
-  GO_TO_BAR: () => ({
-    state: 'BAR',
-  }),
-};
-
-// All transitions
-const transitions: TTransitions<State, Action> = {
-  FOO: {
-    ...baseTransitions,
-    ...fooBarTransitions,
-    GO_TO_FOO,
-  },
-  BAR: {
-    ...baseTransitions,
-    ...fooBarTransitions,
-    GO_TO_FOO,
-  },
-  BAZ: {
-    ...baseTransitions,
-    GO_TO_FOO,
-  },
-};
+// A single transition to be used in any state. Be explicit about return type
+const GO_TO_FOO = (state: State, action: PickAction<Action, 'SWITCH'>): PickState<State, 'FOO'> => ({
+  state: 'FOO',
+});
 ```
 
 ### BaseState

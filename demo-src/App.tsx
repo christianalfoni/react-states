@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { match, useEnterState, useTransitionState } from '../src';
+import { match, useStateTransition } from '../src';
 import { useDevtools } from '../src/devtools';
 import { reducer } from './reducers/todos';
 
@@ -13,13 +13,21 @@ const Test = () => {
 
   const [state, dispatch] = todosReducer;
 
-  useEnterState(state, 'LOADING', () => {
+  useStateTransition(state, 'LOADING', () => {
     setTimeout(() => dispatch({ type: 'fetchTodosSuccess', todos: [] }), 500);
   });
 
-  useTransitionState(state, 'LOADED => addTodo => LOADED', () => {
-    // Do something
-  });
+  useStateTransition(
+    state,
+    {
+      LOADED: {
+        addTodo: 'LOADED',
+      },
+    },
+    () => {
+      // Do something
+    },
+  );
 
   return match(state, {
     NOT_LOADED: ({}) => <button onClick={() => dispatch({ type: 'fetchTodos' })}>Fetch Todos</button>,

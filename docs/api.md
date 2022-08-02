@@ -5,13 +5,6 @@
 ```ts
 import { transition } from 'react-states';
 
-const states = createStates({
-  NOT_LOADED: () => ({}),
-  LOADING: () => ({}),
-  LOADED: (data: string[]) => ({ data }),
-  ERROR: (error: string) => ({ error }),
-});
-
 type State =
   | {
       state: 'NOT_LOADED';
@@ -74,15 +67,7 @@ import { useData } from './useData';
 const DataComponent = () => {
   const [state, dispatch] = useData();
 
-  const partialMatch = match(
-    state,
-    {
-      LOADED: ({ data }) => data,
-    },
-    (otherStates) => [],
-  );
-
-  const exhaustiveMatch = match(state, {
+  return match(state, {
     NOT_LOADED: () => <button onClick={() => dispatch({ type: 'LOAD' })}>Load data</button>,
     LOADING: () => 'Loading...',
     LOADED: ({ data }) => (
@@ -94,9 +79,19 @@ const DataComponent = () => {
     ),
     ERROR: ({ error }) => <span style={{ color: 'red' }}>{error}</span>,
   });
-
-  return <div />;
 };
+```
+
+You can also do a partial match:
+
+```ts
+const data = match(
+  state,
+  {
+    LOADED: ({ data }) => data,
+  },
+  (otherStates) => [],
+);
 ```
 
 #### matchProp
@@ -120,7 +115,7 @@ const DataComponent = () => {
 };
 ```
 
-#### useEnterState
+#### useStateTransition
 
 ```ts
 useEnterState(
@@ -136,43 +131,28 @@ useEnterState(
 );
 ```
 
-#### useTransitionState
-
 ```ts
 // Inferred actual possible transitions
-useTransitionState(state, 'FOO => SWITCH => BAR', (current, action, prev) => {});
+useTransitionState(
+  state,
+  {
+    FOO: {
+      SWITCH: 'BAR', // ['BAR', 'BAZ']
+    },
+  },
+  (current, action, prev) => {
+    // When either transition occurs
+
+    return () => {
+      // When other transition occurs
+    };
+  },
+);
 ```
 
 ```ts
-useTransitionState(state, (current, action, prev) => {
+useTransitionState(state, (current, action?, prev?) => {
   // Any transition
-});
-```
-
-#### renderReducer
-
-```tsx
-import { act, render } from '@testing-library/react';
-import { renderReducer } from 'react-states/test';
-import { createEnvironment } from './environments/test';
-
-it('should do something', () => {
-  const environment = createEnvironment();
-  const [state, dispatch] = renderReducer(
-    () => useData(),
-    (UseData) =>
-      render(
-        <EnvironmentProvider environment={environment}>
-          <UseData />
-        </EnvironmentProvider>,
-      ),
-  );
-
-  act(() => {
-    dispatch({ type: 'LOAD' });
-  });
-
-  expect(state.state).toBe('LOADING');
 });
 ```
 

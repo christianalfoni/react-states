@@ -1,14 +1,21 @@
-import { $ACTION, $TRANSITIONS } from './constants';
+import { $ACTION, $PREV_STATE, $TRANSITIONS } from './constants';
 
 export interface IState {
   state: string;
   [$ACTION]?: IAction;
-  [$TRANSITIONS]?: TReadableTransition<any>;
+  [$PREV_STATE]?: IState;
+  [$TRANSITIONS]?: TEvaluatedTransitions;
 }
 
 export interface IAction {
   type: string;
 }
+
+export type TEvaluatedTransitions = {
+  [S: string]: {
+    [A: string]: string;
+  };
+};
 
 export type TMatch<S extends IState, R = any> = {
   [SS in S['state']]: (state: S & { state: SS }) => R;
@@ -32,23 +39,11 @@ export type PickAction<A extends IAction, T extends A['type']> = A extends {
 
 export type TTransition<S extends IState, A extends IAction, SS extends S['state'] = S['state']> = {
   [AA in A['type']]?: (
-    state: Readonly<S & { state: SS }>,
-    action: A extends { type: AA } ? Readonly<A> : never,
+    state: Readonly<S extends { state: SS } ? S : never>,
+    action: Readonly<A extends { type: AA } ? A : never>,
   ) => Readonly<S>;
 };
 
 export type TTransitions<S extends IState, A extends IAction> = {
   [SS in S['state']]: TTransition<S, A, SS>;
 };
-
-export type TReadableTransition<T extends TTransitions<any, any>> = {
-  [S in keyof T]: {
-    [A in keyof T[S]]: S extends string
-      ? A extends string
-        ? T[S][A] extends (...args: any[]) => IState
-          ? `${S} => ${A} => ${ReturnType<T[S][A]>['state']}`
-          : never
-        : never
-      : never;
-  }[keyof T[S]];
-}[keyof T];

@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "8.0.0-rc1",
+  "version": "8.0.0-rc11",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
@@ -55,7 +55,10 @@
     "utils.js.map",
     "types.d.ts",
     "types.js",
-    "types.js.map"
+    "types.js.map",
+    "tools.d.ts",
+    "tools.js",
+    "tools.js.map"
   ],
   "peerDependencies": {
     "react": "*"
