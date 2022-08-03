@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import { match, useStateTransition } from '../src';
-import { useDevtools } from '../src/devtools';
+import { match, useStateTransition, useDevtools } from '../src';
+
 import { reducer } from './reducers/todos';
 
 const Test = () => {
@@ -34,6 +34,7 @@ const Test = () => {
     LOADING: () => <h2>Loading...</h2>,
     LOADED: ({ todos }) => (
       <div>
+        <button onClick={() => dispatch({ type: 'fetchTodos' })}>Fetch Todos</button>
         <button
           onClick={() => {
             dispatch({

@@ -6,8 +6,7 @@ import { App } from './App';
 const rootElement = document.getElementById('root');
 
 render(
-  <DevtoolsProvider>
-    <App />
-  </DevtoolsProvider>,
+  <App />,
+
   rootElement,
 );

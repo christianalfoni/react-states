@@ -1,5 +1,11 @@
 import { $ACTION, $PREV_STATE, $TRANSITIONS } from './constants';
 
+export interface StateChange {
+  debugDispatch?: (action: IAction, isIgnored: boolean) => void;
+  prevState?: IState;
+  action?: IAction;
+}
+
 export interface IState {
   state: string;
   [$ACTION]?: IAction;

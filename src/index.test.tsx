@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react-hooks';
 import React, { useReducer } from 'react';
 import { match, transition, useStateTransition } from '.';
-import { $ACTION, $PREV_STATE } from './constants';
 
 type State = { state: 'FOO' } | { state: 'BAR' } | { state: 'OTHER' };
 type Action = { type: 'SWITCH' } | { type: 'SWITCH_SAME' } | { type: 'NOOP' } | { type: 'SWITCH_OTHER' };
@@ -305,12 +304,6 @@ describe('TRANSITIONS', () => {
         expect(args).toEqual([
           {
             state: 'BAR',
-            [$ACTION]: {
-              type: 'SWITCH',
-            },
-            [$PREV_STATE]: {
-              state: 'FOO',
-            },
           },
           {
             type: 'SWITCH',
@@ -327,12 +320,6 @@ describe('TRANSITIONS', () => {
         expect(args).toEqual([
           {
             state: 'FOO',
-            [$ACTION]: {
-              type: 'SWITCH',
-            },
-            [$PREV_STATE]: {
-              state: 'BAR',
-            },
           },
           {
             type: 'SWITCH',

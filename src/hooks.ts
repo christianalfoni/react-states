@@ -1,15 +1,8 @@
 import React from 'react';
-import {
-  $ACTION,
-  DEBUG_TRIGGER_TRANSITIONS,
-  DEBUG_ID,
-  DEBUG_COMMAND,
-  DEBUG_TRANSITIONS,
-  $TRANSITIONS,
-  $PREV_STATE,
-} from './constants';
+import { $ACTION, $TRANSITIONS, $PREV_STATE } from './constants';
 import { Manager } from './devtools/Manager';
 import { IState } from './types';
+import { stateChangeTracker, upsertStateChange } from './utils';
 
 export function useStateTransition<
   S extends IState,
@@ -22,7 +15,7 @@ export function useStateTransition<
             | Exclude<S[typeof $TRANSITIONS], undefined>[SS][AA]
             | Exclude<S[typeof $TRANSITIONS], undefined>[SS][AA][];
         };
-      }
+      },
 >(
   state: S,
   states: SS,
@@ -71,7 +64,15 @@ export function useStateTransition() {
   const deps = Array.isArray(arguments[arguments.length - 1]) ? arguments[arguments.length - 1] : [];
 
   if (typeof transitions === 'function') {
-    return React.useEffect(() => cb(state, state[$ACTION], state[$PREV_STATE]), deps.concat(state));
+    const stateChange = stateChangeTracker.get(state);
+    return React.useEffect(() => {
+      const disposer = cb(state, stateChange?.action, stateChange?.prevState);
+
+      return () => {
+        disposer?.();
+        stateChangeTracker.delete(state);
+      };
+    }, deps.concat(state));
   }
 
   if (typeof transitions === 'string' || Array.isArray(transitions)) {
@@ -81,27 +82,43 @@ export function useStateTransition() {
 
     return React.useEffect(
       // @ts-ignore
-      () => isMatch && cb(currentState),
+      () => {
+        let disposer = isMatch ? cb(currentState) : undefined;
+
+        return () => {
+          disposer?.();
+          stateChangeTracker.delete(state);
+        };
+      },
       deps.concat(isMatch),
     );
   }
 
   return React.useEffect(() => {
+    const stateChange = stateChangeTracker.get(state);
     const currentState = state;
-    const prevState = state[$PREV_STATE];
-    const action = state[$ACTION];
-    const transition = transitions[prevState?.state]?.[action?.type];
+    const prevState = stateChange?.prevState;
+    const action = stateChange?.action;
+    const transition = prevState?.state && action?.type && transitions[prevState?.state]?.[action?.type];
 
     if (transition) {
       const targetStates = Array.isArray(transition) ? transition : [transition];
       if (targetStates.includes(currentState.state)) {
-        return cb(currentState, action, prevState);
+        const disposer = cb(currentState, action, prevState);
+        return () => {
+          disposer?.();
+          stateChangeTracker.delete(state);
+        };
       }
     }
+
+    return () => {
+      stateChangeTracker.delete(state);
+    };
   }, deps.concat(state));
 }
 
-export const managerContext = React.createContext((null as unknown) as Manager);
+export const managerContext = React.createContext(null as unknown as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context
@@ -113,53 +130,24 @@ export const useDevtools = (id: string, reducer: [any, any]) => {
     return reducer;
   }
 
-  const [state, dispatch] = reducer;
+  const [state] = reducer;
 
   React.useEffect(() => () => manager.dispose(id), [id, manager]);
 
-  // @ts-ignore
-  reducer[0][DEBUG_ID] = id;
-  // @ts-ignore
-  reducer[0][DEBUG_COMMAND] = (command: { cmd: string }) => {
-    manager.onMessage(id, {
-      type: 'command',
-      command,
-    });
-  };
-
-  reducer[1] = (action: any) => {
-    action[$ACTION] = (id: string, isIgnored: boolean) => {
+  upsertStateChange(reducer[0], {
+    debugDispatch: (action, isIgnored) => {
       manager.onMessage(id, {
         type: 'dispatch',
         action,
         ignored: isIgnored,
       });
-    };
-
-    dispatch(action);
-
-    if (action.type === DEBUG_TRIGGER_TRANSITIONS) {
-      manager.onMessage(id, {
-        type: 'transitions',
-        // @ts-ignore
-        transitions: state[DEBUG_TRANSITIONS],
-      });
-      return;
-    }
-  };
+    },
+  });
 
   React.useEffect(() => {
     manager.onMessage(id, {
       type: 'state',
       state,
-      // @ts-ignore
-      transitions: state[DEBUG_TRANSITIONS],
-      triggerTransitions: () => {
-        // We dispatch to ensure the transition is run
-        reducer[1]({
-          type: DEBUG_TRIGGER_TRANSITIONS,
-        });
-      },
     });
   }, [id, manager, state]);
 

@@ -11,21 +11,6 @@ export type DevtoolMessage =
       state: {
         state: string;
       };
-      triggerTransitions: () => void;
-    }
-  | {
-      type: 'transitions';
-      transitions: {
-        [key: string]: {
-          [key: string]: Function;
-        };
-      };
-    }
-  | {
-      type: 'command';
-      command: {
-        cmd: string;
-      };
     };
 
 export type HistoryItem =
@@ -109,22 +94,11 @@ export class Manager {
                   },
                   ...this.states[id].history,
                 ],
-            triggerTransitions: message.triggerTransitions,
           },
         };
         break;
       }
 
-      case 'transitions': {
-        this.states = {
-          ...this.states,
-          [id]: {
-            ...this.states[id],
-            transitions: message.transitions,
-          },
-        };
-        break;
-      }
       case 'dispatch': {
         this.states = {
           ...this.states,

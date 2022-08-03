@@ -1,11 +1,26 @@
-import { $ACTION, $PREV_STATE, DEBUG_ID, DEBUG_TRANSITIONS, $TRANSITIONS } from './constants';
-import { IAction, IState, TMatch, TPartialMatch, TTransitions } from './types';
+import { $ACTION, $PREV_STATE, $TRANSITIONS } from './constants';
+import { IAction, IState, StateChange, TMatch, TPartialMatch, TTransitions } from './types';
+
+export const stateChangeTracker = new WeakMap<IState, StateChange>();
+
+export function upsertStateChange(state: IState, change: StateChange) {
+  const stateChange = stateChangeTracker.get(state);
+  const updatedStateChange = {
+    ...stateChange,
+    ...change,
+  };
+
+  stateChangeTracker.set(state, updatedStateChange);
+
+  return updatedStateChange;
+}
 
 export function transition<S extends IState, A extends IAction, T extends TTransitions<S, A>>(
   state: S,
   action: A,
   transitions: T,
 ): S & {
+  // Only for typing inference
   [$ACTION]?: A;
   [$PREV_STATE]?: S;
   [$TRANSITIONS]?: {
@@ -16,34 +31,23 @@ export function transition<S extends IState, A extends IAction, T extends TTrans
 } {
   let newState = state;
 
-  // @ts-ignore
-  const debugId = state[DEBUG_ID];
+  const stateChange = stateChangeTracker.get(state);
 
   // @ts-ignore
   if (transitions[state.state] && transitions[state.state][action.type]) {
     // @ts-ignore
     newState = transitions[state.state][action.type](state, action);
-    // @ts-ignore
-    newState[$ACTION] = action;
-    // @ts-ignore
-    action[$ACTION] && newState !== state && action[$ACTION](debugId, false);
-    // @ts-ignore
-    newState[$PREV_STATE] = state;
-    // @ts-ignore
-    delete state[$PREV_STATE];
-    // @ts-ignore
-    delete state[$ACTION];
+
+    stateChange?.debugDispatch?.(action, false);
+
+    upsertStateChange(newState, {
+      action,
+      prevState: state,
+    });
+
+    stateChangeTracker.delete(state);
   } else {
-    // @ts-ignore
-    action[$ACTION] && action[$ACTION](debugId, true);
-  }
-
-  if (debugId) {
-    // @ts-ignore
-    newState[DEBUG_ID] = debugId;
-
-    // @ts-ignore
-    newState[DEBUG_TRANSITIONS] = transitions;
+    stateChange?.debugDispatch?.(action, true);
   }
 
   return newState as any;
@@ -80,7 +84,7 @@ export function matchProp<
   S extends IState,
   P extends {
     [K in keyof S]: keyof (S & { state: K });
-  }[keyof S]
+  }[keyof S],
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function matchProp() {
   const state = arguments[0];
