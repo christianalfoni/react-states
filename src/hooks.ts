@@ -115,11 +115,14 @@ export function useStateTransition() {
     const currentState = state;
     const prevState = stateChange?.prevState;
     const action = stateChange?.action;
+    const stateTransition = prevState?.state && action?.type && transitions[prevState?.state]?.[action?.type];
+    const actionTransition =
+      prevState?.state && action?.type && typeof transitions[prevState?.state] === 'string'
+        ? transitions[prevState?.state]
+        : undefined;
 
-    const transition = prevState?.state && action?.type && transitions[prevState?.state]?.[action?.type];
-
-    if (transition) {
-      const targetStates = Array.isArray(transition) ? transition : [transition];
+    if (stateTransition) {
+      const targetStates = Array.isArray(stateTransition) ? stateTransition : [stateTransition];
       if (targetStates.includes(currentState.state)) {
         const disposer = cb(currentState, action, prevState);
         return () => {
@@ -127,6 +130,12 @@ export function useStateTransition() {
           stateChangeTracker.delete(state);
         };
       }
+    } else if (actionTransition && actionTransition === action?.type) {
+      const disposer = cb(action, prevState);
+      return () => {
+        disposer?.();
+        stateChangeTracker.delete(state);
+      };
     }
 
     return () => {

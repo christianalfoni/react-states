@@ -93,7 +93,7 @@ test('should have fallback match', () => {
   ).toBe('bar');
 });
 describe('TRANSITIONS', () => {
-  describe('useEnterEffect', () => {
+  describe('ENTERING STATE', () => {
     test('should run on initial state', () => {
       let hasRunEnteredEffect = false;
       renderHook(() => {
@@ -240,7 +240,7 @@ describe('TRANSITIONS', () => {
     });
   });
 
-  describe('useTransitionEffect', () => {
+  describe('TRANSITION FROM => ACTION => TO', () => {
     test('should run when entering state by action from state', () => {
       let hasRunEffect = false;
       const { result } = renderHook(() => {
@@ -353,6 +353,54 @@ describe('TRANSITIONS', () => {
           });
         });
         expect(runEffectCount).toBe(3);
+      });
+    });
+
+    describe('TRANSITION BY ACTION', () => {
+      test('should give correct args', () => {
+        let args: any[] = [];
+        const { result } = renderHook(() => {
+          const r = useReducer(reducer, { state: 'FOO' });
+
+          useStateTransition(
+            r[0],
+            {
+              FOO: 'SWITCH',
+              BAR: 'SWITCH',
+            },
+            (action, current) => {
+              args = [action, current];
+            },
+          );
+
+          return r;
+        });
+        act(() => {
+          result.current[1]({
+            type: 'SWITCH',
+          });
+        });
+        expect(args).toEqual([
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'FOO',
+          },
+        ]);
+        act(() => {
+          result.current[1]({
+            type: 'SWITCH',
+          });
+        });
+        expect(args).toEqual([
+          {
+            type: 'SWITCH',
+          },
+          {
+            state: 'BAR',
+          },
+        ]);
       });
     });
   });

@@ -136,6 +136,24 @@ useEnterState(
 useTransitionState(
   state,
   {
+    FOO: 'SWITCH',
+    BAR: 'SWITCH',
+  },
+  (action, prev) => {
+    // When either transition occurs
+
+    return () => {
+      // When other transition occurs
+    };
+  },
+);
+```
+
+```ts
+// Inferred actual possible transitions
+useTransitionState(
+  state,
+  {
     FOO: {
       SWITCH: 'BAR', // ['BAR', 'BAZ']
     },

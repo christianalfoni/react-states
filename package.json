@@ -1,6 +1,6 @@
 {
   "name": "react-states",
-  "version": "8.0.0-rc12",
+  "version": "8.0.0-rc13",
   "description": "Explicit states for predictable user experiences",
   "author": "Christian Alfoni <christianalfoni@gmail.com>",
   "license": "MIT",
