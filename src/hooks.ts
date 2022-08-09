@@ -10,18 +10,34 @@ export function useStateTransition<
     | S['state']
     | S['state'][]
     | {
+        [SS in keyof Exclude<S[typeof $TRANSITIONS], undefined>]?: keyof Exclude<S[typeof $TRANSITIONS], undefined>[SS];
+      }
+    | {
         [SS in keyof Exclude<S[typeof $TRANSITIONS], undefined>]?: {
           [AA in keyof Exclude<S[typeof $TRANSITIONS], undefined>[SS]]?:
             | Exclude<S[typeof $TRANSITIONS], undefined>[SS][AA]
             | Exclude<S[typeof $TRANSITIONS], undefined>[SS][AA][];
         };
-      },
+      }
 >(
   state: S,
   states: SS,
   effect: SS extends S['state'] | S['state'][]
     ? (
         current: SS extends string[] ? S & { state: SS[number] } : SS extends string ? S & { state: SS } : never,
+      ) => void | (() => void)
+    : SS extends { [state: string]: string }
+    ? (
+        action: Exclude<S[typeof $ACTION], undefined> & {
+          type: {
+            [AA in keyof SS]: SS[AA] extends Exclude<S[typeof $ACTION], undefined>['type'] ? SS[AA] : never;
+          }[keyof SS];
+        },
+        prev: S extends {
+          state: keyof SS;
+        }
+          ? S
+          : never,
       ) => void | (() => void)
     : (
         current: S extends {
@@ -99,6 +115,7 @@ export function useStateTransition() {
     const currentState = state;
     const prevState = stateChange?.prevState;
     const action = stateChange?.action;
+
     const transition = prevState?.state && action?.type && transitions[prevState?.state]?.[action?.type];
 
     if (transition) {
@@ -118,7 +135,7 @@ export function useStateTransition() {
   }, deps.concat(state));
 }
 
-export const managerContext = React.createContext(null as unknown as Manager);
+export const managerContext = React.createContext((null as unknown) as Manager);
 
 // We have to type as any as States<any, any> throws error not matching
 // the explicit context

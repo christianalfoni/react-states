@@ -98,14 +98,10 @@ export const Resizer = ({
   useStateTransition(
     resizer,
     {
-      DETECTING_RESIZE: {
-        ON_MOUSE_MOVE: 'DETECTING_RESIZE',
-      },
-      RESIZING: {
-        ON_MOUSE_MOVE: 'RESIZING',
-      },
+      DETECTING_RESIZE: 'ON_MOUSE_MOVE',
+      RESIZING: 'ON_MOUSE_MOVE',
     },
-    (_, { x }, __) => {
+    ({ x }) => {
       onResize(window.innerWidth - x);
     },
   );
@@ -113,9 +109,7 @@ export const Resizer = ({
   useStateTransition(
     resizer,
     {
-      DETECTING_RESIZE: {
-        ON_MOUSE_UP_RESIZER: 'IDLE',
-      },
+      DETECTING_RESIZE: 'ON_MOUSE_UP_RESIZER',
     },
     () => onClick(),
   );
