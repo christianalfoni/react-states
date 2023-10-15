@@ -155,8 +155,12 @@ export function useEnter<S extends IState, SS extends S['state'] | S['state'][]>
   const currentState = state;
   const isMatch = statesList.includes(state.state);
 
-  // @ts-ignore
-  return React.useEffect(() => isMatch && effect(currentState), deps.concat(isMatch));
+  return React.useEffect(() => {
+    if (isMatch) {
+      // @ts-ignore
+      return effect(currentState);
+    }
+  }, deps.concat(isMatch));
 }
 
 export function useTransition<S extends IState, T extends S[typeof $TRANSITIONS] | S[typeof $TRANSITIONS][]>(

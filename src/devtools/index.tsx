@@ -32,7 +32,7 @@ export const DevtoolsManager = () => {
   React.useEffect(() => manager.subscribe(setStatesData), [manager]);
 
   const toggleExpanded = React.useCallback(
-    (id) => {
+    (id: string) => {
       setExpandedStates((current) =>
         current.includes(id) ? current.filter((existingId) => existingId !== id) : current.concat(id),
       );
