@@ -21,49 +21,49 @@ Enhance your reducer with transitions. Transitions creates additional constraint
 ### createTransitions
 
 ```ts
-import { createTransitions } from 'react-states';
+import { createTransitions } from "react-states";
 
 type State =
   | {
-      state: 'NOT_LOADED';
+      state: "NOT_LOADED";
     }
   | {
-      state: 'LOADING';
+      state: "LOADING";
     }
   | {
-      state: 'LOADED';
+      state: "LOADED";
       data: string;
     }
   | {
-      state: 'ERROR';
+      state: "ERROR";
     };
 
 type Action = {
-  type: 'FETCH';
+  type: "FETCH";
 };
 
 type Cmd = {
-  cmd: 'FETCH_DATA';
+  cmd: "FETCH_DATA";
 };
 
 export const useData = createTransitions<State, Action, Cmd>()({
   NOT_LOADED: {
     FETCH: () => [
       {
-        state: 'LOADING',
+        state: "LOADING",
       },
       {
-        cmd: 'FETCH_DATA',
+        cmd: "FETCH_DATA",
       },
     ],
   },
   LOADING: {
     FETCH_SUCCESS: ({ data }) => ({
-      state: 'LOADED',
+      state: "LOADED",
       data,
     }),
     FETCH_ERROR: ({ error }) => ({
-      state: 'ERROR',
+      state: "ERROR",
       error,
     }),
   },
@@ -75,12 +75,12 @@ export const useData = createTransitions<State, Action, Cmd>()({
 ### match
 
 ```tsx
-import { match } from 'react-states';
-import { useData } from './useData';
+import { match } from "react-states";
+import { useData } from "./useData";
 
 const DataComponent = () => {
   const [state, dispatch] = useData({
-    FETCH_DATA: () => Promise.resolve('Some data'),
+    FETCH_DATA: () => Promise.resolve("Some data"),
   });
 
   const partialMatch = match(
@@ -88,14 +88,16 @@ const DataComponent = () => {
     {
       LOADED: ({ data }) => data,
     },
-    (otherStates) => [],
+    (otherStates) => []
   );
 
-  const matchByKey = match(state, 'data')?.data ?? [];
+  const matchByKey = match(state, "data")?.data ?? [];
 
   const exhaustiveMatch = match(state, {
-    NOT_LOADED: () => <button onClick={() => dispatch({ type: 'LOAD' })}>Load data</button>,
-    LOADING: () => 'Loading...',
+    NOT_LOADED: () => (
+      <button onClick={() => dispatch({ type: "LOAD" })}>Load data</button>
+    ),
+    LOADING: () => "Loading...",
     LOADED: ({ data }) => (
       <ul>
         {data.map((item, index) => (
@@ -103,9 +105,19 @@ const DataComponent = () => {
         ))}
       </ul>
     ),
-    ERROR: ({ error }) => <span style={{ color: 'red' }}>{error}</span>,
+    ERROR: ({ error }) => <span style={{ color: "red" }}>{error}</span>,
   });
 
   return <div />;
 };
 ```
+
+### Debugging
+
+```ts
+import { debugging } from "react-states";
+
+debugging.active = Boolean(import.meta.DEV);
+```
+
+You could also base it with a keyboard shortcut, localStorage etc.
