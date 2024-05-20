@@ -1,6 +1,6 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { match, createTransitions } from '../src/index';
+import { match, createTransitions } from "../src/index";
 
 type Todo = {
   title: string;
@@ -9,59 +9,59 @@ type Todo = {
 
 type State =
   | {
-      state: 'NOT_LOADED';
+      state: "NOT_LOADED";
     }
   | {
-      state: 'LOADING';
+      state: "LOADING";
     }
   | {
-      state: 'LOADED';
+      state: "LOADED";
       todos: Todo[];
     }
   | {
-      state: 'ERROR';
+      state: "ERROR";
       error: string;
     };
 
 type Action =
   | {
-      type: 'ADD_TODO';
+      type: "ADD_TODO";
       todo: Todo;
     }
   | {
-      type: 'FETCH_TODOS';
+      type: "FETCH_TODOS";
     }
   | {
-      type: 'FETCH_TODOS_SUCCESS';
+      type: "FETCH_TODOS_SUCCESS";
       todos: Todo[];
     }
   | {
-      type: 'FETCH_TODOS_ERROR';
+      type: "FETCH_TODOS_ERROR";
       error: string;
     };
 
 type Cmd = {
-  cmd: 'FETCH_TODOS';
+  cmd: "FETCH_TODOS";
 };
 
-const useTransitions = createTransitions<State, Action, Cmd>()({
+const useTransitions = createTransitions<State, Action, Cmd>({
   NOT_LOADED: {
     FETCH_TODOS: () => [
       {
-        state: 'LOADING',
+        state: "LOADING",
       },
       {
-        cmd: 'FETCH_TODOS',
+        cmd: "FETCH_TODOS",
       },
     ],
   },
   LOADING: {
-    FETCH_TODOS_SUCCESS: ({ todos }) => ({ state: 'LOADED', todos }),
-    FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+    FETCH_TODOS_SUCCESS: ({ todos }) => ({ state: "LOADED", todos }),
+    FETCH_TODOS_ERROR: ({ error }) => ({ state: "ERROR", error }),
   },
   LOADED: {
     ADD_TODO: ({ todo }, { todos }) => ({
-      state: 'LOADED',
+      state: "LOADED",
       todos: [todo].concat(todos),
     }),
   },
@@ -75,16 +75,16 @@ const Test = () => {
         setTimeout(
           () =>
             dispatch({
-              type: 'FETCH_TODOS_SUCCESS',
+              type: "FETCH_TODOS_SUCCESS",
               todos: [],
             }),
-          500,
+          500
         );
       },
     },
     {
-      state: 'NOT_LOADED',
-    },
+      state: "NOT_LOADED",
+    }
   );
 
   return match(state, {
@@ -92,7 +92,7 @@ const Test = () => {
       <button
         onClick={() =>
           dispatch({
-            type: 'FETCH_TODOS',
+            type: "FETCH_TODOS",
           })
         }
       >
@@ -105,10 +105,10 @@ const Test = () => {
         <button
           onClick={() => {
             dispatch({
-              type: 'ADD_TODO',
+              type: "ADD_TODO",
               todo: {
                 completed: false,
-                title: 'New_' + Date.now(),
+                title: "New_" + Date.now(),
               },
             });
           }}

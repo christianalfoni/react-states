@@ -127,22 +127,21 @@ export function createTransitions<
   S extends TState,
   A extends TAction,
   C extends TCmd
->() {
-  return <T extends TTransitions<[S, C | null], A>>(transitions: T) =>
-    (
-      commands: {
-        [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
-      },
-      initialState: S
-    ): [S, (action: A) => void] => {
-      const [[state, cmd], dispatch] = useReducer(
-        (stateCmd: [S, C | null], action: A) =>
-          transition<[S, C | null], A>(stateCmd, action, transitions),
-        [initialState, null]
-      );
+>(transitions: TTransitions<[S, C | null], A>) {
+  return (
+    commands: {
+      [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
+    },
+    initialState: S
+  ): [S, (action: A) => void] => {
+    const [[state, cmd], dispatch] = useReducer(
+      (stateCmd: [S, C | null], action: A) =>
+        transition<[S, C | null], A>(stateCmd, action, transitions),
+      [initialState, null]
+    );
 
-      useEffect(() => exec(cmd, commands), [cmd]);
+    useEffect(() => exec(cmd, commands), [cmd]);
 
-      return useMemo(() => [state, dispatch], [state]);
-    };
+    return useMemo(() => [state, dispatch], [state]);
+  };
 }

@@ -42,7 +42,7 @@ type Cmd = {
   cmd: "FETCH_DATA";
 };
 
-export const useData = createTransitions<State, Action, Cmd>()({
+export const useData = createTransitions<State, Action, Cmd>({
   NOT_LOADED: {
     FETCH: () => [
       {
