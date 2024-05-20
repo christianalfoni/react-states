@@ -12,81 +12,112 @@ npm install react-states
 
 [![react-states](https://img.youtube.com/vi/4M--Kp41CjI/0.jpg)](https://www.youtube.com/watch?v=4M--Kp41CjI)
 
-## Examples
+## Description
 
-- [Resizer in the Devtools](./src/devtools//Resizer.tsx)
-- [ExcalidrawFirebase](https://github.com/codesandbox/excalidraw-firebase/tree/main/src)
-- [FamilyScrum](https://github.com/christianalfoni/family-scrum-v2/tree/main/src)
+Enhance your reducer with transitions. Transitions creates additional constraints and explicitness in your code. By only allowing certain actions to run in certain states and control what effects run from your reducer, you give your reducer full control of how the state of the application moves forward.
 
-## Documentation
+## API
 
-- [API](./docs/api.md)
-- [Patterns](./docs/patterns.md)
-
-## Values
-
-- "It is just a reducer"
-- Simple utilities
-- Enhanced type safety
-- Reducer does not express side effects
-
-## Learn by example
-
-Instead of expressing your state implicitly:
+### createTransitions
 
 ```ts
-type State = {
-  isLoading: boolean;
-  error: string | null;
-  data: string[];
+import { createTransitions } from "react-states";
+
+type State =
+  | {
+      state: "NOT_LOADED";
+    }
+  | {
+      state: "LOADING";
+    }
+  | {
+      state: "LOADED";
+      data: string;
+    }
+  | {
+      state: "ERROR";
+    };
+
+type Action = {
+  type: "FETCH";
+};
+
+type Cmd = {
+  cmd: "FETCH_DATA";
+};
+
+export const useData = createTransitions<State, Action, Cmd>()({
+  NOT_LOADED: {
+    FETCH: () => [
+      {
+        state: "LOADING",
+      },
+      {
+        cmd: "FETCH_DATA",
+      },
+    ],
+  },
+  LOADING: {
+    FETCH_SUCCESS: ({ data }) => ({
+      state: "LOADED",
+      data,
+    }),
+    FETCH_ERROR: ({ error }) => ({
+      state: "ERROR",
+      error,
+    }),
+  },
+  LOADED: {},
+  ERROR: {},
+});
+```
+
+### match
+
+```tsx
+import { match } from "react-states";
+import { useData } from "./useData";
+
+const DataComponent = () => {
+  const [state, dispatch] = useData({
+    FETCH_DATA: () => Promise.resolve("Some data"),
+  });
+
+  const partialMatch = match(
+    state,
+    {
+      LOADED: ({ data }) => data,
+    },
+    (otherStates) => []
+  );
+
+  const matchByKey = match(state, "data")?.data ?? [];
+
+  const exhaustiveMatch = match(state, {
+    NOT_LOADED: () => (
+      <button onClick={() => dispatch({ type: "LOAD" })}>Load data</button>
+    ),
+    LOADING: () => "Loading...",
+    LOADED: ({ data }) => (
+      <ul>
+        {data.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    ),
+    ERROR: ({ error }) => <span style={{ color: "red" }}>{error}</span>,
+  });
+
+  return <div />;
 };
 ```
 
-You can do so explicitly:
+### Debugging
 
 ```ts
-type State =
-  | {
-      state: 'NOT_LOADED';
-    }
-  | {
-      state: 'LOADING';
-    }
-  | {
-      state: 'LOADED';
-      data: string[];
-    }
-  | {
-      state: 'ERROR';
-      error: string;
-    };
+import { debugging } from "react-states";
+
+debugging.active = Boolean(import.meta.DEV);
 ```
 
-With explicit states you can guard what actions are valid in what states using `transition`:
-
-```ts
-import { transition } from 'react-states';
-
-const reducer = (prevState: State, action: Action) =>
-  transition(prevState, action, {
-    NOT_LOADED: {
-      FETCH: () => ({
-        state: 'LOADING',
-      }),
-    },
-    LOADING: {
-      FETCH_SUCCESS: (_, { data }) => ({
-        state: 'LOADED',
-        data,
-      }),
-      FETCH_ERROR: (_, { error }) => ({
-        state: 'ERROR',
-        error,
-      }),
-    },
-    LOADED: {},
-    ERROR: {},
-  });
-```
-
-With additional utilities like `createStates`, `createActions` and `match` you will increase safety and reduce boilerplate in your code.
+You could also base it with a keyboard shortcut, localStorage etc.

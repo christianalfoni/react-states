@@ -1,36 +1,115 @@
 import * as React from 'react';
 
-import { match, useDevtools, useEnter, useTransition } from '../src';
-import { actions, reducer } from './reducers/todos';
+import { match, createTransitions } from '../src/index';
+
+type Todo = {
+  title: string;
+  completed: boolean;
+};
+
+type State =
+  | {
+      state: 'NOT_LOADED';
+    }
+  | {
+      state: 'LOADING';
+    }
+  | {
+      state: 'LOADED';
+      todos: Todo[];
+    }
+  | {
+      state: 'ERROR';
+      error: string;
+    };
+
+type Action =
+  | {
+      type: 'ADD_TODO';
+      todo: Todo;
+    }
+  | {
+      type: 'FETCH_TODOS';
+    }
+  | {
+      type: 'FETCH_TODOS_SUCCESS';
+      todos: Todo[];
+    }
+  | {
+      type: 'FETCH_TODOS_ERROR';
+      error: string;
+    };
+
+type Cmd = {
+  cmd: 'FETCH_TODOS';
+};
+
+const useTransitions = createTransitions<State, Action, Cmd>()({
+  NOT_LOADED: {
+    FETCH_TODOS: () => [
+      {
+        state: 'LOADING',
+      },
+      {
+        cmd: 'FETCH_TODOS',
+      },
+    ],
+  },
+  LOADING: {
+    FETCH_TODOS_SUCCESS: ({ todos }) => ({ state: 'LOADED', todos }),
+    FETCH_TODOS_ERROR: ({ error }) => ({ state: 'ERROR', error }),
+  },
+  LOADED: {
+    ADD_TODO: ({ todo }, { todos }) => ({
+      state: 'LOADED',
+      todos: [todo].concat(todos),
+    }),
+  },
+  ERROR: {},
+});
 
 const Test = () => {
-  const todosReducer = React.useReducer(reducer, {
-    state: 'NOT_LOADED',
-  });
-
-  useDevtools('Todos', todosReducer);
-
-  const [state, dispatch] = todosReducer;
-  const { addTodo, fetchTodos, fetchTodosSuccess } = actions(dispatch);
-
-  useEnter(state, 'LOADING', () => {
-    setTimeout(() => fetchTodosSuccess([]), 500);
-  });
-
-  useTransition(state, 'LOADED => addTodo => LOADED', () => {
-    // Do something
-  });
+  const [state, dispatch] = useTransitions(
+    {
+      FETCH_TODOS: () => {
+        setTimeout(
+          () =>
+            dispatch({
+              type: 'FETCH_TODOS_SUCCESS',
+              todos: [],
+            }),
+          500,
+        );
+      },
+    },
+    {
+      state: 'NOT_LOADED',
+    },
+  );
 
   return match(state, {
-    NOT_LOADED: ({}) => <button onClick={() => fetchTodos()}>Fetch Todos</button>,
+    NOT_LOADED: () => (
+      <button
+        onClick={() =>
+          dispatch({
+            type: 'FETCH_TODOS',
+          })
+        }
+      >
+        Fetch Todos
+      </button>
+    ),
     LOADING: () => <h2>Loading...</h2>,
     LOADED: ({ todos }) => (
       <div>
         <button
           onClick={() => {
-            addTodo({
-              completed: false,
-              title: 'New_' + Date.now(),
+            dispatch({
+              type: 'ADD_TODO',
+              todo: {
+                completed: false,
+                title: 'New_' + Date.now(),
+              },
             });
           }}
         >

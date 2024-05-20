@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { render, createPortal } from 'react-dom';
-import { DevtoolsManager, DevtoolsProvider } from '../src/devtools';
+import { createRoot } from 'react-dom/client';
+import { debugging } from '../src';
+
+debugging.active = true;
+
 import { App } from './App';
 
 const rootElement = document.getElementById('root');
 
-render(
-  <DevtoolsProvider>
-    <App />
-  </DevtoolsProvider>,
-  rootElement,
-);
+const root = createRoot(rootElement!);
+
+root.render(<App />);
