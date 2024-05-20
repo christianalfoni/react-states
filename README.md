@@ -8,10 +8,6 @@
 npm install react-states
 ```
 
-## Introduction to react-states
-
-[![react-states](https://img.youtube.com/vi/4M--Kp41CjI/0.jpg)](https://www.youtube.com/watch?v=4M--Kp41CjI)
-
 ## Description
 
 Enhance your reducer with transitions. Transitions creates additional constraints and explicitness in your code. By only allowing certain actions to run in certain states and control what effects run from your reducer, you give your reducer full control of how the state of the application moves forward.
@@ -79,21 +75,28 @@ import { match } from "react-states";
 import { useData } from "./useData";
 
 const DataComponent = () => {
-  const [state, dispatch] = useData({
-    FETCH_DATA: () => Promise.resolve("Some data"),
+  const [data, dispatch] = useData({
+    FETCH_DATA: async () => {
+      const newData = await Promise.resolve("Some data");
+
+      dispatch({
+        type: "FETCH_SUCCESS",
+        data: newData,
+      });
+    },
   });
 
   const partialMatch = match(
-    state,
+    data,
     {
       LOADED: ({ data }) => data,
     },
     (otherStates) => []
   );
 
-  const matchByKey = match(state, "data")?.data ?? [];
+  const matchByKey = match(data, "data")?.data ?? [];
 
-  const exhaustiveMatch = match(state, {
+  const exhaustiveMatch = match(data, {
     NOT_LOADED: () => (
       <button onClick={() => dispatch({ type: "LOAD" })}>Load data</button>
     ),
@@ -120,4 +123,4 @@ import { debugging } from "react-states";
 debugging.active = Boolean(import.meta.DEV);
 ```
 
-You could also base it with a keyboard shortcut, localStorage etc.
+You could also implement custom behaviour like a keyboard shortcut, localStorage etc.
