@@ -38,32 +38,8 @@ export function transition<const S extends StateCmd, const A extends TAction>(
       action,
       state
     ) ?? stateCmd;
-  const newStateCmd = Array.isArray(result) ? result : ([result, null] as S);
 
-  if (debugging.active) {
-    console.groupCollapsed(
-      "\x1B[30;105;1m " +
-        action.type +
-        " \x1B[m => " +
-        "\x1B[30;43;1m " +
-        stateCmd[0].state +
-        " \x1B[m => [ " +
-        "\x1B[30;43;1m " +
-        newStateCmd[0].state +
-        " \x1B[m" +
-        (newStateCmd[1]
-          ? " , \x1B[30;103;1m " + newStateCmd[1].cmd + " \x1B[m ] "
-          : " , null " + "\x1B[m]")
-    );
-    console.log({
-      prevState: stateCmd[0],
-      nextState: newStateCmd[0],
-      cmd: newStateCmd[1],
-    });
-    console.groupEnd();
-  }
-
-  return newStateCmd;
+  return Array.isArray(result) ? result : ([result, null] as S);
 }
 
 export function exec<
@@ -128,6 +104,10 @@ export function createTransitions<
   A extends TAction,
   C extends TCmd
 >(transitions: TTransitions<[S, C | null], A>) {
+  // Tracks dispatches so that the debugger does not give
+  // duplicate logs during strict mode
+  let hasPendingAction = false;
+
   return (
     commands: {
       [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
@@ -135,13 +115,66 @@ export function createTransitions<
     initialState: S
   ): [S, (action: A) => void] => {
     const [[state, cmd], dispatch] = useReducer(
-      (stateCmd: [S, C | null], action: A) =>
-        transition<[S, C | null], A>(stateCmd, action, transitions),
+      (stateCmd: [S, C | null], action: A) => {
+        const newStateCmd = transition<[S, C | null], A>(
+          stateCmd,
+          action,
+          transitions
+        );
+
+        // We only log if an actual transition happened
+        const didTransition = stateCmd !== newStateCmd;
+
+        if (debugging.active && didTransition && hasPendingAction) {
+          console.groupCollapsed(
+            "\x1B[30;43;1m " +
+              stateCmd[0].state +
+              " \x1B[m => " +
+              "\x1B[30;105;1m " +
+              action.type +
+              " \x1B[m => [ " +
+              "\x1B[30;43;1m " +
+              newStateCmd[0].state +
+              " \x1B[m" +
+              (newStateCmd[1]
+                ? " , \x1B[30;103;1m " + newStateCmd[1].cmd + " \x1B[m ] "
+                : " , null " + "\x1B[m]")
+          );
+          console.log({
+            prevState: stateCmd[0],
+            nextState: newStateCmd[0],
+            cmd: newStateCmd[1],
+          });
+          console.groupEnd();
+        } else if (debugging.active && !didTransition && hasPendingAction) {
+          console.log(
+            "\x1B[30;43;1m " +
+              stateCmd[0].state +
+              " \x1B[m => " +
+              "\x1B[30;105;1m " +
+              action.type +
+              " \x1B[m => IGNORED"
+          );
+        }
+
+        hasPendingAction = false;
+
+        return newStateCmd;
+      },
       [initialState, null]
     );
 
     useEffect(() => exec(cmd, commands), [cmd]);
 
-    return useMemo(() => [state, dispatch], [state]);
+    return useMemo(
+      () => [
+        state,
+        (action: A) => {
+          hasPendingAction = true;
+          dispatch(action);
+        },
+      ],
+      [state]
+    );
   };
 }

@@ -10,7 +10,15 @@ npm install react-states
 
 ## Description
 
-Enhance your reducer with transitions. Transitions creates additional constraints and explicitness in your code. By only allowing certain actions to run in certain states and control what effects run from your reducer, you give your reducer full control of how the state of the application moves forward.
+This video is the initial introduction of the concept:
+
+[![react-states concept](https://img.youtube.com/vi/ul_3ABrpj64/0.jpg)](https://www.youtube.com/watch?v=ul_3ABrpj64)
+
+After exploring this concept at [CodeSandbox.io](https://codesandbox.io) we discovered one flaw in the concept. Using transition effects led to a lot of indirection in the code, which made it very difficult to reason about application flows. The indirection happens because your logic is split between the reducer, which is often a single file, and the component handling the effects of those transitions.
+
+To fix this issue **react-states** is now co locating state with commands. That means your reducer does not only describe the transitions from one state to another, but can also describe a `command` to execute as part of that transition.
+
+You can now define your state, transitions and commands as a pure reducer hook. The actual execution of the commands is implemented with the usage of the hook. This is great for separation of concerns and testability.
 
 ## API
 
@@ -70,6 +78,10 @@ export const useData = createTransitions<State, Action, Cmd>({
 
 ### match
 
+Transform state into values and UI.
+
+#### Exhaustive match
+
 ```tsx
 import { match } from "react-states";
 import { useData } from "./useData";
@@ -86,32 +98,68 @@ const DataComponent = () => {
     },
   });
 
-  const partialMatch = match(
-    data,
-    {
-      LOADED: ({ data }) => data,
-    },
-    (otherStates) => []
-  );
-
-  const matchByKey = match(data, "data")?.data ?? [];
-
-  const exhaustiveMatch = match(data, {
+  return match(data, {
     NOT_LOADED: () => (
       <button onClick={() => dispatch({ type: "LOAD" })}>Load data</button>
     ),
     LOADING: () => "Loading...",
-    LOADED: ({ data }) => (
-      <ul>
-        {data.map((item, index) => (
-          <li key={index}>{item}</li>
-        ))}
-      </ul>
-    ),
-    ERROR: ({ error }) => <span style={{ color: "red" }}>{error}</span>,
+    LOADED: ({ data }) => <div>Data: {data}</div>,
+    ERROR: ({ error }) => <div style={{ color: "red" }}>{error}</div>,
+  });
+};
+```
+
+#### Partial match
+
+```tsx
+import { match } from "react-states";
+import { useData } from "./useData";
+
+const DataComponent = () => {
+  const [data, dispatch] = useData({
+    FETCH_DATA: async () => {
+      const newData = await Promise.resolve("Some data");
+
+      dispatch({
+        type: "FETCH_SUCCESS",
+        data: newData,
+      });
+    },
   });
 
-  return <div />;
+  const dataWithDefault = match(
+    data,
+    {
+      LOADED: ({ data }) => data,
+    },
+    (otherStates) => "No data yet"
+  );
+
+  return <div>Data: {dataWithDefault}</div>;
+};
+```
+
+#### Match by key
+
+```tsx
+import { match } from "react-states";
+import { useData } from "./useData";
+
+const DataComponent = () => {
+  const [data, dispatch] = useData({
+    FETCH_DATA: async () => {
+      const newData = await Promise.resolve("Some data");
+
+      dispatch({
+        type: "FETCH_SUCCESS",
+        data: newData,
+      });
+    },
+  });
+
+  const dataWithDefault = match(data, "data")?.data ?? "No data yet";
+
+  return <div>Data: {dataWithDefault}</div>;
 };
 ```
 

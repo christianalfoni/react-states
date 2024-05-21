@@ -103,6 +103,15 @@ const Test = () => {
     LOADED: ({ todos }) => (
       <div>
         <button
+          onClick={() =>
+            dispatch({
+              type: "FETCH_TODOS",
+            })
+          }
+        >
+          Fetch Todos
+        </button>
+        <button
           onClick={() => {
             dispatch({
               type: "ADD_TODO",
