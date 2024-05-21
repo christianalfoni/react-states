@@ -127,13 +127,13 @@ export function createTransitions<
 
         if (debugging.active && didTransition && hasPendingAction) {
           console.groupCollapsed(
-            "\x1B[30;43;1m " +
+            "\x1B[30;101;1m " +
               stateCmd[0].state +
               " \x1B[m => " +
-              "\x1B[30;105;1m " +
+              "\x1B[30;102;1m " +
               action.type +
               " \x1B[m => [ " +
-              "\x1B[30;43;1m " +
+              "\x1B[30;101;1m " +
               newStateCmd[0].state +
               " \x1B[m" +
               (newStateCmd[1]
@@ -148,10 +148,10 @@ export function createTransitions<
           console.groupEnd();
         } else if (debugging.active && !didTransition && hasPendingAction) {
           console.log(
-            "\x1B[30;43;1m " +
+            "\x1B[30;101;1m " +
               stateCmd[0].state +
               " \x1B[m => " +
-              "\x1B[30;105;1m " +
+              "\x1B[30;102;1m " +
               action.type +
               " \x1B[m => IGNORED"
           );
