@@ -44,29 +44,31 @@ type Cmd = {
   cmd: "FETCH_TODOS";
 };
 
-const useTransitions = createTransitions<State, Action, Cmd>({
+const useTransitions = createTransitions<State, Action, Cmd>((transition) => ({
   NOT_LOADED: {
-    FETCH_TODOS: () => [
-      {
-        state: "LOADING",
-      },
-      {
-        cmd: "FETCH_TODOS",
-      },
-    ],
+    FETCH_TODOS: () =>
+      transition(
+        {
+          state: "LOADING",
+        },
+        {
+          cmd: "FETCH_TODOS",
+        }
+      ),
   },
   LOADING: {
-    FETCH_TODOS_SUCCESS: ({ todos }) => ({ state: "LOADED", todos }),
-    FETCH_TODOS_ERROR: ({ error }) => ({ state: "ERROR", error }),
+    FETCH_TODOS_SUCCESS: ({ todos }) => transition({ state: "LOADED", todos }),
+    FETCH_TODOS_ERROR: ({ error }) => transition({ state: "ERROR", error }),
   },
   LOADED: {
-    ADD_TODO: ({ todo }, { todos }) => ({
-      state: "LOADED",
-      todos: [todo].concat(todos),
-    }),
+    ADD_TODO: ({ todo }, { todos }) =>
+      transition({
+        state: "LOADED",
+        todos: [todo].concat(todos),
+      }),
   },
   ERROR: {},
-});
+}));
 
 const Test = () => {
   const [state, dispatch] = useTransitions(
