@@ -103,10 +103,18 @@ export function createTransitions<
   S extends TState,
   A extends TAction,
   C extends TCmd
->(transitions: TTransitions<[S, C | null], A>) {
+>(
+  transitions: (
+    transition: (state: S, cmd?: C) => [S, C | null]
+  ) => TTransitions<[S, C | null], A>
+) {
   // Tracks dispatches so that the debugger does not give
   // duplicate logs during strict mode
   let hasPendingAction = false;
+
+  const result = (state: S, cmd?: C) => {
+    return [state, cmd || null] as [S, C | null];
+  };
 
   return (
     commands: {
@@ -119,7 +127,7 @@ export function createTransitions<
         const newStateCmd = transition<[S, C | null], A>(
           stateCmd,
           action,
-          transitions
+          transitions(result)
         );
 
         // We only log if an actual transition happened
