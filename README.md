@@ -79,6 +79,8 @@ export const useData = createTransitions<State, Action, Cmd>((transition) => ({
 }));
 ```
 
+The `transition` function is used to ensure type safety. It is not strictly necessary, but TypeScript does not have exact return types. That means you only get errors on lacking properties. The `transition` function ensures exact types on your state and commands.
+
 ### match
 
 Transform state into values and UI.
