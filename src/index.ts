@@ -27,7 +27,7 @@ type TTransitions<S extends StateCmd, A extends TAction> = {
   };
 };
 
-export function transition<const S extends StateCmd, const A extends TAction>(
+function transition<const S extends StateCmd, const A extends TAction>(
   stateCmd: S,
   action: A,
   transitions: TTransitions<S, A>
@@ -42,7 +42,7 @@ export function transition<const S extends StateCmd, const A extends TAction>(
   return Array.isArray(result) ? result : ([result, null] as S);
 }
 
-export function exec<
+function exec<
   C extends TCmd,
   T extends {
     [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
@@ -55,13 +55,14 @@ export function exec<
   return commands[cmd.cmd as C["cmd"]](cmd);
 }
 
-export type TMatch<S extends TState, R = any> = {
+type TMatch<S extends TState, R = any> = {
   [SS in S["state"]]: (state: S & { state: SS }) => R;
 };
 
-export type TPartialMatch<S extends TState, R = any> = {
+type TPartialMatch<S extends TState, R = any> = {
   [SS in S["state"]]?: (state: S & { state: SS }) => R;
 };
+
 export function match<
   S extends TState,
   P extends {
