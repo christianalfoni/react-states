@@ -16,9 +16,9 @@ type TAction = {
   type: string;
 };
 
-type StateCmd = [TState, TCmd | null];
+type TStateCmd = [TState, TCmd | null];
 
-type TTransitions<S extends StateCmd, A extends TAction> = {
+type TTransitions<S extends TStateCmd, A extends TAction> = {
   [SS in S[0]["state"]]: {
     [AA in A["type"]]?: (
       action: A & { type: AA },
@@ -27,7 +27,14 @@ type TTransitions<S extends StateCmd, A extends TAction> = {
   };
 };
 
-function transition<const S extends StateCmd, const A extends TAction>(
+type TTransitionsHook<S extends TState, A extends TAction, C extends TCmd> = (
+  commands: {
+    [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
+  },
+  initialState: S
+) => [S, (action: A) => void];
+
+function transition<const S extends TStateCmd, const A extends TAction>(
   stateCmd: S,
   action: A,
   transitions: TTransitions<S, A>
@@ -100,7 +107,7 @@ export function match() {
   return matches[state.state](state);
 }
 
-export function createTransitions<
+export function createTransitionsHook<
   S extends TState,
   A extends TAction,
   C extends TCmd
@@ -108,7 +115,7 @@ export function createTransitions<
   transitions: (
     transition: (state: S, cmd?: C) => [S, C | null]
   ) => TTransitions<[S, C | null], A>
-) {
+): TTransitionsHook<S, A, C> {
   // Tracks dispatches so that the debugger does not give
   // duplicate logs during strict mode
   let hasPendingAction = false;
@@ -117,12 +124,7 @@ export function createTransitions<
     return [state, cmd || null] as [S, C | null];
   };
 
-  return (
-    commands: {
-      [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
-    },
-    initialState: S
-  ): [S, (action: A) => void] => {
+  return (commands, initialState) => {
     const [[state, cmd], dispatch] = useReducer(
       (stateCmd: [S, C | null], action: A) => {
         const newStateCmd = transition<[S, C | null], A>(

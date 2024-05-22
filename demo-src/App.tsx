@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { match, createTransitions } from "../src/index";
+import { match, createTransitionsHook } from "../src/index";
 
 type Todo = {
   title: string;
@@ -44,31 +44,34 @@ type Cmd = {
   cmd: "FETCH_TODOS";
 };
 
-const useTransitions = createTransitions<State, Action, Cmd>((transition) => ({
-  NOT_LOADED: {
-    FETCH_TODOS: () =>
-      transition(
-        {
-          state: "LOADING",
-        },
-        {
-          cmd: "FETCH_TODOS",
-        }
-      ),
-  },
-  LOADING: {
-    FETCH_TODOS_SUCCESS: ({ todos }) => transition({ state: "LOADED", todos }),
-    FETCH_TODOS_ERROR: ({ error }) => transition({ state: "ERROR", error }),
-  },
-  LOADED: {
-    ADD_TODO: ({ todo }, { todos }) =>
-      transition({
-        state: "LOADED",
-        todos: [todo].concat(todos),
-      }),
-  },
-  ERROR: {},
-}));
+const useTransitions = createTransitionsHook<State, Action, Cmd>(
+  (transition) => ({
+    NOT_LOADED: {
+      FETCH_TODOS: () =>
+        transition(
+          {
+            state: "LOADING",
+          },
+          {
+            cmd: "FETCH_TODOS",
+          }
+        ),
+    },
+    LOADING: {
+      FETCH_TODOS_SUCCESS: ({ todos }) =>
+        transition({ state: "LOADED", todos }),
+      FETCH_TODOS_ERROR: ({ error }) => transition({ state: "ERROR", error }),
+    },
+    LOADED: {
+      ADD_TODO: ({ todo }, { todos }) =>
+        transition({
+          state: "LOADED",
+          todos: [todo].concat(todos),
+        }),
+    },
+    ERROR: {},
+  })
+);
 
 const Test = () => {
   const [state, dispatch] = useTransitions(
