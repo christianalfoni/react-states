@@ -9,17 +9,17 @@ type Todo = {
 
 type State =
   | {
-      state: "NOT_LOADED";
+      status: "NOT_LOADED";
     }
   | {
-      state: "LOADING";
+      status: "LOADING";
     }
   | {
-      state: "LOADED";
+      status: "LOADED";
       todos: Todo[];
     }
   | {
-      state: "ERROR";
+      status: "ERROR";
       error: string;
     };
 
@@ -40,32 +40,32 @@ type Action =
       error: string;
     };
 
-type Cmd = {
-  cmd: "FETCH_TODOS";
+type Effect = {
+  type: "FETCH_TODOS";
 };
 
-const useTransitions = createTransitionsHook<State, Action, Cmd>(
+const useTransitions = createTransitionsHook<State, Action, Effect>(
   (transition) => ({
     NOT_LOADED: {
       FETCH_TODOS: () =>
         transition(
           {
-            state: "LOADING",
+            status: "LOADING",
           },
           {
-            cmd: "FETCH_TODOS",
+            type: "FETCH_TODOS",
           }
         ),
     },
     LOADING: {
       FETCH_TODOS_SUCCESS: ({ todos }) =>
-        transition({ state: "LOADED", todos }),
-      FETCH_TODOS_ERROR: ({ error }) => transition({ state: "ERROR", error }),
+        transition({ status: "LOADED", todos }),
+      FETCH_TODOS_ERROR: ({ error }) => transition({ status: "ERROR", error }),
     },
     LOADED: {
       ADD_TODO: ({ todo }, { todos }) =>
         transition({
-          state: "LOADED",
+          status: "LOADED",
           todos: [todo].concat(todos),
         }),
     },
@@ -88,7 +88,7 @@ const Test = () => {
       },
     },
     {
-      state: "NOT_LOADED",
+      status: "NOT_LOADED",
     }
   );
 

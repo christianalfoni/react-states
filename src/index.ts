@@ -5,75 +5,79 @@ export const debugging = {
 };
 
 type TState = {
-  state: string;
+  status: string;
 };
 
-type TCmd = {
-  cmd: string;
+type TEffect = {
+  type: string;
 };
 
 type TAction = {
   type: string;
 };
 
-type TStateCmd = [TState, TCmd | null];
+type TStateEffect = [TState, TEffect | null];
 
-type TTransitions<S extends TStateCmd, A extends TAction> = {
-  [SS in S[0]["state"]]: {
+type TTransitions<S extends TStateEffect, A extends TAction> = {
+  [SS in S[0]["status"]]: {
     [AA in A["type"]]?: (
       action: A & { type: AA },
-      state: S[0] & { state: SS }
+      state: S[0] & { status: SS }
     ) => S[0] | S;
   };
 };
 
-type TTransitionsHook<S extends TState, A extends TAction, C extends TCmd> = (
-  commands: {
-    [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
+type TTransitionsHook<
+  S extends TState,
+  A extends TAction,
+  E extends TEffect
+> = (
+  effects: {
+    [EE in E["type"]]: (effect: E & { type: EE }) => void;
   },
   initialState: S
 ) => [S, (action: A) => void];
 
-function transition<const S extends TStateCmd, const A extends TAction>(
-  stateCmd: S,
+function transition<const S extends TStateEffect, const A extends TAction>(
+  stateEffect: S,
   action: A,
   transitions: TTransitions<S, A>
 ): S {
-  const [state] = stateCmd;
+  const [state] = stateEffect;
   const result =
-    transitions[state.state as S[0]["state"]]?.[action.type as A["type"]]?.(
+    transitions[state.status as S[0]["status"]]?.[action.type as A["type"]]?.(
       action,
       state
-    ) ?? stateCmd;
+    ) ?? stateEffect;
 
   return Array.isArray(result) ? result : ([result, null] as S);
 }
 
 function exec<
-  C extends TCmd,
+  E extends TEffect,
   T extends {
-    [CC in C["cmd"]]: (cmd: C & { cmd: CC }) => void;
+    [EE in E["type"]]: (effect: E & { type: EE }) => void;
   }
->(cmd: C | null, commands: T) {
-  if (!cmd || !commands[cmd.cmd as C["cmd"]]) {
+>(effect: E | null, commands: T) {
+  if (!effect || !commands[effect.type as E["type"]]) {
     return;
   }
 
-  return commands[cmd.cmd as C["cmd"]](cmd);
+  return commands[effect.type as E["type"]](effect);
 }
 
 type TMatch<S extends TState, R = any> = {
-  [SS in S["state"]]: (state: S & { state: SS }) => R;
+  [SS in S["status"]]: (state: S & { status: SS }) => R;
 };
 
 type TPartialMatch<S extends TState, R = any> = {
-  [SS in S["state"]]?: (state: S & { state: SS }) => R;
+  [SS in S["status"]]?: (state: S & { status: SS }) => R;
 };
 
 export function match<
   S extends TState,
   P extends {
-    [K in keyof S]: keyof (S & { state: K });
+    [K in keyof S]: keyof (S & { status: K });
   }[keyof S]
 >(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function match<S extends TState, T extends TMatch<S>>(
@@ -85,7 +89,7 @@ export function match<S extends TState, T extends TMatch<S>>(
 export function match<S extends TState, T extends TPartialMatch<S>, U>(
   state: S,
   matches: T,
-  _: (state: S & { state: Exclude<S["state"], keyof T> }) => U
+  _: (state: S & { status: Exclude<S["status"], keyof T> }) => U
 ):
   | {
       [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
@@ -110,57 +114,57 @@ export function match() {
 export function createTransitionsHook<
   S extends TState,
   A extends TAction,
-  C extends TCmd
+  E extends TEffect
 >(
   transitions: (
-    transition: (state: S, cmd?: C) => [S, C | null]
-  ) => TTransitions<[S, C | null], A>
-): TTransitionsHook<S, A, C> {
+    transition: (state: S, effect?: E) => [S, E | null]
+  ) => TTransitions<[S, E | null], A>
+): TTransitionsHook<S, A, E> {
   // Tracks dispatches so that the debugger does not give
   // duplicate logs during strict mode
   let hasPendingAction = false;
 
-  const result = (state: S, cmd?: C) => {
-    return [state, cmd || null] as [S, C | null];
+  const result = (state: S, effect?: E) => {
+    return [state, effect || null] as [S, E | null];
   };
 
-  return (commands, initialState) => {
-    const [[state, cmd], dispatch] = useReducer(
-      (stateCmd: [S, C | null], action: A) => {
-        const newStateCmd = transition<[S, C | null], A>(
-          stateCmd,
+  return (effects, initialState) => {
+    const [[state, effect], dispatch] = useReducer(
+      (stateEffect: [S, E | null], action: A) => {
+        const newStateEffect = transition<[S, E | null], A>(
+          stateEffect,
           action,
           transitions(result)
         );
 
         // We only log if an actual transition happened
-        const didTransition = stateCmd !== newStateCmd;
+        const didTransition = stateEffect !== newStateEffect;
 
         if (debugging.active && didTransition && hasPendingAction) {
           console.groupCollapsed(
             "\x1B[30;101;1m " +
-              stateCmd[0].state +
+              stateEffect[0].status +
               " \x1B[m => " +
               "\x1B[30;102;1m " +
               action.type +
               " \x1B[m => [ " +
               "\x1B[30;101;1m " +
-              newStateCmd[0].state +
+              newStateEffect[0].status +
               " \x1B[m" +
-              (newStateCmd[1]
-                ? " , \x1B[30;103;1m " + newStateCmd[1].cmd + " \x1B[m ] "
+              (newStateEffect[1]
+                ? " , \x1B[30;103;1m " + newStateEffect[1].type + " \x1B[m ] "
                 : " , null " + "\x1B[m]")
           );
           console.log({
-            prevState: stateCmd[0],
-            nextState: newStateCmd[0],
-            cmd: newStateCmd[1],
+            prevState: stateEffect[0],
+            nextState: newStateEffect[0],
+            effect: newStateEffect[1],
           });
           console.groupEnd();
         } else if (debugging.active && !didTransition && hasPendingAction) {
           console.log(
             "\x1B[30;101;1m " +
-              stateCmd[0].state +
+              stateEffect[0].status +
               " \x1B[m => " +
               "\x1B[30;102;1m " +
               action.type +
@@ -170,12 +174,12 @@ export function createTransitionsHook<
 
         hasPendingAction = false;
 
-        return newStateCmd;
+        return newStateEffect;
       },
       [initialState, null]
     );
 
-    useEffect(() => exec(cmd, commands), [cmd]);
+    useEffect(() => exec(effect, effects), [effect]);
 
     return useMemo(
       () => [

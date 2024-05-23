@@ -29,28 +29,28 @@ import { createTransitions } from "react-states";
 
 type State =
   | {
-      state: "NOT_LOADED";
+      status: "NOT_LOADED";
     }
   | {
-      state: "LOADING";
+      status: "LOADING";
     }
   | {
-      state: "LOADED";
+      status: "LOADED";
       data: string;
     }
   | {
-      state: "ERROR";
+      status: "ERROR";
     };
 
 type Action = {
   type: "FETCH";
 };
 
-type Cmd = {
-  cmd: "FETCH_DATA";
+type Effect = {
+  type: "FETCH_DATA";
 };
 
-const useData = createTransitions<State, Action, Cmd>((transition) => ({
+const useData = createTransitions<State, Action, Effect>((transition) => ({
   NOT_LOADED: {
     FETCH: () =>
       transition(
@@ -91,7 +91,7 @@ const DataComponent = () => {
       },
     },
     {
-      state: "NOT_LOADED",
+      status: "NOT_LOADED",
     }
   );
 
@@ -99,7 +99,7 @@ const DataComponent = () => {
 };
 ```
 
-The `transition` function is used to ensure type safety. It is not strictly necessary, but TypeScript does not have exact return types. That means you only get errors on lacking properties. The `transition` function ensures exact types on your state and commands.
+The `transition` function is used to ensure type safety. It is not strictly necessary, but TypeScript does not have exact return types. That means you only get errors on lacking properties. The `transition` function ensures exact types on your state and effects.
 
 ### match
 
@@ -112,7 +112,7 @@ import { match } from "react-states";
 import { useData } from "./useData";
 
 const DataComponent = () => {
-  const [data, dispatch] = useData(
+  const [state, dispatch] = useData(
     {
       FETCH_DATA: async () => {
         const newData = await Promise.resolve("Some data");
@@ -124,11 +124,11 @@ const DataComponent = () => {
       },
     },
     {
-      state: "NOT_LOADED",
+      status: "NOT_LOADED",
     }
   );
 
-  return match(data, {
+  return match(state, {
     NOT_LOADED: () => (
       <button onClick={() => dispatch({ type: "LOAD" })}>Load data</button>
     ),
@@ -146,7 +146,7 @@ import { match } from "react-states";
 import { useData } from "./useData";
 
 const DataComponent = () => {
-  const [data, dispatch] = useData(
+  const [state, dispatch] = useData(
     {
       FETCH_DATA: async () => {
         const newData = await Promise.resolve("Some data");
@@ -158,12 +158,12 @@ const DataComponent = () => {
       },
     },
     {
-      state: "NOT_LOADED",
+      status: "NOT_LOADED",
     }
   );
 
   const dataWithDefault = match(
-    data,
+    state,
     {
       LOADED: ({ data }) => data,
     },
@@ -181,7 +181,7 @@ import { match } from "react-states";
 import { useData } from "./useData";
 
 const DataComponent = () => {
-  const [data, dispatch] = useData(
+  const [state, dispatch] = useData(
     {
       FETCH_DATA: async () => {
         const newData = await Promise.resolve("Some data");
@@ -193,11 +193,11 @@ const DataComponent = () => {
       },
     },
     {
-      state: "NOT_LOADED",
+      status: "NOT_LOADED",
     }
   );
 
-  const dataWithDefault = match(data, "data")?.data ?? "No data yet";
+  const dataWithDefault = match(state, "data")?.data ?? "No data yet";
 
   return <div>Data: {dataWithDefault}</div>;
 };
