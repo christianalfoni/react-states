@@ -24,7 +24,7 @@ You can now define your state, transitions and commands as a pure reducer hook. 
 
 ### createTransitions
 
-```ts
+```tsx
 import { createTransitions } from "react-states";
 
 type State =
@@ -50,7 +50,7 @@ type Cmd = {
   cmd: "FETCH_DATA";
 };
 
-export const useData = createTransitions<State, Action, Cmd>((transition) => ({
+const useData = createTransitions<State, Action, Cmd>((transition) => ({
   NOT_LOADED: {
     FETCH: () =>
       transition(
@@ -77,6 +77,26 @@ export const useData = createTransitions<State, Action, Cmd>((transition) => ({
   LOADED: {},
   ERROR: {},
 }));
+
+const DataComponent = () => {
+  const [data, dispatch] = useData(
+    {
+      FETCH_DATA: async () => {
+        const newData = await Promise.resolve("Some data");
+
+        dispatch({
+          type: "FETCH_SUCCESS",
+          data: newData,
+        });
+      },
+    },
+    {
+      state: "NOT_LOADED",
+    }
+  );
+
+  return <div />;
+};
 ```
 
 The `transition` function is used to ensure type safety. It is not strictly necessary, but TypeScript does not have exact return types. That means you only get errors on lacking properties. The `transition` function ensures exact types on your state and commands.
