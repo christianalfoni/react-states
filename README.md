@@ -79,7 +79,7 @@ const useData = createTransitions<State, Action, Effect>((transition) => ({
 }));
 
 const DataComponent = () => {
-  const [data, dispatch] = useData(
+  const [state, dispatch] = useData(
     {
       FETCH_DATA: async () => {
         const newData = await Promise.resolve("Some data");
