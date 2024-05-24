@@ -58,7 +58,7 @@ const useData = createTransitions<State, Action, Effect>((transition) => ({
           state: "LOADING",
         },
         {
-          cmd: "FETCH_DATA",
+          type: "FETCH_DATA",
         }
       ),
   },
