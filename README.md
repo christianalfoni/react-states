@@ -55,7 +55,7 @@ const useData = createTransitions<State, Action, Effect>((transition) => ({
     FETCH: () =>
       transition(
         {
-          state: "LOADING",
+          status: "LOADING",
         },
         {
           type: "FETCH_DATA",
@@ -65,12 +65,12 @@ const useData = createTransitions<State, Action, Effect>((transition) => ({
   LOADING: {
     FETCH_SUCCESS: ({ data }) =>
       transition({
-        state: "LOADED",
+        status: "LOADED",
         data,
       }),
     FETCH_ERROR: ({ error }) =>
       transition({
-        state: "ERROR",
+        status: "ERROR",
         error,
       }),
   },
