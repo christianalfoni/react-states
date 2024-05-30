@@ -105,10 +105,10 @@ export function match() {
   }
 
   if (_) {
-    return (matches[state.state] || _)(state);
+    return (matches[state.status] || _)(state);
   }
 
-  return matches[state.state](state);
+  return matches[state.status](state);
 }
 
 export function createTransitionsHook<
