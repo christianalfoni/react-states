@@ -74,12 +74,6 @@ type TPartialMatch<S extends TState, R = any> = {
   [SS in S["status"]]?: (state: S & { status: SS }) => R;
 };
 
-export function match<
-  S extends TState,
-  P extends {
-    [K in keyof S]: keyof (S & { status: K });
-  }[keyof S]
->(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function match<S extends TState, T extends TMatch<S>>(
   state: S,
   matches: T
@@ -95,6 +89,12 @@ export function match<S extends TState, T extends TPartialMatch<S>, U>(
       [K in keyof T]: T[K] extends (...args: any[]) => infer R ? R : never;
     }[keyof T]
   | U;
+export function match<
+  S extends TState,
+  P extends {
+    [K in keyof S]: keyof (S & { status: K });
+  }[keyof S]
+>(state: S, prop: P): S extends Record<P, unknown> ? S : undefined;
 export function match() {
   const state = arguments[0];
   const matches = arguments[1];
