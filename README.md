@@ -22,10 +22,10 @@ You can now define your state, transitions and effects as a pure reducer hook. T
 
 ## API
 
-### createTransitions
+### createTransitionsHook
 
 ```tsx
-import { createTransitions } from "react-states";
+import { createTransitionsHook } from "react-states";
 
 type State =
   | {
@@ -50,7 +50,7 @@ type Effect = {
   type: "FETCH_DATA";
 };
 
-const useData = createTransitions<State, Action, Effect>((transition) => ({
+const useData = createTransitionsHook<State, Action, Effect>((transition) => ({
   NOT_LOADED: {
     FETCH: () =>
       transition(
