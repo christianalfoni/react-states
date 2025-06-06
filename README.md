@@ -2,7 +2,7 @@
 
 > Explicit states for predictable user experiences
 
-## Install
+## Install 2
 
 ```sh
 npm install react-states
